@@ -422,6 +422,9 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
 .editable-field{background:rgba(255,193,40,.06);border:1px solid rgba(255,193,40,.2);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--t1);outline:none;width:100%;}
 .editable-field:focus{border-color:var(--blue);}
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
 </head>
 <body>
 
@@ -951,11 +954,11 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
     </div>
     <div class="mg">
       <label class="lbl" data-en="Subject" data-ar="الموضوع">Subject</label>
-      <input class="inp" type="text" placeholder="Announcement subject..." style="margin-bottom:0">
+      <input id="broadSubject" class="inp" type="text" placeholder="Announcement subject..." style="margin-bottom:0">
     </div>
     <div class="mg">
       <label class="lbl" data-en="Message" data-ar="الرسالة">Message</label>
-      <textarea class="inp" rows="3" style="resize:none;height:80px;margin-bottom:0" placeholder="Type announcement..."></textarea>
+      <textarea id="broadBody" class="inp" rows="3" style="resize:none;height:80px;margin-bottom:0" placeholder="Type announcement..."></textarea>
     </div>
     <button class="btn-pri" onclick="submitBroadcast()" data-en="📢 Send to All" data-ar="📢 إرسال للجميع">📢 Send to All</button>
     <button class="btn-sec" onclick="closeModal('broadcastModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
@@ -1615,7 +1618,7 @@ async function loadSupabaseData(isAdmin) {
     if (reqRes.data && reqRes.data.length > 0) {
       requests = reqRes.data.map(r => ({
         id: r.id, type: r.type, typeLabel: r.type_label,
-        from: r.from_emp_id, fromName: r.from_name,
+        from: r.from_emp_id, fromEmpId: r.from_emp_id, fromName: r.from_name,
         to: r.to_dept, toLabel: r.to_label,
         title: r.title, details: r.details, status: r.status,
         chain: r.chain, chainStatus: r.chain_status, urgent: r.urgent,
@@ -1652,7 +1655,8 @@ async function loadSupabaseData(isAdmin) {
           supervisor_id: e.supervisor_id, report_to: e.report_to,
           location: e.location, locationLabel: e.location_label,
           phone: e.phone, salary: e.salary, password: e.password,
-          startDate: e.start_date, active: e.active, init: e.init
+          startDate: e.start_date, active: e.active, init: e.init,
+          fcm_token: e.fcm_token || null
         }));
       }
     }
@@ -1916,6 +1920,8 @@ function login(roleKey) {
   showTab('home');
   // Admin-specific post-login
   setTimeout(() => _postLoginAdmin(roleKey), 50);
+  // Request notification permission + save FCM token
+  setTimeout(() => initFCMToken(), 1500);
 }
 
 function logout() {
@@ -2136,15 +2142,21 @@ function handleReq(id, action) {
       req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
       req.forManager = null; req.forDept = 'hr';
       toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
+      // Notify employee that request moved to HR
+      sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Forwarded to HR', req.title || req.typeLabel);
     } else {
       req.status = 'approved';
       req.chainStatus = req.chainStatus.map(() => 'done');
       toast('✅ ' + t('Request approved','تمت الموافقة على الطلب'));
+      // Notify employee of approval
+      sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Approved', req.title || req.typeLabel);
     }
   } else if (action === 'reject') {
     req.status = 'rejected';
     req.chainStatus = req.chainStatus.map((s,i) => s === 'active' ? 'rejected' : s);
     toast('❌ ' + t('Request rejected','تم رفض الطلب'));
+    // Notify employee of rejection
+    sendPush(getEmpFCMToken(req.fromEmpId || req.from), '❌ Request Rejected', req.title || req.typeLabel);
   } else if (action === 'call') {
     // Generate pass
     const serial = generateSerial(req.fromName);
@@ -2386,7 +2398,7 @@ function submitRequest() {
     passes.push({ serial, empName:user.name, empDept:user.dept, purpose:title, issuedBy:user.dept, date:'Apr 9, 2026', valid:true, roleKey:role });
   }
 
-  const newReq = { id:newId, type:selectedReqType, typeLabel:rt.label, typeLabelAr: AR_MAP[rt.label] || rt.label, from:role, fromName:lang==='ar'?user.nameAr:user.name, to:rt.to, toLabel:rt.toLabel, title, date:'Today', status:reqStatus, chainStep:isLeave?1:null, details:document.getElementById('fDetails').value || title, chain, chainStatus, forManager, forDept, urgent:selectedReqType==='incident', passGenerated:!!serial, passSerial:serial, passIssued:serial?user.dept:null, passPurpose:serial?title:null };
+  const newReq = { id:newId, type:selectedReqType, typeLabel:rt.label, typeLabelAr: AR_MAP[rt.label] || rt.label, from:role, fromName:lang==='ar'?user.nameAr:user.name, fromEmpId:user.id, to:rt.to, toLabel:rt.toLabel, title, date:'Today', status:reqStatus, chainStep:isLeave?1:null, details:document.getElementById('fDetails').value || title, chain, chainStatus, forManager, forDept, urgent:selectedReqType==='incident', passGenerated:!!serial, passSerial:serial, passIssued:serial?user.dept:null, passPurpose:serial?title:null };
 
   // Auto-translate request title in background
   autoTranslate(title).then(ar => { if (ar !== title) { newReq.titleAr = ar; AR_MAP[title] = ar; } });
@@ -2428,6 +2440,8 @@ function submitRequest() {
   if (badge) badge.textContent = requests.filter(r => r.from === role).length;
 
   toast('📤 ' + t('Request submitted: ' + newId, 'تم إرسال الطلب: ' + newId));
+  // Notify admins of new request
+  sendPush(getAdminFCMTokens(), '📋 New Request', (lang==='ar'?user.nameAr:user.name) + ': ' + title);
   renderMyRequests();
   renderIncoming();
 
@@ -2552,7 +2566,31 @@ function sendMsg() {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openBroadcastModal() { openModal('broadcastModal'); }
-function submitBroadcast() { closeModal('broadcastModal'); toast(t('📢 Announcement sent to all staff','📢 تم إرسال الإعلان لجميع الموظفين')); }
+function submitBroadcast() {
+  const subject = (document.getElementById('broadSubject')?.value || '').trim();
+  const body    = (document.getElementById('broadBody')?.value || '').trim();
+  if (!subject) { toast(t('⚠️ Please enter a subject','⚠️ الرجاء إدخال الموضوع')); return; }
+
+  closeModal('broadcastModal');
+
+  // Save announcement locally
+  const ann = { id:'ANN-'+Date.now(), title:subject, body, from:user.name, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}), type:'broadcast' };
+  announcements.unshift(ann);
+  renderAnnouncements?.();
+
+  // Save to Supabase
+  sb.from('announcements').insert({ title:subject, body, sender_id:user.id||role, sender_name:user.name })
+    .then(({error}) => { if (error) console.warn('Broadcast save failed:', error); });
+
+  // Push notify all staff
+  sendPush(getAllActiveFCMTokens(), '📢 ' + subject, body || subject);
+
+  toast(t('📢 Announcement sent to all staff','📢 تم إرسال الإعلان لجميع الموظفين'));
+
+  // Reset fields
+  if (document.getElementById('broadSubject')) document.getElementById('broadSubject').value = '';
+  if (document.getElementById('broadBody')) document.getElementById('broadBody').value = '';
+}
 
 document.querySelectorAll('.modal-bg').forEach(bg => bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); }));
 
@@ -4580,6 +4618,76 @@ loadSupabaseData = async function(isAdmin) {
   const { data: jtData } = await sb.from('settings').select('value').eq('key','all_job_titles').single();
   if (jtData?.value && Array.isArray(jtData.value)) allJobTitles = jtData.value;
 };
+
+// ══════════════════════════════════════════════════════════════════════════
+// FIREBASE PUSH NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey: "AIzaSyASpt0_nfVQpkdOP1fjof0h7RgoX_QK3ts",
+  authDomain: "alhuda-staff.firebaseapp.com",
+  projectId: "alhuda-staff",
+  storageBucket: "alhuda-staff.firebasestorage.app",
+  messagingSenderId: "26066694621",
+  appId: "1:26066694621:web:ea974304cf73fdeae1c634"
+};
+const FB_VAPID = "BKItbbD6eoXp-HPKMSk5vdf2xwwLnhpitl9PBE01Ca3N2e5C9GJMMXTVHGT7ywaMLZ_6iiE_I9IHrn-xE49dJzU";
+
+let _fbApp = null;
+let _fbMsg  = null;
+
+async function initFirebase() {
+  if (_fbApp) return;
+  try {
+    _fbApp = firebase.initializeApp(FB_CONFIG);
+    _fbMsg  = firebase.messaging(_fbApp);
+  } catch(e) { console.warn('Firebase init:', e); }
+}
+
+// Called after login — asks permission and saves device token to Supabase
+async function initFCMToken() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  try {
+    await initFirebase();
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+
+    const token = await _fbMsg.getToken({ vapidKey: FB_VAPID, serviceWorkerRegistration: swReg });
+    if (!token || !user?.id) return;
+
+    // Save token to Supabase employees table
+    await sb.from('employees').update({ fcm_token: token }).eq('id', user.id);
+    // Also keep it on local user object
+    user.fcmToken = token;
+    // Refresh local employee record
+    const emp = employees.find(e => e.id === user.id);
+    if (emp) emp.fcm_token = token;
+  } catch(e) { console.warn('FCM token init:', e); }
+}
+
+// Send push via Supabase Edge Function (avoids browser CORS on FCM API)
+async function sendPush(tokens, title, body) {
+  const valid = (Array.isArray(tokens) ? tokens : [tokens]).filter(Boolean);
+  if (!valid.length) return;
+  try {
+    await sb.functions.invoke('send-push', { body: { tokens: valid, title, body } });
+  } catch(e) { console.warn('sendPush error:', e); }
+}
+
+// Helpers to collect FCM tokens from the employees array
+function getAdminFCMTokens() {
+  return employees
+    .filter(e => e.active && (e.emp_type === 'admin' || e.id === 'ADM-001'))
+    .map(e => e.fcm_token).filter(Boolean);
+}
+function getEmpFCMToken(empId) {
+  return employees.filter(e => e.id === empId && e.fcm_token).map(e => e.fcm_token);
+}
+function getAllActiveFCMTokens() {
+  return employees.filter(e => e.active && e.fcm_token).map(e => e.fcm_token);
+}
 
 // ─── AUTO-CREATE DEPT GROUPS ──────────────────────────────────────────────────
 function autoCreateDeptGroups() {
