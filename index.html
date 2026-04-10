@@ -2609,7 +2609,7 @@ function toast(msg) {
 
 // ─── EMPLOYEE DATA ────────────────────────────────────────────────────────────
 let employees = [
-  { id:'ADM-001', firstName:'Admin', lastName:'User', dept:'admin', deptLabel:'Administration', role:'System Admin', phone:'', startDate:'2020-01-01', salary:0, password:'admin', active:true, init:'AU', emp_type:'admin', report_to:null, area:null, dept_key:'admin' },
+  { id:'ADM-001', firstName:'لؤي', lastName:'خليل الجبل', dept:'admin', deptLabel:'Administration', role:'General Manager', phone:'', startDate:'2020-01-01', salary:0, password:'admin', active:true, init:'لخ', emp_type:'admin', report_to:null, area:null, dept_key:'admin' },
   { id:'004', firstName:'طه', lastName:'محمد رزق الشوبة', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'03/03/2024', salary:250000, password:'1234', active:true, init:'طا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
   { id:'005', firstName:'احمد', lastName:'مهدي احمد البدجي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/08/2025', salary:40000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
   { id:'006', firstName:'ارجوان', lastName:'عبدالسلام علي السراجي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/01/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
@@ -2873,6 +2873,8 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
 
   // Helper — determine if a given employee is a supervisor or manager
   const getLevel = e => {
+    // Admin account = General Manager, always appears in manager dropdown
+    if (e.emp_type === 'admin' || e.id === 'ADM-001') return 'manager';
     const jt = allJobTitles.find(j => j.name === e.role || j.nameAr === e.role || j.key === e.role);
     if (jt) return jt.type;
     if (e.emp_type === 'manager') return 'manager';
