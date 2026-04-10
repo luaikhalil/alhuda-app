@@ -2853,25 +2853,26 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
   }
   if (section) section.style.display = 'block';
 
-  // "Basic" = regular employee (not a supervisor or above)
-  const isBasic = !empType || empType === '' || empType === 'employee' || empType === 'security';
+  // Only regular employees get both Supervisor + Manager tabs
+  // Supervisors, managers, dept_officers only report to a Manager (no Supervisor tab)
+  const isBasic = empType === 'employee' || empType === 'security';
 
   // Show supervisor tab only for basic employees
   if (tabRow) tabRow.style.display = isBasic ? 'flex' : 'none';
 
   // Helper: look up the type of an employee's job title
   const getEmpTitleType = e => {
-    // 1. Match against allJobTitles by name/key
+    // 1. Match against allJobTitles by name/key (most precise)
     const jt = allJobTitles.find(j => j.name === e.role || j.nameAr === e.role || j.key === e.role);
     if (jt) return jt.type;
-    // 2. Use emp_type field directly (most reliable — stored on every employee)
+    // 2. Use emp_type field directly
     if (e.emp_type === 'manager') return 'manager';
     if (e.emp_type === 'supervisor') return 'supervisor';
-    if (e.emp_type === 'dept_officer') return 'manager'; // dept officers act as managers
-    // 3. Text fallback for legacy roles
+    // 3. Role text fallback — only exact words to avoid false matches
     const r = (e.role || '').toLowerCase();
-    if (r.includes('manager') || (e.role||'').includes('مدير')) return 'manager';
-    if (r.includes('supervisor') || (e.role||'').includes('مشرف')) return 'supervisor';
+    const words = r.split(/[\s\-\/]+/);
+    if (words.includes('manager') || (e.role||'').includes('مدير')) return 'manager';
+    if (words.includes('supervisor') || (e.role||'').includes('مشرف')) return 'supervisor';
     return 'employee';
   };
 
