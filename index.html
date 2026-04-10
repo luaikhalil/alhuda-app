@@ -327,6 +327,8 @@ select.inp{appearance:none;}
 /* ── POINTS OPTIONS ── */
 .points-opt{flex:1;padding:9px 6px;border-radius:var(--r1);border:1px solid var(--border);background:var(--bgc);text-align:center;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .2s;}
 .points-opt.sel{background:rgba(251,191,36,.12);border-color:var(--gold);color:var(--gold);}
+.donate-amt-btn{flex:1;min-width:48px;padding:9px 6px;border-radius:10px;border:1.5px solid rgba(255,193,40,.3);background:rgba(255,193,40,.08);color:var(--gold);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.donate-amt-btn.sel,.donate-amt-btn:active{background:rgba(255,193,40,.25);border-color:var(--gold);transform:scale(.96);}
 
 /* ── LEADERBOARD ── */
 .lb-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--bgc);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:7px;}
@@ -712,11 +714,12 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
     <div class="tab" id="tab-profile">
       <div class="prof-hdr">
         <div class="prof-av" id="profAv">AH</div>
-        <div>
+        <div style="flex:1">
           <div style="font-size:16px;font-weight:700" id="profName">Ahmad Hassan</div>
           <div style="font-size:11px;color:var(--blue);margin-top:2px" id="profDept">Ground Floor · Sales Staff</div>
           <div style="font-size:10px;color:var(--t3);margin-top:1px" id="profId">EMP-001 · Since Jan 2023</div>
         </div>
+        <button onclick="logout()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer" data-en="🚪 Sign Out" data-ar="🚪 خروج">🚪 Sign Out</button>
       </div>
 
       <!-- Clock-in (moved from Schedule) -->
@@ -737,18 +740,45 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
       <!-- Coins & Performance -->
       <div id="profCoinsSection" style="display:none">
         <div class="stitle" data-en="PERFORMANCE & COINS" data-ar="الأداء والعملات">PERFORMANCE & COINS</div>
-        <div class="coin-display">
-          <span style="font-size:32px">🪙</span>
-          <div>
-            <div style="font-size:11px;color:var(--t2)" data-en="TOTAL COINS EARNED" data-ar="إجمالي العملات">TOTAL COINS EARNED</div>
-            <div style="font-size:28px;font-weight:700;color:var(--gold)" id="profCoinsDisplay">0</div>
-          </div>
-          <div style="margin-left:auto;text-align:right">
-            <div style="font-size:11px;color:var(--t2)" data-en="Tasks Done" data-ar="المهام المنجزة">Tasks Done</div>
-            <div style="font-size:18px;font-weight:700;color:var(--t1)" id="profTasksDoneDisplay">0</div>
-            <div style="font-size:10px;color:var(--blue);margin-top:2px" id="profRankDisplay2"></div>
+
+        <!-- Big coin card -->
+        <div style="background:linear-gradient(135deg,#b8860b,#ffd700,#b8860b);border-radius:18px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-18px;right:-18px;font-size:80px;opacity:.15">🪙</div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="background:rgba(0,0,0,.2);border-radius:50%;width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🪙</div>
+            <div>
+              <div style="font-size:11px;color:rgba(0,0,0,.6);font-weight:600;letter-spacing:.5px" data-en="YOUR COIN BALANCE" data-ar="رصيدك من العملات">YOUR COIN BALANCE</div>
+              <div style="font-size:38px;font-weight:800;color:#000;line-height:1.1" id="profCoinsDisplay">0</div>
+              <div style="font-size:11px;color:rgba(0,0,0,.6);margin-top:2px" id="profRankDisplay2"></div>
+            </div>
+            <div style="margin-left:auto;text-align:right">
+              <div style="background:rgba(0,0,0,.15);border-radius:10px;padding:8px 12px">
+                <div style="font-size:10px;color:rgba(0,0,0,.6)" data-en="Tasks Done" data-ar="المهام">Tasks Done</div>
+                <div style="font-size:20px;font-weight:700;color:#000" id="profTasksDoneDisplay">0</div>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Coin actions row -->
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <button onclick="openDonateCoinsModal()" style="flex:1;background:linear-gradient(135deg,rgba(255,193,40,.15),rgba(255,140,0,.1));border:1.5px solid rgba(255,193,40,.4);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center">
+            <div style="font-size:22px">🎁</div>
+            <div style="font-size:12px;font-weight:600;color:var(--gold);margin-top:4px" data-en="Donate Coins" data-ar="هدية عملات">Donate Coins</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px" data-en="Gift a colleague" data-ar="أرسل لزميل">Gift a colleague</div>
+          </button>
+          <button onclick="showTab('tasks')" style="flex:1;background:rgba(59,130,246,.08);border:1.5px solid rgba(59,130,246,.2);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center">
+            <div style="font-size:22px">✅</div>
+            <div style="font-size:12px;font-weight:600;color:var(--blue);margin-top:4px" data-en="My Tasks" data-ar="مهامي">My Tasks</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px" data-en="Earn more coins" data-ar="اكسب المزيد">Earn more coins</div>
+          </button>
+          <button onclick="showCoinHistory()" style="flex:1;background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.2);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center">
+            <div style="font-size:22px">📜</div>
+            <div style="font-size:12px;font-weight:600;color:var(--green);margin-top:4px" data-en="History" data-ar="السجل">History</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px" data-en="Transactions" data-ar="المعاملات">Transactions</div>
+          </button>
+        </div>
+
         <div id="profRecentTasks" style="margin-bottom:14px"></div>
       </div>
 
@@ -962,6 +992,43 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
     </div>
     <button class="btn-pri" onclick="submitBroadcast()" data-en="📢 Send to All" data-ar="📢 إرسال للجميع">📢 Send to All</button>
     <button class="btn-sec" onclick="closeModal('broadcastModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── DONATE COINS MODAL ── -->
+<div class="modal-bg" id="donateCoinsModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="🎁 Donate Coins" data-ar="🎁 هدية عملات">🎁 Donate Coins</div>
+    <div style="background:linear-gradient(135deg,rgba(255,193,40,.12),rgba(255,140,0,.08));border:1px solid rgba(255,193,40,.2);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:22px">🪙</span>
+      <div>
+        <div style="font-size:11px;color:var(--t2)" data-en="Your Balance" data-ar="رصيدك">Your Balance</div>
+        <div style="font-size:20px;font-weight:700;color:var(--gold)" id="donateBalDisplay">0</div>
+      </div>
+    </div>
+    <div class="mg">
+      <label class="lbl" data-en="Send To" data-ar="إرسال إلى">Send To</label>
+      <select class="inp" id="donateRecipient">
+        <option value="">— Select colleague —</option>
+      </select>
+    </div>
+    <div class="mg">
+      <label class="lbl" data-en="Amount" data-ar="المبلغ">Amount</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="donate-amt-btn" onclick="setDonateAmt(5)">5</button>
+        <button class="donate-amt-btn" onclick="setDonateAmt(10)">10</button>
+        <button class="donate-amt-btn" onclick="setDonateAmt(25)">25</button>
+        <button class="donate-amt-btn" onclick="setDonateAmt(50)">50</button>
+      </div>
+      <input class="inp" type="number" id="donateAmt" placeholder="Or enter custom amount..." min="1" style="margin-bottom:0">
+    </div>
+    <div class="mg">
+      <label class="lbl" data-en="Message (optional)" data-ar="رسالة (اختياري)">Message (optional)</label>
+      <input class="inp" type="text" id="donateMsg" placeholder="Great work! 🎉" style="margin-bottom:0">
+    </div>
+    <button class="btn-pri" onclick="submitDonateCoins()" data-en="🎁 Send Coins" data-ar="🎁 إرسال العملات">🎁 Send Coins</button>
+    <button class="btn-sec" onclick="closeModal('donateCoinsModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -2609,138 +2676,7 @@ function toast(msg) {
 
 // ─── EMPLOYEE DATA ────────────────────────────────────────────────────────────
 let employees = [
-  { id:'ADM-001', firstName:'لؤي', lastName:'خليل الجبل', dept:'admin', deptLabel:'Administration', role:'General Manager', phone:'', startDate:'2020-01-01', salary:0, password:'admin', active:true, init:'لخ', emp_type:'admin', report_to:null, area:null, dept_key:'admin' },
-  { id:'004', firstName:'طه', lastName:'محمد رزق الشوبة', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'03/03/2024', salary:250000, password:'1234', active:true, init:'طا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'005', firstName:'احمد', lastName:'مهدي احمد البدجي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/08/2025', salary:40000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'006', firstName:'ارجوان', lastName:'عبدالسلام علي السراجي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/01/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'007', firstName:'اكرم', lastName:'محمد سعيد الحمادي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'01/07/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'008', firstName:'اياد', lastName:'علي محمد السمان', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/06/2025', salary:40000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'009', firstName:'احمد', lastName:'عبده مسعد عبيد', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'04/02/2024', salary:250000, password:'1234', active:true, init:'اع', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'010', firstName:'ايمن', lastName:'حميد محمد دلهم', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'05/03/2025', salary:70000, password:'1234', active:true, init:'اد', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'011', firstName:'ملاك', lastName:'عاصم عبدالجليل الشميري', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'19/03/2024', salary:120000, password:'1234', active:true, init:'ما', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'012', firstName:'ابراهيم', lastName:'اشرف علي الدعيس', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'14/01/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'013', firstName:'ايدن', lastName:'جوي لوسيرو', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/10/2024', salary:318000, password:'1234', active:true, init:'ال', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'014', firstName:'احمد', lastName:'خالد احمد المطري', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/06/2025', salary:40000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'015', firstName:'اسامه', lastName:'محمد صالح العفاري', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'04/01/2026', salary:120000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'016', firstName:'اسماء', lastName:'صالح عبده الهاجري', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'24/02/2024', salary:70000, password:'1234', active:true, init:'اا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'017', firstName:'اصيل', lastName:'عبدالسلام علي الفقية', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'19/09/2024', salary:100000, password:'1234', active:true, init:'اا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'018', firstName:'امينة', lastName:'عبداللطيف محمد الذماري', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'26/03/2024', salary:100000, password:'1234', active:true, init:'اا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'019', firstName:'انور', lastName:'محمد احمد السروري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'01/06/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'020', firstName:'علي', lastName:'محمد عبدالهادي زهران', dept:'office_supervision', deptLabel:'Top Supervision', role:'GM Office Staff', phone:'', startDate:'04/02/2024', salary:200000, password:'1234', active:true, init:'عز', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_supervision' },
-  { id:'021', firstName:'بسام', lastName:'نجيب يحيى لطف الله', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'18/02/2024', salary:120000, password:'1234', active:true, init:'با', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'022', firstName:'بشرى', lastName:'محمد صالح المعقلي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/01/2025', salary:70000, password:'1234', active:true, init:'با', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'023', firstName:'بشير', lastName:'علي عبده راجح', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/02/2024', salary:120000, password:'1234', active:true, init:'بر', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'024', firstName:'بكيل', lastName:'غالب علي الزاهري', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'16/03/2024', salary:70000, password:'1234', active:true, init:'با', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'025', firstName:'تركي', lastName:'قائد علي الصلوي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'30/05/2024', salary:70000, password:'1234', active:true, init:'تا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'026', firstName:'جاد', lastName:'منصور احمد الرياشي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'17/08/2024', salary:90000, password:'1234', active:true, init:'جا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'027', firstName:'جيهان', lastName:'احمد علي ضورة', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'27/03/2024', salary:70000, password:'1234', active:true, init:'جض', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'028', firstName:'جيهان', lastName:'مجاهد منصور شعلان', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/12/2024', salary:70000, password:'1234', active:true, init:'جش', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'029', firstName:'حسن', lastName:'عبدالقادر علي الحبيشي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/10/2024', salary:200000, password:'1234', active:true, init:'حا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'030', firstName:'حسين', lastName:'امين راشد الحطيبي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'29/03/2024', salary:70000, password:'1234', active:true, init:'حا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'031', firstName:'حسين', lastName:'علي حسين السنحاني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/06/2025', salary:70000, password:'1234', active:true, init:'حا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'032', firstName:'حنان', lastName:'ابادر شامي يوسف', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'14/01/2025', salary:60000, password:'1234', active:true, init:'حي', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'034', firstName:'دعاء', lastName:'محمد عبدالقدوس الحسني', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'19/03/2024', salary:70000, password:'1234', active:true, init:'دا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'035', firstName:'رحمه', lastName:'يوسف يحيى عبده', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'23/03/2025', salary:70000, password:'1234', active:true, init:'رع', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'036', firstName:'رفيق', lastName:'محمد أحمد الجمرة', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'17/06/2025', salary:120000, password:'1234', active:true, init:'را', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'037', firstName:'رمزي', lastName:'احمد جازم عبدالرحيم', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'20/03/2025', salary:70000, password:'1234', active:true, init:'رع', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'038', firstName:'زياد', lastName:'وليد محمد الوصابي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'16/01/2025', salary:70000, password:'1234', active:true, init:'زا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'039', firstName:'زياد', lastName:'بسام صالح الهمداني', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'14/02/2024', salary:100000, password:'1234', active:true, init:'زا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'040', firstName:'ابراهيم', lastName:'احمد محمد بعثر', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'11/05/2024', salary:70000, password:'1234', active:true, init:'اب', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'041', firstName:'محمد', lastName:'علي ناصر الحرازي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'25/01/2024', salary:80000, password:'1234', active:true, init:'ما', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'042', firstName:'شهاب', lastName:'الدين احمد البيضاني', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'13/01/2025', salary:70000, password:'1234', active:true, init:'شا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'043', firstName:'شهاب', lastName:'فيصل الزهرات', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'25/04/2024', salary:70000, password:'1234', active:true, init:'شا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'044', firstName:'مصطفى', lastName:'محمد عبدالرحمن الهمداني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'29/05/2024', salary:120000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'046', firstName:'انسام', lastName:'عبدالباسط عبده سعيد', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'21/01/2025', salary:70000, password:'1234', active:true, init:'اس', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'047', firstName:'عامر', lastName:'علي حمود الشهاب', dept:'office_hr', deptLabel:'HR Department', role:'HR Officer', phone:'', startDate:'01/01/2024', salary:45000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_hr' },
-  { id:'048', firstName:'عبدالاله', lastName:'العزي محمد الخولاني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'19/01/2025', salary:150000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'049', firstName:'عبدالحميد', lastName:'احمد ناصر الرماح', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'05/03/2025', salary:130000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'050', firstName:'عبدالرحمن', lastName:'احمد محمد الحربي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/01/2025', salary:70000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'051', firstName:'عبدالرحمن', lastName:'عثمان محمد حنش', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/08/2025', salary:70000, password:'1234', active:true, init:'عح', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'052', firstName:'عبدالرحمن', lastName:'محمد احمد شمس الدين', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/08/2024', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'053', firstName:'عبدالرحمن', lastName:'ياسر عبدالله الصردحي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'07/01/2025', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'054', firstName:'عبدالغني', lastName:'ردمان احمد القباطي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'18/10/2024', salary:120000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'055', firstName:'عبدالغني', lastName:'رضوان احمد المطري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'09/09/2024', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'056', firstName:'عبدالغني', lastName:'محمد يحيى الحربي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/10/2024', salary:100000, password:'1234', active:true, init:'عا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'057', firstName:'عبداللطيف', lastName:'عبدالله علي فراص', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'14/01/2025', salary:100000, password:'1234', active:true, init:'عف', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'058', firstName:'عبدالله', lastName:'احمد عبدالله العزاني', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'01/01/2024', salary:300000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'059', firstName:'عبدالله', lastName:'محمد احمد السروري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'12/12/2024', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'060', firstName:'عبدالمجيد', lastName:'محمد محمد القضاضي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'13/04/2025', salary:80000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'061', firstName:'عبده', lastName:'محمد حسن القباطي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/01/2024', salary:120000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'062', firstName:'عدنان', lastName:'حسن غالب زايد', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'24/08/2025', salary:70000, password:'1234', active:true, init:'عز', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'063', firstName:'عدنان', lastName:'عبدالله عثمان الشيباني', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'09/11/2023', salary:300000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'064', firstName:'عدي', lastName:'ماجد عبده ربة العنسي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'20/01/2025', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'065', firstName:'محمد', lastName:'علي قائد البعبعي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/01/2024', salary:120000, password:'1234', active:true, init:'ما', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'066', firstName:'عفيف', lastName:'شرف محمد عبدالله', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'23/12/2024', salary:70000, password:'1234', active:true, init:'عع', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'067', firstName:'علي', lastName:'احمد علي الشاحذي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'06/08/2024', salary:90000, password:'1234', active:true, init:'عا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'068', firstName:'علي', lastName:'صالح علي عكارس', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'24/05/2025', salary:70000, password:'1234', active:true, init:'عع', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'069', firstName:'علي', lastName:'صالح مصلح سرحان', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'23/08/2025', salary:120000, password:'1234', active:true, init:'عس', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'070', firstName:'ايمن', lastName:'محمد غالب الكامل', dept:'office_hr', deptLabel:'HR Department', role:'HR Officer', phone:'', startDate:'27/03/2024', salary:100000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_hr' },
-  { id:'071', firstName:'عمار', lastName:'عادل ناجي البعداني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/07/2025', salary:40000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'072', firstName:'عمر', lastName:'إبراهيم عزي السايس', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'09/07/2025', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'073', firstName:'عيسى', lastName:'سعيد عبدالله الصغير', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'20/08/2024', salary:70000, password:'1234', active:true, init:'عا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'074', firstName:'عيسى', lastName:'محمد عبدالله سعيد', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/01/2024', salary:120000, password:'1234', active:true, init:'عس', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'075', firstName:'غالب', lastName:'علي محمد الجبل', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/03/2024', salary:120000, password:'1234', active:true, init:'غا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'076', firstName:'غيداء', lastName:'صلاح ناجي واصل', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'17/01/2025', salary:70000, password:'1234', active:true, init:'غو', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'077', firstName:'فاروق', lastName:'عبدالله إسماعيل القدسي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'07/03/2024', salary:100000, password:'1234', active:true, init:'فا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'078', firstName:'فتاح', lastName:'شرف محمد ناجي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/03/2024', salary:120000, password:'1234', active:true, init:'فن', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'079', firstName:'فهد', lastName:'عبدالخالق الحرازي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'28/02/2025', salary:70000, password:'1234', active:true, init:'فا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'080', firstName:'كمال', lastName:'احمد احمد الحيمي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'20/08/2025', salary:70000, password:'1234', active:true, init:'كا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'081', firstName:'ليلى', lastName:'محمد ناصر الشامي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/06/2025', salary:70000, password:'1234', active:true, init:'لا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'082', firstName:'ماجد', lastName:'يحيى محمد حنينه', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'16/01/2025', salary:70000, password:'1234', active:true, init:'مح', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'083', firstName:'مجد', lastName:'عبدالواسع مجاهد سعيد', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'23/03/2024', salary:70000, password:'1234', active:true, init:'مس', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'084', firstName:'محرم', lastName:'علي مهدي صلاح', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/05/2024', salary:120000, password:'1234', active:true, init:'مص', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'085', firstName:'محمد', lastName:'خالد يسلم كليب', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'18/05/2024', salary:120000, password:'1234', active:true, init:'مك', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'086', firstName:'محمد', lastName:'سعيد امام محيي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'02/03/2024', salary:80000, password:'1234', active:true, init:'مم', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'087', firstName:'محمد', lastName:'عادل محمد يعني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'18/09/2024', salary:70000, password:'1234', active:true, init:'مي', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'088', firstName:'محمد', lastName:'عبدالعزيز دحوه', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'20/01/2025', salary:70000, password:'1234', active:true, init:'مد', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'089', firstName:'محمد', lastName:'عبدالوهاب الشوبه', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'28/12/2024', salary:40000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'090', firstName:'عزالدين', lastName:'علي محمد تقي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'23/01/2025', salary:70000, password:'1234', active:true, init:'عت', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'091', firstName:'سليم', lastName:'حمود حمود الروضي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'01/06/2024', salary:150000, password:'1234', active:true, init:'سا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'092', firstName:'محمد', lastName:'فؤاد عبدالدائم ناجي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'13/08/2025', salary:120000, password:'1234', active:true, init:'من', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'093', firstName:'محمد', lastName:'مجاهد السماوي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'11/02/2025', salary:120000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'094', firstName:'محمد', lastName:'محمد محمد الخباز', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'07/08/2025', salary:70000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'095', firstName:'محمود', lastName:'زين فتيني مسلماني', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'11/03/2025', salary:70000, password:'1234', active:true, init:'مم', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'096', firstName:'ضيف', lastName:'الله شوكان مريط', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'10/04/2025', salary:100000, password:'1234', active:true, init:'ضم', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'097', firstName:'معتصم', lastName:'نعمان الاشموري', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'02/07/2025', salary:40000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'098', firstName:'محمد', lastName:'غالب علي الحرازي', dept:'office_hr', deptLabel:'HR Department', role:'HR Officer', phone:'', startDate:'02/10/2025', salary:100000, password:'1234', active:true, init:'ما', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_hr' },
-  { id:'099', firstName:'رؤى', lastName:'مجاهد عبدالله يعقوب', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'15/01/2025', salary:70000, password:'1234', active:true, init:'ري', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'100', firstName:'منصور', lastName:'احمد محمد الزيدي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'21/01/2025', salary:70000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'101', firstName:'مها', lastName:'محمد مثنى البواب', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/01/2025', salary:70000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'102', firstName:'نبيلة', lastName:'مقبل محمد مفتاح', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'24/02/2024', salary:45000, password:'1234', active:true, init:'نم', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'103', firstName:'نجيبة', lastName:'محمد صالح المعقلي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'24/03/2024', salary:70000, password:'1234', active:true, init:'نا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'104', firstName:'نصر', lastName:'عبدالملك قائد محمد', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'06/10/2024', salary:70000, password:'1234', active:true, init:'نم', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'105', firstName:'نصر', lastName:'يحيى قاسم العطاني', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'24/08/2025', salary:70000, password:'1234', active:true, init:'نا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'106', firstName:'هاني', lastName:'محسن يحيى الحرازي', dept:'office_purchasing', deptLabel:'Purchasing Dept', role:'Purchasing Officer', phone:'', startDate:'01/01/2024', salary:250000, password:'1234', active:true, init:'ها', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_purchasing' },
-  { id:'107', firstName:'هايل', lastName:'سعيد صالح الحيمي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'19/01/2025', salary:70000, password:'1234', active:true, init:'ها', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'108', firstName:'هلال', lastName:'يحيى محسن الانسي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'04/08/2025', salary:70000, password:'1234', active:true, init:'ها', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'109', firstName:'هيثم', lastName:'عبدالسلام صلاح الحميري', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'24/01/2025', salary:70000, password:'1234', active:true, init:'ها', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'110', firstName:'وفاء', lastName:'عبدالله قائد المرشحي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'31/03/2024', salary:45000, password:'1234', active:true, init:'وا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'111', firstName:'وفاء', lastName:'محمد سنحان سعيد', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'23/03/2024', salary:100000, password:'1234', active:true, init:'وس', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'112', firstName:'وليد', lastName:'احمد علي مصلح', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'11/02/2025', salary:70000, password:'1234', active:true, init:'وم', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'113', firstName:'وليد', lastName:'يحيى محمد طاهر', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'26/10/2024', salary:70000, password:'1234', active:true, init:'وط', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'114', firstName:'ياسين', lastName:'اربيو داوي', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'01/02/2024', salary:120000, password:'1234', active:true, init:'يد', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'115', firstName:'يحيى', lastName:'محمد عبده الحبيشي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'24/05/2025', salary:70000, password:'1234', active:true, init:'يا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'116', firstName:'يوسف', lastName:'عصام محمد العديني', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'29/01/2025', salary:100000, password:'1234', active:true, init:'يا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'117', firstName:'عبدالله', lastName:'عبدالاله احمد النجار', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'11/02/2024', salary:50000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'129', firstName:'فؤاد', lastName:'محرم فؤاد الحبيشي', dept:'office_marketing', deptLabel:'Marketing Dept', role:'Marketing Officer', phone:'', startDate:'01/09/2025', salary:200000, password:'1234', active:true, init:'فا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_marketing' },
-  { id:'130', firstName:'طه', lastName:'حسين محمد احمد الحاضري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'01/12/2024', salary:70000, password:'1234', active:true, init:'طا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'131', firstName:'احمد', lastName:'عبدالرحمن علي العنبسي', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'20/09/2025', salary:80000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'132', firstName:'اميره', lastName:'عبدالسلام الحضراني', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/08/2025', salary:100000, password:'1234', active:true, init:'اا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'133', firstName:'محمد', lastName:'عبدالعزيز عبده السروري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'07/10/2025', salary:70000, password:'1234', active:true, init:'ما', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'134', firstName:'ابراهيم', lastName:'محمد احمد العومري', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'07/10/2025', salary:70000, password:'1234', active:true, init:'اا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'135', firstName:'محمد', lastName:'عبدالله عبدالله عداعد', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'13/10/2025', salary:70000, password:'1234', active:true, init:'مع', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'137', firstName:'بشير', lastName:'محمد حميد مغلس', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'18/11/2025', salary:122066, password:'1234', active:true, init:'بم', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'138', firstName:'ناصر', lastName:'ضيف الله هادي النهمي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/12/2025', salary:90000, password:'1234', active:true, init:'نا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'139', firstName:'عبد', lastName:'العزيز فتحي احمد قرض', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'23/12/2025', salary:70000, password:'1234', active:true, init:'عق', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'140', firstName:'امل', lastName:'عبد القوي عبد الله محمد', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'06/01/2026', salary:80000, password:'1234', active:true, init:'ام', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'141', firstName:'امة', lastName:'اللطيف علي احمد الضياني', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'04/01/2026', salary:70000, password:'1234', active:true, init:'اا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'142', firstName:'عمرو', lastName:'مختار علي الحمادي', dept:'warehouse', deptLabel:'Warehouse', role:'Warehouse Employee', phone:'', startDate:'04/01/2026', salary:70000, password:'1234', active:true, init:'عا', emp_type:'employee', report_to:null, area:null, dept_key:'warehouse' },
-  { id:'143', firstName:'عبد', lastName:'الباري عبد الله محمد داحش', dept:'gf', deptLabel:'Ground Floor', role:'Sales Employee', phone:'', startDate:'28/12/2025', salary:40000, password:'1234', active:true, init:'عد', emp_type:'employee', report_to:null, area:null, dept_key:'gf' },
-  { id:'144', firstName:'عمرو', lastName:'مصلح صالح الصايدي', dept:'office_hr', deptLabel:'HR Department', role:'HR Officer', phone:'', startDate:'25/12/2025', salary:200000, password:'1234', active:true, init:'عا', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_hr' },
-  { id:'146', firstName:'هيثم', lastName:'عبدالقوي سيف محمد', dept:'office_accounting', deptLabel:'Accounting Dept', role:'Accountant', phone:'', startDate:'14/01/2026', salary:120000, password:'1234', active:true, init:'هم', emp_type:'dept_officer', report_to:null, area:null, dept_key:'office_accounting' },
-  { id:'147', firstName:'محمد', lastName:'حسن حسن الجعدبي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'08/02/2026', salary:70000, password:'1234', active:true, init:'ما', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'148', firstName:'منيف', lastName:'يحى اسماعيل المنيفي', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'01/02/2026', salary:70000, password:'1234', active:true, init:'ما', emp_type:'security', report_to:null, area:null, dept_key:'security' },
-  { id:'149', firstName:'اسلام', lastName:'عبد الطيف محمد الذماري', dept:'security', deptLabel:'Security', role:'Security Guard', phone:'', startDate:'29/01/2026', salary:70000, password:'1234', active:true, init:'اا', emp_type:'security', report_to:null, area:null, dept_key:'security' },
+  { id:'ADM-001', firstName:'لؤي', lastName:'خليل الجبل', dept:'admin', deptLabel:'Administration', role:'General Manager', phone:'', startDate:'2020-01-01', salary:0, password:'admin', active:true, init:'لخ', emp_type:'admin', report_to:null, area:null, dept_key:'admin' }
 ];
 
 let empFilter = 'all';
@@ -4709,6 +4645,120 @@ function getEmpFCMToken(empId) {
 }
 function getAllActiveFCMTokens() {
   return employees.filter(e => e.active && e.fcm_token).map(e => e.fcm_token);
+}
+
+// ─── AUTO-CREATE DEPT GROUPS ──────────────────────────────────────────────────
+// ─── COIN DONATION ────────────────────────────────────────────────────────────
+function openDonateCoinsModal() {
+  const myCoins = employeePoints[user.id || role] || 0;
+  if (myCoins < 1) { toast(t('⚠️ You have no coins to donate','⚠️ ليس لديك عملات للتبرع')); return; }
+
+  // Fill balance display
+  document.getElementById('donateBalDisplay').textContent = myCoins;
+  document.getElementById('donateAmt').value = '';
+  document.getElementById('donateMsg').value = '';
+  document.querySelectorAll('.donate-amt-btn').forEach(b => b.classList.remove('sel'));
+
+  // Populate recipient dropdown — all active employees except self
+  const sel = document.getElementById('donateRecipient');
+  sel.innerHTML = `<option value="">${t('— Select colleague —','— اختر زميل —')}</option>` +
+    employees
+      .filter(e => e.active && e.id !== (user.id || role))
+      .sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName))
+      .map(e => `<option value="${e.id}">${e.firstName} ${e.lastName} · ${e.role || ''}</option>`)
+      .join('');
+
+  openModal('donateCoinsModal');
+}
+
+function setDonateAmt(n) {
+  document.getElementById('donateAmt').value = n;
+  document.querySelectorAll('.donate-amt-btn').forEach(b => {
+    b.classList.toggle('sel', parseInt(b.textContent) === n);
+  });
+}
+
+async function submitDonateCoins() {
+  const recipientId = document.getElementById('donateRecipient').value;
+  const amt = parseInt(document.getElementById('donateAmt').value) || 0;
+  const msg = document.getElementById('donateMsg').value.trim();
+  const myCoins = employeePoints[user.id || role] || 0;
+
+  if (!recipientId) { toast(t('⚠️ Please select a colleague','⚠️ الرجاء اختيار زميل')); return; }
+  if (amt < 1)      { toast(t('⚠️ Enter an amount','⚠️ أدخل المبلغ')); return; }
+  if (amt > myCoins){ toast(t('⚠️ Not enough coins','⚠️ رصيد غير كافٍ')); return; }
+
+  const recipient = employees.find(e => e.id === recipientId);
+  if (!recipient) return;
+
+  // Deduct from sender
+  employeePoints[user.id || role] = myCoins - amt;
+  // Add to recipient
+  employeePoints[recipientId] = (employeePoints[recipientId] || 0) + amt;
+
+  closeModal('donateCoinsModal');
+  toast(`🎁 ${t('Sent','أرسلت')} ${amt} 🪙 ${t('to','إلى')} ${recipient.firstName} ${recipient.lastName}`);
+
+  // Save both to Supabase
+  await sb.from('employee_points').upsert(
+    { emp_id: user.id || role, total_points: employeePoints[user.id || role] },
+    { onConflict: 'emp_id' }
+  );
+  await sb.from('employee_points').upsert(
+    { emp_id: recipientId, total_points: employeePoints[recipientId] },
+    { onConflict: 'emp_id' }
+  );
+
+  // Log transaction
+  await sb.from('coin_transactions').insert({
+    from_emp_id: user.id || role,
+    from_name: user.name || (user.firstName + ' ' + user.lastName),
+    to_emp_id: recipientId,
+    to_name: recipient.firstName + ' ' + recipient.lastName,
+    amount: amt,
+    message: msg || null,
+    type: 'donate'
+  }).catch(() => {}); // ignore if table doesn't exist yet
+
+  // Notify recipient
+  sendPush(getEmpFCMToken(recipientId),
+    `🎁 ${t('You received coins!','استلمت عملات!')}`,
+    `${user.name || user.firstName} ${t('sent you','أرسل لك')} ${amt} 🪙${msg ? ' — ' + msg : ''}`
+  );
+
+  // Refresh coin display
+  updateCoinsDisplay();
+}
+
+function showCoinHistory() {
+  // Show recent coin transactions in a toast for now
+  const myId = user.id || role;
+  sb.from('coin_transactions')
+    .select('*')
+    .or(`from_emp_id.eq.${myId},to_emp_id.eq.${myId}`)
+    .order('created_at', { ascending: false })
+    .limit(10)
+    .then(({ data }) => {
+      if (!data || !data.length) { toast(t('No coin transactions yet','لا توجد معاملات عملات بعد')); return; }
+      // Build a simple display
+      const lines = data.map(tx => {
+        const isSent = tx.from_emp_id === myId;
+        const who = isSent ? tx.to_name : tx.from_name;
+        const sign = isSent ? '−' : '+';
+        const clr = isSent ? '#ef4444' : '#10b981';
+        return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <div><span style="font-size:15px">${isSent ? '🎁' : '🪙'}</span> ${isSent ? t('Sent to','إلى') : t('From','من')} <strong>${who}</strong>${tx.message ? '<br><span style="font-size:11px;color:var(--t3)">' + tx.message + '</span>' : ''}</div>
+          <div style="color:${clr};font-weight:700;font-size:15px">${sign}${tx.amount}</div>
+        </div>`;
+      }).join('');
+      // Reuse a simple modal
+      const modal = document.createElement('div');
+      modal.className = 'modal-bg';
+      modal.style.cssText = 'display:flex;z-index:9999';
+      modal.innerHTML = `<div class="modal"><div class="mhandle"></div><div class="mtitle">📜 ${t('Coin History','سجل العملات')}</div>${lines}<button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:10px">${t('Close','إغلاق')}</button></div>`;
+      document.body.appendChild(modal);
+      setTimeout(() => modal.querySelector('.modal').style.transform = 'translateY(0)', 10);
+    });
 }
 
 // ─── AUTO-CREATE DEPT GROUPS ──────────────────────────────────────────────────
