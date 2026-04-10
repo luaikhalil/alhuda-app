@@ -2840,51 +2840,56 @@ function switchReportTab(tab) {
 }
 
 function buildReportingDropdowns(supervisorId, managerId, empType) {
-  // Everyone except admin sees reporting fields.
-  // Basic employees → both tabs (Supervisor + Manager)
-  // Supervisors / managers / dept_officers → Manager tab only
+  // Hierarchy:
+  //   employee/security  → Supervisor tab + Manager tab
+  //   supervisor         → Manager tab only
+  //   manager            → Manager tab only (reports to General Manager)
+  //   admin              → hidden
+
   const section = document.getElementById('reportingSection');
   const tabRow  = document.getElementById('tabSupervisor')?.parentElement;
 
-  const isAdmin = empType === 'admin';
-  if (isAdmin) {
+  if (empType === 'admin') {
     if (section) section.style.display = 'none';
     return;
   }
   if (section) section.style.display = 'block';
 
-  // Only regular employees get both Supervisor + Manager tabs
-  // Supervisors, managers, dept_officers only report to a Manager (no Supervisor tab)
-  const isBasic = empType === 'employee' || empType === 'security';
+  // Determine this employee's level from job title first, then emp_type
+  const currentRoleVal = document.getElementById('eRole')?.value || '';
+  const titleInfo = allJobTitles.find(j => j.name === currentRoleVal || j.key === currentRoleVal);
+  let level = titleInfo?.type; // 'employee' | 'supervisor' | 'manager'
+  if (!level) {
+    if (empType === 'manager')    level = 'manager';
+    else if (empType === 'supervisor') level = 'supervisor';
+    else level = 'employee';
+  }
 
-  // Show supervisor tab only for basic employees
-  if (tabRow) tabRow.style.display = isBasic ? 'flex' : 'none';
+  // Only regular employees see the Supervisor tab
+  const showSupervisorTab = (level === 'employee');
+  if (tabRow) tabRow.style.display = showSupervisorTab ? 'flex' : 'none';
 
-  // Helper: look up the type of an employee's job title
-  const getEmpTitleType = e => {
-    // 1. Match against allJobTitles by name/key (most precise)
+  const selfId = document.getElementById('empEditId')?.value;
+
+  // Helper — determine if a given employee is a supervisor or manager
+  const getLevel = e => {
     const jt = allJobTitles.find(j => j.name === e.role || j.nameAr === e.role || j.key === e.role);
     if (jt) return jt.type;
-    // 2. Use emp_type field directly
     if (e.emp_type === 'manager') return 'manager';
     if (e.emp_type === 'supervisor') return 'supervisor';
-    // 3. Role text fallback — only exact words to avoid false matches
-    const r = (e.role || '').toLowerCase();
-    const words = r.split(/[\s\-\/]+/);
+    // exact-word text fallback only
+    const words = (e.role || '').toLowerCase().split(/[\s\-\/]+/);
     if (words.includes('manager') || (e.role||'').includes('مدير')) return 'manager';
     if (words.includes('supervisor') || (e.role||'').includes('مشرف')) return 'supervisor';
     return 'employee';
   };
 
-  const selfId = document.getElementById('empEditId')?.value;
-
-  // Populate supervisor dropdown — employees whose title type is 'supervisor'
+  // Supervisor dropdown — only employees whose level is 'supervisor'
   const supSel = document.getElementById('eSupervisor');
   if (supSel) {
-    const sups = employees.filter(e =>
-      e.active && e.id !== selfId && getEmpTitleType(e) === 'supervisor'
-    ).sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
-
+    const sups = employees
+      .filter(e => e.active && e.id !== selfId && getLevel(e) === 'supervisor')
+      .sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
     supSel.innerHTML = `<option value="">${t('— No Supervisor —','— بدون مشرف —')}</option>` +
       sups.map(s =>
         `<option value="${s.id}" ${s.id === supervisorId ? 'selected' : ''}>
@@ -2893,13 +2898,12 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
       ).join('');
   }
 
-  // Populate manager dropdown — employees whose title type is 'manager'
+  // Manager dropdown — only employees whose level is 'manager'
   const mgrSel = document.getElementById('eManager');
   if (mgrSel) {
-    const mgrs = employees.filter(e =>
-      e.active && e.id !== selfId && getEmpTitleType(e) === 'manager'
-    ).sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
-
+    const mgrs = employees
+      .filter(e => e.active && e.id !== selfId && getLevel(e) === 'manager')
+      .sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
     mgrSel.innerHTML = `<option value="">${t('— No Manager —','— بدون مدير —')}</option>` +
       mgrs.map(m =>
         `<option value="${m.id}" ${m.id === managerId ? 'selected' : ''}>
@@ -2909,7 +2913,7 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
   }
 
   // Default active tab
-  switchReportTab(isBasic ? 'supervisor' : 'manager');
+  switchReportTab(showSupervisorTab ? 'supervisor' : 'manager');
 }
 
 // Keep old name as alias so nothing else breaks
