@@ -163,6 +163,11 @@ select.inp{appearance:none;}
 .req-card:hover{border-color:rgba(255,193,40,.22);box-shadow:0 4px 20px rgba(255,193,40,.07);}
 .req-card:active{background:var(--bgch);}
 .req-card.urgent{border-color:rgba(239,68,68,.35);box-shadow:0 2px 12px rgba(239,68,68,.08);}
+.req-card.overdue{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.03);box-shadow:0 2px 16px rgba(239,68,68,.1);}
+.overdue-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:#f87171;}
+.overdue-bar{background:rgba(239,68,68,.06);border-bottom:1px solid rgba(239,68,68,.15);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#f87171;font-weight:600;}
+@keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.5}}
+.overdue-pulse{animation:pulse-red 1.8s ease-in-out infinite;}
 .req-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
 .req-type{font-size:13px;font-weight:700;}
 .req-from{font-size:11px;color:var(--t2);margin-top:2px;}
@@ -1264,9 +1269,16 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
       <div class="search-row">
         <input class="search-inp" type="text" id="reqSearch" placeholder="Search requests..." oninput="renderAdminRequests()">
       </div>
+      <!-- Overdue summary bar (hidden when no overdue) -->
+      <div id="overdueBar" class="overdue-bar" style="display:none;border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="filterAdminReqs('overdue',document.querySelector('.afc[data-f=overdue]'))">
+        <span class="overdue-pulse">⏰</span>
+        <span id="overdueBarText">0 overdue requests (>24h unanswered)</span>
+        <span style="font-size:10px;opacity:.7">View all →</span>
+      </div>
       <div class="admin-filters">
         <div class="afc active" onclick="filterAdminReqs('all',this)">All</div>
         <div class="afc" onclick="filterAdminReqs('pending',this)">Pending</div>
+        <div class="afc" data-f="overdue" onclick="filterAdminReqs('overdue',this)" style="color:#f87171;border-color:rgba(239,68,68,.25)">⏰ Overdue <span id="overdueTabCount" style="background:rgba(239,68,68,.2);border-radius:10px;padding:0 5px;font-size:10px;margin-left:2px">0</span></div>
         <div class="afc" onclick="filterAdminReqs('in_progress',this)">In Progress</div>
         <div class="afc" onclick="filterAdminReqs('resolved',this)">Resolved</div>
         <div class="afc" onclick="filterAdminReqs('leave',this)">Leave</div>
@@ -1786,6 +1798,7 @@ async function loadSupabaseData(isAdmin) {
         passGenerated: r.pass_generated, passSerial: r.pass_serial,
         passIssued: r.pass_issued, passPurpose: r.pass_purpose,
         adminNote: r.admin_note,
+        createdAt: r.created_at,
         date: new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})
       }));
     }
@@ -2877,7 +2890,7 @@ function switchAdminTab(tab) {
   document.getElementById('atab-' + tab).classList.add('active');
   document.getElementById('apane-' + tab).style.display = 'block';
   if (tab === 'employees') renderEmployees();
-  if (tab === 'requests') renderAdminRequests();
+  if (tab === 'requests') { renderAdminRequests(); try { checkAndNotifyOverdue(true); } catch(e) {} }
   if (tab === 'passes') renderAdminPasses();
   if (tab === 'changes') {
     try { renderPendingChanges(); } catch(e) { console.warn('renderPendingChanges err', e); }
@@ -3324,10 +3337,105 @@ let adminReqFilter = 'all';
 function filterAdminReqs(f, el) {
   adminReqFilter = f;
   document.querySelectorAll('#apane-requests .afc').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   renderAdminRequests();
 }
 
+// ─── OVERDUE UTILITIES ────────────────────────────────────────────────────────
+const OVERDUE_HOURS = 24;
+const PENDING_STATUSES = ['pending', 'pending_manager', 'pending_hr', 'in_progress'];
+
+function getReqAgeHours(req) {
+  if (!req.createdAt) return 0;
+  return (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
+}
+
+function isReqOverdue(req) {
+  return PENDING_STATUSES.includes(req.status) && getReqAgeHours(req) >= OVERDUE_HOURS;
+}
+
+function getOverdueRequests() {
+  return requests.filter(r => isReqOverdue(r));
+}
+
+function formatAge(req) {
+  const hrs = getReqAgeHours(req);
+  if (!req.createdAt || hrs === 0) return req.date || '';
+  if (hrs < 1) return `${Math.round(hrs * 60)}m ago`;
+  if (hrs < 24) return `${Math.round(hrs)}h ago`;
+  const days = Math.floor(hrs / 24);
+  const remH = Math.round(hrs % 24);
+  return `${days}d ${remH}h ago`;
+}
+
+function updateOverdueBadges() {
+  const overdue = getOverdueRequests();
+  const count = overdue.length;
+  // Overdue bar
+  const bar = document.getElementById('overdueBar');
+  const barText = document.getElementById('overdueBarText');
+  if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
+  if (barText) barText.textContent = `${count} overdue request${count!==1?'s':''} (>${OVERDUE_HOURS}h unanswered)`;
+  // Overdue tab counter
+  const tabCount = document.getElementById('overdueTabCount');
+  if (tabCount) tabCount.textContent = count;
+  // Requests admin tab badge
+  const reqTab = document.getElementById('atab-requests');
+  if (reqTab) {
+    const existing = reqTab.querySelector('.overdue-tab-badge');
+    if (count > 0) {
+      if (!existing) {
+        const badge = document.createElement('span');
+        badge.className = 'overdue-tab-badge';
+        badge.style.cssText = 'background:#ef4444;color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;margin-left:4px;vertical-align:middle';
+        badge.textContent = count;
+        reqTab.appendChild(badge);
+      } else {
+        existing.textContent = count;
+      }
+    } else if (existing) {
+      existing.remove();
+    }
+  }
+}
+
+// ─── SEND REMINDER PUSH ───────────────────────────────────────────────────────
+function sendReminderForReq(reqId) {
+  const req = requests.find(r => r.id === reqId);
+  if (!req) return;
+  const age = formatAge(req);
+  const title = `⏰ Reminder: Pending Request (${age})`;
+  const body = `"${req.title}" from ${req.fromName} is still waiting for your response.`;
+  // Push to responsible person (forManager) or dept
+  let tokens = [];
+  if (req.forManager) {
+    const target = employees.find(e => e.id === req.forManager);
+    if (target?.fcm_token) tokens = [target.fcm_token];
+  }
+  if (!tokens.length) tokens = getAdminFCMTokens(); // fallback to admin
+  sendPush(tokens, title, body);
+  toast(`📩 Reminder sent for: ${req.title}`);
+}
+
+// Called on login and on switching to Requests tab — checks and notifies about overdue
+function checkAndNotifyOverdue(silent = false) {
+  const overdue = getOverdueRequests();
+  updateOverdueBadges();
+  if (!overdue.length) return;
+  if (!silent) {
+    // Send push reminders for each overdue request (throttled: only if >6h since last reminder)
+    overdue.forEach(req => {
+      const lastReminder = req._lastReminderSent || 0;
+      if (Date.now() - lastReminder > 6 * 60 * 60 * 1000) {
+        req._lastReminderSent = Date.now();
+        sendReminderForReq(req.id);
+      }
+    });
+    toast(`⏰ ${overdue.length} overdue request${overdue.length>1?'s':''} — reminders sent`);
+  }
+}
+
+// ─── RENDER ADMIN REQUESTS ────────────────────────────────────────────────────
 function renderAdminRequests() {
   const q = (document.getElementById('reqSearch')?.value||'').toLowerCase();
   const list = document.getElementById('adminReqList');
@@ -3336,29 +3444,57 @@ function renderAdminRequests() {
   const statusL = { pending_manager:'Pending Mgr', pending_hr:'Pending HR', pending:'Pending', in_progress:'In Progress', resolved:'Resolved', approved:'Approved', rejected:'Rejected' };
 
   let reqs = [...requests];
-  if (adminReqFilter !== 'all') {
-    if (['pending','in_progress','resolved'].includes(adminReqFilter)) reqs = reqs.filter(r => r.status === adminReqFilter || (adminReqFilter==='pending' && r.status.startsWith('pending')));
-    else reqs = reqs.filter(r => r.type === adminReqFilter);
+
+  if (adminReqFilter === 'overdue') {
+    reqs = reqs.filter(r => isReqOverdue(r));
+  } else if (adminReqFilter !== 'all') {
+    if (['pending','in_progress','resolved'].includes(adminReqFilter)) {
+      reqs = reqs.filter(r => r.status === adminReqFilter || (adminReqFilter==='pending' && r.status.startsWith('pending')));
+    } else {
+      reqs = reqs.filter(r => r.type === adminReqFilter);
+    }
   }
+
   if (q) reqs = reqs.filter(r => (r.title+r.fromName+r.typeLabel+r.id).toLowerCase().includes(q));
 
-  if (reqs.length === 0) { list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">No requests found</div>`; return; }
+  // Sort: overdue first, then by date
+  reqs.sort((a,b) => {
+    const aOv = isReqOverdue(a) ? 1 : 0;
+    const bOv = isReqOverdue(b) ? 1 : 0;
+    if (bOv !== aOv) return bOv - aOv; // overdue items first
+    return new Date(b.createdAt||0) - new Date(a.createdAt||0);
+  });
 
-  list.innerHTML = reqs.map(r => `
-    <div class="req-row">
+  updateOverdueBadges();
+
+  if (reqs.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">${adminReqFilter==='overdue'?'✅ No overdue requests!':'No requests found'}</div>`;
+    return;
+  }
+
+  list.innerHTML = reqs.map(r => {
+    const overdue = isReqOverdue(r);
+    const age = formatAge(r);
+    const overdueTag = overdue
+      ? `<span class="overdue-badge overdue-pulse">⏰ ${age}</span>`
+      : `<span style="font-size:10px;color:var(--t3)">${age}</span>`;
+    return `
+    <div class="req-row${overdue ? ' overdue' : ''}">
       <div class="req-row-top">
-        <div>
-          <div class="req-row-type">${r.urgent?'🔴 ':''}${r.typeLabel}</div>
-          <div class="req-row-from">👤 ${r.fromName} · ${r.id} · ${r.date}</div>
+        <div style="flex:1;min-width:0">
+          <div class="req-row-type">${r.urgent?'🔴 ':''}${r.typeLabel} ${overdueTag}</div>
+          <div class="req-row-from">👤 ${r.fromName} · ${r.id}</div>
         </div>
         <span class="bdg ${statusC[r.status]||'o'}">${statusL[r.status]||r.status}</span>
       </div>
       <div class="req-row-title">${r.title}</div>
-      <div style="display:flex;gap:6px;margin-top:8px">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         <button style="flex:1;padding:8px;border-radius:var(--r1);background:rgba(255,193,40,.08);color:var(--blue);border:1px solid rgba(255,193,40,.2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" onclick="openReqEdit('${r.id}')">✏️ Edit</button>
+        ${overdue ? `<button style="flex:1;padding:8px;border-radius:var(--r1);background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" onclick="sendReminderForReq('${r.id}')">📩 Remind</button>` : ''}
         <button style="padding:8px 12px;border-radius:var(--r1);background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.15);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" onclick="deleteReq('${r.id}')">🗑</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openReqEdit(id) {
@@ -4846,6 +4982,10 @@ loadSupabaseData = async function(isAdmin) {
   if (locData?.value && Array.isArray(locData.value)) allLocations = locData.value;
   const { data: jtData } = await sb.from('settings').select('value').eq('key','all_job_titles').single();
   if (jtData?.value && Array.isArray(jtData.value)) allJobTitles = jtData.value;
+  // Check overdue requests after data loads (admin only — non-silent so reminders fire)
+  if (isAdmin) {
+    setTimeout(() => { try { checkAndNotifyOverdue(false); } catch(e) {} }, 1500);
+  }
 };
 
 // ══════════════════════════════════════════════════════════════════════════
