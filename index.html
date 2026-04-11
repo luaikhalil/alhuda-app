@@ -1764,12 +1764,14 @@ const REQ_TYPES = {
     { key:'general',     icon:'📝', label:'General Request',  labelAr:'طلب عام',         to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
   ],
   manager: [
-    { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'supervision_then_hr', toLabel:'Supervision → HR',  toNote:'Goes to Supervision Team then HR.' },
-    { key:'supply',      icon:'📦', label:'Supply Request',   labelAr:'طلب تموين',       to:'accounting',       toLabel:'Accounting Dept',      toNote:'Goes to Accounting / Procurement.' },
-    { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',     toNote:'Goes directly to Maintenance Department.' },
+    { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',               toLabel:'General Manager',       toNote:'Goes directly to the General Manager for approval, then HR.' },
+    { key:'escalate',    icon:'🚨', label:'Escalate to GM',   labelAr:'تصعيد للمدير العام', to:'gm',            toLabel:'General Manager',       toNote:'Escalate an urgent issue directly to the General Manager.' },
+    { key:'budget',      icon:'💵', label:'Budget Request',   labelAr:'طلب ميزانية',     to:'gm',               toLabel:'General Manager',       toNote:'Request budget approval from the General Manager.' },
+    { key:'supply',      icon:'📦', label:'Supply Request',   labelAr:'طلب تموين',       to:'accounting',       toLabel:'Accounting Dept',       toNote:'Goes to Accounting / Procurement.' },
+    { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',      toNote:'Goes directly to Maintenance Department.' },
     { key:'it',          icon:'💻', label:'IT Support',       labelAr:'دعم تقني',        to:'it',               toLabel:'IT Department',         toNote:'Goes directly to IT Department.' },
-    { key:'general',     icon:'📝', label:'General Memo',     labelAr:'مذكرة عامة',      to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
-    { key:'pass',        icon:'🎫', label:'Issue Pass',       labelAr:'إصدار تصريح',    to:'employee',         toLabel:'Employee',              toNote:'Issue an office access pass for an employee.' },
+    { key:'general',     icon:'📝', label:'General Memo',     labelAr:'مذكرة عامة',      to:'gm',               toLabel:'General Manager',       toNote:'Send a memo directly to the General Manager.' },
+    { key:'pass',        icon:'🎫', label:'Issue Pass',       labelAr:'إصدار تصريح',     to:'employee',         toLabel:'Employee',              toNote:'Issue an office access pass for an employee.' },
   ],
   dept_officer: [
     { key:'reply_call',  icon:'🎫', label:'Reply + Call In',  labelAr:'رد + استدعاء',   to:'employee',         toLabel:'Employee (+ Pass)',     toNote:'Reply to an employee and generate an office access pass.' },
@@ -2148,8 +2150,15 @@ function renderIncoming() {
       return matchDept && (active || escalated);
     });
   } else if (user.type === 'admin') {
-    // Admin sees all pending/escalated
-    incoming = requests.filter(r => ['pending','in_progress','pending_manager','escalated'].includes(r.status));
+    // Admin (General Manager) sees:
+    // 1. All requests directed to GM (forManager === ADM-001 or forDept === 'gm')
+    // 2. All pending/in-progress department requests for full visibility
+    incoming = requests.filter(r =>
+      r.forManager === 'ADM-001' ||
+      r.forManager === (user.id || 'ADM-001') ||
+      r.forDept === 'gm' ||
+      ['pending','in_progress','pending_manager','escalated'].includes(r.status)
+    );
   }
 
   if (incoming.length === 0) {
@@ -2204,18 +2213,34 @@ function handleReq(id, action) {
 
   if (action === 'approve') {
     if (req.status === 'pending_manager') {
-      // Forward to HR
-      req.status = 'pending_hr';
-      req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
-      req.forManager = null; req.forDept = 'hr';
-      toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
-      // Notify employee that request moved to HR
-      sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Forwarded to HR', req.title || req.typeLabel);
+      const isLeaveRequest = req.type === 'leave';
+      const isGMDirectRequest = req.to === 'gm' && req.type !== 'leave';
+
+      if (isGMDirectRequest) {
+        // GM requests (escalate, budget, memo) → approved directly, no HR step
+        req.status = 'approved';
+        req.chainStatus = req.chainStatus.map(() => 'done');
+        toast('✅ ' + t('Approved by General Manager','تمت الموافقة من المدير العام'));
+        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Request Approved by GM','تمت الموافقة من المدير العام'), req.title || req.typeLabel);
+      } else if (isLeaveRequest) {
+        // Leave requests → forward to HR after GM/manager approval
+        req.status = 'pending_hr';
+        req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
+        req.forManager = null; req.forDept = 'hr';
+        toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
+        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Leave Forwarded to HR','إجازتك أُحيلت إلى الموارد البشرية'), req.title || req.typeLabel);
+      } else {
+        // Other pending_manager requests → forward to HR
+        req.status = 'pending_hr';
+        req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
+        req.forManager = null; req.forDept = 'hr';
+        toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
+        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Forwarded to HR', req.title || req.typeLabel);
+      }
     } else {
       req.status = 'approved';
       req.chainStatus = req.chainStatus.map(() => 'done');
       toast('✅ ' + t('Request approved','تمت الموافقة على الطلب'));
-      // Notify employee of approval
       sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Approved', req.title || req.typeLabel);
     }
   } else if (action === 'reject') {
@@ -2447,11 +2472,22 @@ function submitRequest() {
 
   // Build chain
   let chain, chainStatus, reqStatus, forManager, forDept;
+  const isGMRequest = rt.to === 'gm'; // request goes directly to General Manager
+
   if (isLeave) {
-    chain = [t('Submitted','مُقدَّم'), t('Manager OK','المدير ✓'), t('HR Approval','HR ✓'), t('Decision','القرار')];
+    chain = [t('Submitted','مُقدَّم'), t('GM Approval','المدير العام ✓'), t('HR Approval','HR ✓'), t('Decision','القرار')];
     chainStatus = ['done','active','pending','pending'];
     reqStatus = 'pending_manager';
-    forManager = user.reportTo || 'gf_mgr';
+    // Managers always report to GM (ADM-001); others use their reportTo field
+    forManager = (user.type === 'manager' || user.type === 'dept_officer')
+      ? (user.report_to || user.reportTo || 'ADM-001')
+      : (user.reportTo || user.report_to || 'ADM-001');
+  } else if (isGMRequest) {
+    // Direct request to General Manager
+    chain = [t('Submitted','مُقدَّم'), t('GM Review','مراجعة المدير العام'), t('Decision','القرار')];
+    chainStatus = ['done','active','pending'];
+    reqStatus = 'pending_manager';
+    forManager = 'ADM-001'; // always goes to Luai
   } else {
     chain = [t('Submitted','مُقدَّم'), t('In Review','قيد المراجعة'), t('Resolved','محلول')];
     chainStatus = ['done','active','pending'];
