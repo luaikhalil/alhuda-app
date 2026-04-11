@@ -571,7 +571,7 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
 
       <div class="srow" id="empStatsRow">
         <div class="schip b"><div class="sv" id="sReqs">3</div><div class="sl" data-en="My Requests" data-ar="طلباتي">My Requests</div></div>
-        <div class="schip g"><div class="sv">08:00</div><div class="sl" data-en="Shift Start" data-ar="بدء الوردية">Shift Start</div></div>
+        <div class="schip g"><div class="sv" id="homeShiftStart">--:--</div><div class="sl" data-en="Shift Start" data-ar="بدء الوردية">Shift Start</div></div>
         <div class="schip o"><div class="sv" id="sMsgs">2</div><div class="sl" data-en="Messages" data-ar="رسائل">Messages</div></div>
       </div>
 
@@ -663,21 +663,7 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
       </div>
 
       <div class="stitle" data-en="THIS WEEK" data-ar="هذا الأسبوع">THIS WEEK</div>
-      <div class="shift-item">
-        <div class="sday"><div class="dn">9</div><div class="dow">WED</div></div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600" data-en="Morning Shift" data-ar="الوردية الصباحية">Morning Shift</div><div style="font-size:11px;color:var(--t2);margin-top:1px">08:00 – 16:00</div></div>
-        <span class="bdg g pulsing" data-en="● Today" data-ar="● اليوم">● Today</span>
-      </div>
-      <div class="shift-item">
-        <div class="sday" style="background:rgba(255,255,255,.04);border-color:var(--border)"><div class="dn" style="color:var(--t2)">10</div><div class="dow">THU</div></div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600" data-en="Afternoon Shift" data-ar="وردية المساء">Afternoon Shift</div><div style="font-size:11px;color:var(--t2);margin-top:1px">12:00 – 20:00</div></div>
-        <span class="bdg o" data-en="Upcoming" data-ar="قادمة">Upcoming</span>
-      </div>
-      <div class="shift-item">
-        <div class="sday" style="background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.18)"><div class="dn" style="color:var(--red)">11</div><div class="dow">FRI</div></div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600" data-en="Day Off" data-ar="يوم إجازة">Day Off</div><div style="font-size:11px;color:var(--t3);margin-top:1px" data-en="Rest day" data-ar="يوم راحة">Rest day</div></div>
-        <span class="bdg r" data-en="Off" data-ar="إجازة">Off</span>
-      </div>
+      <div id="weeklySchedule"></div>
 
       <div class="stitle" data-en="LEAVE BALANCE" data-ar="رصيد الإجازات">LEAVE BALANCE</div>
       <div class="srow">
@@ -1423,9 +1409,8 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
       <!-- Shifts -->
       <div class="setting-group">
         <div class="setting-group-title">📅 Shift Templates</div>
-        <div class="setting-row"><span class="setting-lbl">Morning Shift</span><span class="setting-val">08:00 – 16:00</span><button class="setting-btn" onclick="toast('Shift editor: coming soon')">Edit</button></div>
-        <div class="setting-row"><span class="setting-lbl">Afternoon Shift</span><span class="setting-val">12:00 – 20:00</span><button class="setting-btn" onclick="toast('Shift editor: coming soon')">Edit</button></div>
-        <div class="setting-row"><span class="setting-lbl">Night Shift</span><span class="setting-val">20:00 – 04:00</span><button class="setting-btn" onclick="toast('Shift editor: coming soon')">Edit</button></div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Define the standard work shifts. Employees can be assigned a default shift from their profile.</div>
+        <div id="shiftTemplatesList"></div>
       </div>
 
       <!-- Clock-In Location / Geofence -->
@@ -1526,6 +1511,44 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
   </div>
 </div>
 
+<!-- ── SHIFT EDITOR MODAL ── -->
+<div class="modal-bg" id="shiftEditorModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Edit Shift Template</div>
+    <input type="hidden" id="seId">
+    <div class="mg">
+      <label class="lbl">Shift Name</label>
+      <input class="inp" type="text" id="seName" style="margin-bottom:0" readonly>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="mg">
+        <label class="lbl">Start Time</label>
+        <input class="inp" type="time" id="seStart" style="margin-bottom:0">
+      </div>
+      <div class="mg">
+        <label class="lbl">End Time</label>
+        <input class="inp" type="time" id="seEnd" style="margin-bottom:0">
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:var(--bgc);border:1px solid var(--border);border-radius:var(--r1)">
+      <div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px">Break Time <span style="font-weight:400;color:var(--t3)">(optional — for long shifts)</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="mg">
+          <label class="lbl">Break Start</label>
+          <input class="inp" type="time" id="seBreakStart" style="margin-bottom:0">
+        </div>
+        <div class="mg">
+          <label class="lbl">Break End</label>
+          <input class="inp" type="time" id="seBreakEnd" style="margin-bottom:0">
+        </div>
+      </div>
+    </div>
+    <button class="btn-pri" onclick="saveShiftTemplate()" style="margin-top:14px">💾 Save Shift</button>
+    <button class="btn-sec" onclick="closeModal('shiftEditorModal')">Cancel</button>
+  </div>
+</div>
+
 <!-- ── EMPLOYEE FORM MODAL ── -->
 <div class="modal-bg" id="empModal">
   <div class="modal">
@@ -1597,6 +1620,12 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
         <label class="lbl">Salary (YER)</label>
         <input class="inp" type="number" id="eSalary" placeholder="180000" style="margin-bottom:0">
       </div>
+    </div>
+    <div class="mg" style="margin-top:8px">
+      <label class="lbl">Default Shift</label>
+      <select class="inp" id="eDefaultShift" style="margin-bottom:0">
+        <option value="">— Not Assigned —</option>
+      </select>
     </div>
     <div class="mg" style="margin-top:8px">
       <label class="lbl">Password</label>
@@ -1894,7 +1923,8 @@ async function loadSupabaseData(isAdmin) {
           location: e.location, locationLabel: e.location_label,
           phone: e.phone, salary: e.salary, password: e.password,
           startDate: e.start_date, active: e.active, init: e.init,
-          fcm_token: e.fcm_token || null
+          fcm_token: e.fcm_token || null,
+          defaultShift: e.default_shift || null
         }));
       }
 
@@ -2346,6 +2376,66 @@ async function toggleClock() {
 // ══════════════════════════════════════════════════════════════════════════
 let specialSchedules = [];
 
+// ── Shift Templates ──────────────────────────────────────────────────────────
+let shiftTemplates = [
+  { id: 'morning',    name: 'Morning Shift',     nameAr: 'الوردية الصباحية',  start: '08:00', end: '16:00', breakStart: null, breakEnd: null, color: '#3b82f6' },
+  { id: 'evening',    name: 'Evening Shift',      nameAr: 'الوردية المسائية',  start: '15:00', end: '23:00', breakStart: null, breakEnd: null, color: '#8b5cf6' },
+  { id: 'sales_floor',name: 'Sales Floor (12h)',  nameAr: 'أرضية المبيعات',    start: '08:00', end: '22:30', breakStart: '13:00', breakEnd: '15:00', color: '#10b981' }
+];
+
+function getShiftById(id) { return shiftTemplates.find(s => s.id === id) || null; }
+function getShiftLabel(id) {
+  const s = getShiftById(id);
+  if (!s) return '—';
+  const br = s.breakStart ? ` (break ${s.breakStart}–${s.breakEnd})` : '';
+  return `${s.start} – ${s.end}${br}`;
+}
+
+function renderShiftTemplates() {
+  const el = document.getElementById('shiftTemplatesList');
+  if (!el) return;
+  el.innerHTML = shiftTemplates.map(s => {
+    const br = s.breakStart ? `<span style="font-size:10px;color:var(--t3);margin-left:6px">break ${s.breakStart}–${s.breakEnd}</span>` : '';
+    return `<div class="setting-row" style="align-items:center">
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0"></span>
+        <span class="setting-lbl" style="font-size:13px">${s.name}</span>
+      </div>
+      <span class="setting-val">${s.start} – ${s.end}${br}</span>
+      <button class="setting-btn" onclick="openShiftEditor('${s.id}')">Edit</button>
+    </div>`;
+  }).join('');
+}
+
+function openShiftEditor(shiftId) {
+  const s = getShiftById(shiftId);
+  if (!s) return;
+  document.getElementById('seId').value = s.id;
+  document.getElementById('seName').value = s.name;
+  document.getElementById('seStart').value = s.start;
+  document.getElementById('seEnd').value = s.end;
+  document.getElementById('seBreakStart').value = s.breakStart || '';
+  document.getElementById('seBreakEnd').value = s.breakEnd || '';
+  openModal('shiftEditorModal');
+}
+
+function saveShiftTemplate() {
+  const id = document.getElementById('seId').value;
+  const idx = shiftTemplates.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  const start = document.getElementById('seStart').value;
+  const end   = document.getElementById('seEnd').value;
+  const bStart = document.getElementById('seBreakStart').value || null;
+  const bEnd   = document.getElementById('seBreakEnd').value   || null;
+  if (!start || !end) { toast('⚠️ Start and end time required'); return; }
+  shiftTemplates[idx] = { ...shiftTemplates[idx], start, end, breakStart: bStart, breakEnd: bEnd };
+  sb.from('settings').upsert({ key: 'shift_templates', value: JSON.stringify(shiftTemplates) }, { onConflict: 'key' })
+    .then(({ error }) => { if (error) console.warn('Shift save error:', error); });
+  closeModal('shiftEditorModal');
+  renderShiftTemplates();
+  toast('✅ Shift template saved');
+}
+
 function renderSsTargetDetails() {
   const type = document.getElementById('ssTarget')?.value;
   const el = document.getElementById('ssTargetDetails');
@@ -2496,6 +2586,94 @@ function renderSpecialScheduleNotice() {
     const dateLabel = ss.date === today ? '📅 Today' : new Date(ss.date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
     return `<div style="margin-bottom:4px"><strong>${dateLabel}:</strong> ${ss.reason} — Work hours: <strong style="color:var(--green)">${ss.start} – ${ss.end}</strong></div>`;
   }).join('');
+}
+
+// ─── WEEKLY SCHEDULE ─────────────────────────────────────────────────────────
+function renderWeeklySchedule() {
+  const el = document.getElementById('weeklySchedule');
+  if (!el) return;
+
+  const emp = user ? employees.find(e => e.id === user.id) : null;
+  const shiftId = emp?.defaultShift || null;
+  const shift = shiftId ? getShiftById(shiftId) : null;
+
+  // Update Shift Start chip on home
+  const startChip = document.getElementById('homeShiftStart');
+  if (startChip) startChip.textContent = shift ? shift.start : '--:--';
+
+  // Build Mon–Sun for the current week
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // Week starts Monday
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+
+  const DOW_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const items = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const isToday = d.toDateString() === today.toDateString();
+    const isPast  = d < today && !isToday;
+    const isFriday = d.getDay() === 5; // Friday = day off
+    const dayNum   = d.getDate();
+    const dow      = DOW_SHORT[i];
+
+    // Check for special schedule on this day
+    const dateStr = d.toISOString().split('T')[0];
+    const special = specialSchedules.find(ss => ss.date === dateStr && isEmployeeAffected(ss, emp));
+
+    let shiftName, shiftTimes, badge, shiftColor;
+
+    if (isFriday) {
+      shiftName = t('Day Off', 'يوم إجازة');
+      shiftTimes = t('Rest day', 'يوم راحة');
+      badge = `<span class="bdg r">${t('Off','إجازة')}</span>`;
+      shiftColor = 'var(--red)';
+    } else if (special) {
+      shiftName = '🗓️ ' + special.reason;
+      shiftTimes = special.start + ' – ' + special.end;
+      badge = isToday ? `<span class="bdg g pulsing">● ${t('Today','اليوم')}</span>` : `<span class="bdg o">${t('Special','خاص')}</span>`;
+      shiftColor = 'var(--gold)';
+    } else if (shift) {
+      shiftName = shift.name;
+      const br = shift.breakStart ? ` <span style="font-size:10px;color:var(--t3)">(break ${shift.breakStart}–${shift.breakEnd})</span>` : '';
+      shiftTimes = `${shift.start} – ${shift.end}${br}`;
+      if (isToday) {
+        badge = `<span class="bdg g pulsing">● ${t('Today','اليوم')}</span>`;
+        shiftColor = shift.color || 'var(--blue)';
+      } else if (isPast) {
+        badge = `<span class="bdg" style="color:var(--t3)">${t('Past','مضت')}</span>`;
+        shiftColor = 'var(--t3)';
+      } else {
+        badge = `<span class="bdg o">${t('Upcoming','قادمة')}</span>`;
+        shiftColor = shift.color || 'var(--blue)';
+      }
+    } else {
+      shiftName = t('No Shift Assigned', 'لا توجد وردية');
+      shiftTimes = t('Contact HR to assign a shift', 'تواصل مع الموارد البشرية');
+      badge = '';
+      shiftColor = 'var(--t3)';
+    }
+
+    const dayBg   = isFriday ? 'background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.18)'
+                  : isToday  ? 'background:var(--blue-dark,rgba(59,130,246,.15));border-color:rgba(59,130,246,.35)'
+                  : isPast   ? 'background:rgba(255,255,255,.02);border-color:var(--border);opacity:.6'
+                  :            'background:rgba(255,255,255,.04);border-color:var(--border)';
+    const dayNumColor = isFriday ? 'color:var(--red)' : isToday ? 'color:var(--blue)' : 'color:var(--t2)';
+
+    items.push(`<div class="shift-item">
+      <div class="sday" style="${dayBg}"><div class="dn" style="${dayNumColor}">${dayNum}</div><div class="dow">${dow}</div></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:${shiftColor}">${shiftName}</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:1px">${shiftTimes}</div>
+      </div>
+      ${badge}
+    </div>`);
+  }
+
+  el.innerHTML = items.join('');
 }
 
 // ─── ACTIVITY FEED ────────────────────────────────────────────────────────────
@@ -3220,6 +3398,7 @@ function switchAdminTab(tab) {
     try { renderSettingGroups(); } catch(e) { console.warn('renderSettingGroups err', e); }
     try { renderDelegatedPermList(); } catch(e) { console.warn('renderDelegatedPermList err', e); }
     try { renderSpecialSchedules(); } catch(e) { console.warn('renderSpecialSchedules err', e); }
+    try { renderShiftTemplates(); } catch(e) { console.warn('renderShiftTemplates err', e); }
     // Populate geofence settings UI from loaded data
     try {
       const togGf = document.getElementById('togGeofence');
@@ -3469,6 +3648,13 @@ function populateEmpFormDropdowns(selectedDept, selectedLocation, selectedDeptLa
   }
 }
 
+function populateDefaultShiftDropdown(currentVal) {
+  const sel = document.getElementById('eDefaultShift');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Not Assigned —</option>' +
+    shiftTemplates.map(s => `<option value="${s.id}"${s.id === currentVal ? ' selected' : ''}>${s.name} (${s.start}–${s.end})</option>`).join('');
+}
+
 function openEmpModal(empId) {
   const isNew = !empId;
   document.getElementById('empModalTitle').textContent = t(isNew ? 'Add New Employee' : 'Edit Employee', isNew ? 'إضافة موظف جديد' : 'تعديل بيانات موظف');
@@ -3489,6 +3675,7 @@ function openEmpModal(empId) {
     const tog = document.getElementById('empActiveToggle');
     e.active ? tog.classList.add('on') : tog.classList.remove('on');
     buildReportingDropdowns(e.supervisor_id || '', e.report_to || '', e.emp_type || '');
+    populateDefaultShiftDropdown(e.defaultShift || '');
   } else {
     ['eFirstName','eLastName','eId','ePhone','eSalary','ePw'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('eStartDate').value = new Date().toISOString().split('T')[0];
@@ -3496,6 +3683,7 @@ function openEmpModal(empId) {
     populateEmpFormDropdowns('', '');
     populateJobTitleDropdown('');
     buildReportingDropdowns('', '', 'employee');
+    populateDefaultShiftDropdown('');
   }
   // Translate options if in Arabic
   document.querySelectorAll('#empModal option[data-en]').forEach(opt => {
@@ -3532,6 +3720,7 @@ async function saveEmployee() {
     salary: parseInt(document.getElementById('eSalary').value) || 0,
     password: document.getElementById('ePw').value || '1234',
     active: document.getElementById('empActiveToggle').classList.contains('on'),
+    defaultShift: document.getElementById('eDefaultShift')?.value || null,
     init: (firstName[0] + (lastName[0] || '')).toUpperCase()
   };
 
@@ -3554,6 +3743,7 @@ async function saveEmployee() {
     role: data.role, supervisor_id: data.supervisor_id, report_to: data.report_to,
     phone: data.phone, salary: data.salary, start_date: data.startDate,
     active: data.active, init: data.init,
+    default_shift: data.defaultShift || null,
     ...(document.getElementById('ePw').value ? { password: document.getElementById('ePw').value } : {})
   };
 
@@ -5208,11 +5398,12 @@ async function rejectTaskCompletion(taskId) {
   await sb.from('tasks').update({ status:'in_progress', submitted_at: null }).eq('id', taskId);
 }
 
-// ── Patch showTab to render tasks when switching to it ────────────────────────
+// ── Patch showTab to render tasks + schedule when switching tabs ───────────────
 const _origShowTab = showTab;
 showTab = function(id) {
   _origShowTab(id);
   if (id === 'tasks') renderTasks();
+  if (id === 'schedule') { try { renderWeeklySchedule(); renderSpecialScheduleNotice(); } catch(e) {} }
 };
 
 // openAdmin rendering is consolidated in the final patch below
@@ -5262,8 +5453,12 @@ const AR_STRINGS = {
   'General Request': 'طلب عام', 'Supply Request': 'طلب تموين',
   // Days
   'Today': 'اليوم', 'Yesterday': 'أمس',
-  'Morning Shift': 'الوردية الصباحية', 'Afternoon Shift': 'وردية المساء',
-  'Night Shift': 'الوردية المسائية', 'Day Off': 'يوم إجازة',
+  'Morning Shift': 'الوردية الصباحية', 'Evening Shift': 'الوردية المسائية',
+  'Sales Floor (12h)': 'أرضية المبيعات (12 ساعة)',
+  'Day Off': 'يوم إجازة', 'Rest day': 'يوم راحة',
+  'No Shift Assigned': 'لا توجد وردية',
+  'Contact HR to assign a shift': 'تواصل مع الموارد البشرية',
+  'Not Assigned': 'غير محدد', 'Default Shift': 'الوردية الافتراضية',
 };
 
 function ar(str) {
@@ -5321,6 +5516,17 @@ loadSupabaseData = async function(isAdmin) {
       storeLocation = { ...storeLocation, ...parsed };
     } catch(e2) {}
   }
+
+  // Load shift templates
+  const { data: stData } = await sb.from('settings').select('value').eq('key','shift_templates').maybeSingle();
+  if (stData?.value) {
+    try {
+      const parsed = typeof stData.value === 'string' ? JSON.parse(stData.value) : stData.value;
+      if (Array.isArray(parsed) && parsed.length > 0) shiftTemplates = parsed;
+    } catch(e2) {}
+  }
+  setTimeout(() => { try { renderShiftTemplates(); } catch(e2) {} }, 200);
+  setTimeout(() => { try { renderWeeklySchedule(); } catch(e2) {} }, 300);
 
   // Load special schedules (only future + today)
   const today = new Date().toISOString().split('T')[0];
