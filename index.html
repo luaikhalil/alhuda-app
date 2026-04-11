@@ -428,6 +428,465 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
 /* inline edit highlight */
 .editable-field{background:rgba(255,193,40,.06);border:1px solid rgba(255,193,40,.2);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--t1);outline:none;width:100%;}
 .editable-field:focus{border-color:var(--blue);}
+
+/* ══════════════════════════════════════════
+   ✦ VISUAL UPGRADE — SOLID GRADIENT SYSTEM
+══════════════════════════════════════════ */
+
+/* ── Body / background depth ── */
+body {
+  background: #1a1710;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,193,40,.07) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(139,92,246,.04) 0%, transparent 60%);
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,193,40,.25); border-radius: 4px; }
+::selection { background: rgba(255,193,40,.3); }
+
+/* ── Header — richer ── */
+.hdr {
+  background: rgba(22,20,14,.97);
+  border-bottom: 1px solid rgba(255,193,40,.15);
+  box-shadow: 0 1px 30px rgba(0,0,0,.4), 0 0 0 0.5px rgba(255,193,40,.08);
+}
+.icon-btn {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+/* ── Bottom nav — floating solid pill ── */
+.bnav {
+  background: rgba(20,18,12,.97);
+  border-top: 1px solid rgba(255,193,40,.12);
+  box-shadow: 0 -4px 32px rgba(0,0,0,.35);
+}
+.ni { border-radius: 14px; transition: all .2s; }
+.ni.active {
+  background: linear-gradient(135deg, rgba(255,193,40,.18), rgba(255,140,0,.12));
+  box-shadow: 0 0 0 1px rgba(255,193,40,.2), 0 4px 16px rgba(255,193,40,.08);
+}
+.ni.active .nlbl { color: var(--blue); font-weight: 700; }
+.ni.active .ico  { filter: drop-shadow(0 0 8px rgba(255,193,40,.6)); }
+
+/* ── Cards — more depth ── */
+.card {
+  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.03));
+  border-color: rgba(255,193,40,.1);
+  box-shadow: 0 2px 16px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.card:hover {
+  border-color: rgba(255,193,40,.25);
+  box-shadow: 0 4px 24px rgba(255,193,40,.08), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* ── Section titles — accent bar ── */
+.stitle {
+  font-size: 11px; font-weight: 700; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin: 20px 0 9px;
+  display: flex; align-items: center; gap: 8px;
+}
+.stitle::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--blue), var(--cyan));
+  flex-shrink: 0;
+}
+
+/* ── Stat chips — solid gradient fills ── */
+.schip {
+  flex: 1;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--r2);
+  padding: 13px 8px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.05);
+  transition: transform .15s;
+}
+.schip:active { transform: scale(.96); }
+.schip .sv { font-size: 20px; font-weight: 700; }
+.schip .sl { font-size: 10px; color: var(--t2); margin-top: 2px; font-weight: 500; }
+
+/* Solid colored chips — matching the performance section style */
+.schip.b {
+  background: linear-gradient(135deg, rgba(255,193,40,.2), rgba(255,140,0,.13));
+  border-color: rgba(255,193,40,.3);
+  box-shadow: 0 2px 16px rgba(255,193,40,.1), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.schip.b .sv { color: var(--blue); }
+.schip.b .sl { color: rgba(255,193,40,.65); }
+
+.schip.g {
+  background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(5,150,105,.11));
+  border-color: rgba(16,185,129,.28);
+  box-shadow: 0 2px 16px rgba(16,185,129,.08), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.schip.g .sv { color: var(--green); }
+.schip.g .sl { color: rgba(16,185,129,.65); }
+
+.schip.o {
+  background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(217,119,6,.11));
+  border-color: rgba(245,158,11,.28);
+  box-shadow: 0 2px 16px rgba(245,158,11,.08), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.schip.o .sv { color: var(--orange); }
+.schip.o .sl { color: rgba(245,158,11,.65); }
+
+.schip.p {
+  background: linear-gradient(135deg, rgba(139,92,246,.18), rgba(109,40,217,.11));
+  border-color: rgba(139,92,246,.28);
+  box-shadow: 0 2px 16px rgba(139,92,246,.08), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.schip.p .sv { color: var(--purple); }
+.schip.p .sl { color: rgba(139,92,246,.65); }
+
+.schip.r {
+  background: linear-gradient(135deg, rgba(239,68,68,.18), rgba(185,28,28,.11));
+  border-color: rgba(239,68,68,.28);
+  box-shadow: 0 2px 16px rgba(239,68,68,.08), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.schip.r .sv { color: var(--red); }
+.schip.r .sl { color: rgba(239,68,68,.65); }
+
+/* ── Badges — slightly brighter ── */
+.bdg.g { background: rgba(16,185,129,.18); }
+.bdg.o { background: rgba(245,158,11,.18); }
+.bdg.r { background: rgba(239,68,68,.18); }
+.bdg.b { background: rgba(255,193,40,.18); }
+.bdg.p { background: rgba(139,92,246,.18); color: #c084fc; border-color: rgba(139,92,246,.3); }
+.bdg.gold { background: rgba(251,191,36,.18); }
+
+/* ── Greeting card ── */
+.greet {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,120,0,.08));
+  border-color: rgba(255,193,40,.28);
+  box-shadow: 0 4px 28px rgba(255,193,40,.1), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.greet-name { font-size: 20px; letter-spacing: -.3px; }
+
+/* ── Buttons ── */
+.btn-pri {
+  background: linear-gradient(135deg, #ffc128, #ff8c00);
+  box-shadow: 0 4px 20px rgba(255,140,0,.25), inset 0 1px 0 rgba(255,255,255,.15);
+  border-radius: 14px;
+  letter-spacing: .02em;
+  transition: all .2s;
+}
+.btn-pri:active { opacity: .85; transform: scale(.98); }
+.btn-sec {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.1);
+  border-radius: 14px;
+}
+.btn-ok {
+  background: rgba(16,185,129,.14);
+  box-shadow: 0 2px 12px rgba(16,185,129,.08);
+  border-radius: 12px;
+}
+.btn-no {
+  background: rgba(239,68,68,.12);
+  box-shadow: 0 2px 12px rgba(239,68,68,.06);
+  border-radius: 12px;
+}
+
+/* ── Inputs ── */
+.inp {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.1);
+  transition: all .2s;
+}
+.inp:focus {
+  border-color: rgba(255,193,40,.5);
+  background: rgba(255,193,40,.04);
+  box-shadow: 0 0 0 3px rgba(255,193,40,.08);
+}
+
+/* ── Clock card ── */
+.clock-card {
+  background: linear-gradient(135deg, rgba(16,185,129,.13), rgba(5,150,105,.07), rgba(255,193,40,.05));
+  border-color: rgba(16,185,129,.3);
+  box-shadow: 0 4px 28px rgba(16,185,129,.1), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.clock-time {
+  font-size: 42px;
+  text-shadow: 0 0 30px rgba(16,185,129,.4);
+}
+
+/* ── Shift items ── */
+.shift-item {
+  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  border-color: rgba(255,255,255,.09);
+  box-shadow: 0 2px 12px rgba(0,0,0,.16);
+  border-radius: 14px;
+}
+.sday {
+  background: rgba(255,193,40,.1);
+  border-color: rgba(255,193,40,.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+}
+
+/* ── Request & task cards ── */
+.req-card, .task-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
+  box-shadow: 0 2px 14px rgba(0,0,0,.18);
+}
+.req-card:hover, .task-card:hover {
+  box-shadow: 0 4px 24px rgba(255,193,40,.09);
+}
+
+/* ── Chat list rows ── */
+.chat-row, .menu-row, .payslip-row, .lb-row, .emp-card, .grp-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.025));
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,.14);
+  transition: all .2s;
+}
+.chat-row:active, .menu-row:active, .payslip-row:active {
+  background: rgba(255,193,40,.08);
+  border-color: rgba(255,193,40,.2);
+}
+
+/* ── Modal ── */
+.modal {
+  background: linear-gradient(180deg, #211e13 0%, #1c1a11 100%);
+  border-color: rgba(255,193,40,.15);
+  box-shadow: 0 -8px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(255,193,40,.08);
+}
+.mhandle { background: rgba(255,193,40,.2); }
+
+/* ── Settings groups ── */
+.setting-group {
+  background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+  border-color: rgba(255,255,255,.09);
+  box-shadow: 0 2px 16px rgba(0,0,0,.18);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.setting-group-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,193,40,.1);
+  margin-bottom: 12px;
+}
+.setting-row { border-color: rgba(255,255,255,.06); }
+.setting-btn {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,140,0,.1));
+  border-color: rgba(255,193,40,.3);
+  transition: all .15s;
+}
+.setting-btn:active { background: rgba(255,193,40,.25); }
+
+/* ── Admin panel ── */
+.admin-hdr {
+  background: rgba(20,18,12,.98);
+  border-color: rgba(255,193,40,.15);
+  box-shadow: 0 1px 20px rgba(0,0,0,.3);
+}
+.admin-tabs {
+  background: rgba(20,18,12,.97);
+  border-color: rgba(255,255,255,.07);
+}
+.admin-tab {
+  font-size: 11px; font-weight: 600;
+  color: var(--t3);
+  transition: all .2s;
+  border-bottom: 2px solid transparent;
+}
+.admin-tab.active {
+  color: var(--blue);
+  background: linear-gradient(180deg, rgba(255,193,40,.1), rgba(255,193,40,.04));
+  border-bottom-color: var(--blue);
+}
+
+/* ── Admin filter chips ── */
+.afc {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.09);
+  transition: all .2s;
+}
+.afc.active {
+  background: linear-gradient(135deg, rgba(255,193,40,.18), rgba(255,140,0,.12));
+  border-color: rgba(255,193,40,.35);
+  color: var(--blue);
+  box-shadow: 0 2px 12px rgba(255,193,40,.1);
+}
+
+/* ── Employee cards ── */
+.emp-av {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,140,0,.08));
+  border-color: rgba(255,193,40,.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ea-btn {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.09);
+}
+
+/* ── Chat avatars ── */
+.chat-av-sm.b { background: rgba(255,193,40,.16); border-color: rgba(255,193,40,.3); }
+.chat-av-sm.p { background: rgba(139,92,246,.16); border-color: rgba(139,92,246,.3); }
+.chat-av-sm.g { background: rgba(16,185,129,.16);  border-color: rgba(16,185,129,.3); }
+.chat-av-sm.o { background: rgba(245,158,11,.16);  border-color: rgba(245,158,11,.3); }
+
+/* ── Announcement card ── */
+.ann-card {
+  background: linear-gradient(135deg, rgba(139,92,246,.13), rgba(255,193,40,.06));
+  border-color: rgba(139,92,246,.28);
+  box-shadow: 0 2px 16px rgba(139,92,246,.07);
+}
+
+/* ── Toast ── */
+.toast {
+  background: rgba(22,20,13,.97);
+  border-color: rgba(255,193,40,.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(255,193,40,.1);
+  border-radius: 14px;
+}
+
+/* ── Lang/filter pills ── */
+.lang-btn.active {
+  background: linear-gradient(135deg, rgba(255,193,40,.18), rgba(255,140,0,.12));
+  border-color: rgba(255,193,40,.35);
+  color: var(--blue);
+  box-shadow: 0 2px 10px rgba(255,193,40,.1);
+}
+
+/* ── Add button ── */
+.add-btn {
+  background: linear-gradient(135deg, #ffc128, #ff8c00);
+  box-shadow: 0 4px 16px rgba(255,140,0,.25);
+  border-radius: 12px;
+}
+
+/* ── Req type buttons ── */
+.rtype-btn {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.09);
+  transition: all .18s;
+  border-radius: 14px;
+}
+.rtype-btn.sel, .rtype-btn:active {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,140,0,.09));
+  border-color: rgba(255,193,40,.35);
+  box-shadow: 0 2px 14px rgba(255,193,40,.1);
+}
+.rtype-btn.sel .rtype-lbl { color: var(--blue); }
+
+/* ── Activity icons ── */
+.aico.b { background: rgba(255,193,40,.14); box-shadow: 0 2px 8px rgba(255,193,40,.08); }
+.aico.g { background: rgba(16,185,129,.14);  box-shadow: 0 2px 8px rgba(16,185,129,.08); }
+.aico.o { background: rgba(245,158,11,.14);  box-shadow: 0 2px 8px rgba(245,158,11,.08); }
+.aico.p { background: rgba(139,92,246,.14);  box-shadow: 0 2px 8px rgba(139,92,246,.08); }
+.aico.r { background: rgba(239,68,68,.14);   box-shadow: 0 2px 8px rgba(239,68,68,.08); }
+
+/* ── Search bar ── */
+.search-inp {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.1);
+  border-radius: 12px;
+}
+.search-inp:focus {
+  border-color: rgba(255,193,40,.4);
+  box-shadow: 0 0 0 3px rgba(255,193,40,.07);
+}
+
+/* ── Toggle switch ── */
+.tog { box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
+.tog.on { background: linear-gradient(135deg, var(--green), #059669); }
+.tog::after { box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+
+/* ── Profile header ── */
+.prof-hdr {
+  background: linear-gradient(135deg, rgba(255,193,40,.1), rgba(139,92,246,.07));
+  border-color: rgba(255,193,40,.18);
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+.prof-av {
+  background: linear-gradient(135deg, rgba(255,193,40,.25), rgba(139,92,246,.2));
+  border-color: rgba(255,193,40,.4);
+  box-shadow: 0 4px 16px rgba(255,193,40,.15);
+}
+
+/* ── Perm checkboxes ── */
+.perm-chk {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.1);
+  border-radius: 20px;
+}
+.perm-chk.on {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,140,0,.09));
+  border-color: rgba(255,193,40,.35);
+  box-shadow: 0 2px 10px rgba(255,193,40,.08);
+}
+
+/* ── Request type grid cards in admin ── */
+.req-row {
+  background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,.14);
+  border-radius: 14px;
+}
+.req-row:active { background: rgba(255,193,40,.06); }
+
+/* ── Import box ── */
+.import-box { border-color: rgba(255,255,255,.12); border-radius: 16px; }
+.import-box:hover { border-color: rgba(255,193,40,.35); }
+
+/* ── Coin display ── */
+.coin-display {
+  background: linear-gradient(135deg, rgba(255,193,40,.15), rgba(255,140,0,.09));
+  border-color: rgba(255,193,40,.25);
+  box-shadow: 0 4px 20px rgba(255,193,40,.09);
+}
+
+/* ── Member chips / icon opts ── */
+.m-chip {
+  background: rgba(255,193,40,.14);
+  border-color: rgba(255,193,40,.3);
+}
+.icon-opt.sel {
+  background: rgba(255,193,40,.18);
+  border-color: rgba(255,193,40,.4);
+}
+
+/* ── Chat panel ── */
+.chat-hdr { background: rgba(20,18,12,.97); border-color: rgba(255,255,255,.09); }
+.bubble.rx {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.1);
+}
+.bubble.tx {
+  background: linear-gradient(135deg, rgba(255,193,40,.2), rgba(255,140,0,.16));
+  border-color: rgba(255,193,40,.28);
+}
+.chat-inp {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.1);
+  border-radius: 20px;
+}
+.send-btn { box-shadow: 0 2px 12px rgba(255,140,0,.25); border-radius: 12px; }
+
+/* ── Login card ── */
+.login-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border-color: rgba(255,193,40,.15);
+  box-shadow: 0 4px 32px rgba(0,0,0,.3);
+}
+.demo-btn {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(255,255,255,.1);
+  border-radius: 12px;
+}
+.demo-btn:hover { background: rgba(255,193,40,.1); border-color: rgba(255,193,40,.3); }
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
