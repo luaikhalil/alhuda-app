@@ -841,15 +841,44 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
   <div class="chat-hdr">
     <div class="chat-back" onclick="closeChat()">‹</div>
     <div class="chat-av" id="chatAvEl" style="background:rgba(255,193,40,.12);border:1px solid rgba(255,193,40,.25)">👨‍💼</div>
-    <div style="flex:1">
-      <div style="font-size:13px;font-weight:600" id="chatNameEl">Manager</div>
-      <div style="font-size:10px;color:var(--green)">● Online</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chatNameEl">Manager</div>
+      <div style="font-size:10px;color:var(--t3)" id="chatSubEl">● Online</div>
+    </div>
+    <!-- Group actions button (only visible in group chats) -->
+    <button id="groupActionsBtn" onclick="toggleGroupMenu()" style="display:none;background:none;border:none;font-size:18px;color:var(--t2);cursor:pointer;padding:4px 8px;border-radius:8px">⋮</button>
+    <!-- Dropdown menu -->
+    <div id="groupMenuDropdown" style="display:none;position:absolute;top:56px;right:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:200;min-width:180px">
+      <div onclick="openManageMembersModal()" style="padding:11px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><span>👥</span> Manage Members</div>
+      <div onclick="unpinGroupMessage()" style="padding:11px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px" id="unpinMenuItem"><span>📌</span> Unpin Message</div>
+    </div>
+  </div>
+  <!-- Pinned message banner (hidden by default) -->
+  <div id="pinnedMsgBanner" style="display:none;background:rgba(255,193,40,.08);border-bottom:1px solid rgba(255,193,40,.2);padding:8px 14px;cursor:pointer" onclick="scrollToPinnedMsg()">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px">📌</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:var(--gold);font-weight:600;margin-bottom:1px">Pinned Message</div>
+        <div id="pinnedMsgText" style="font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      </div>
     </div>
   </div>
   <div class="chat-msgs" id="chatMsgsEl"></div>
   <div class="chat-input-row">
     <input class="chat-inp" type="text" id="chatInpEl" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
     <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- ── MANAGE MEMBERS MODAL ── -->
+<div class="modal-bg" id="manageMembersModal">
+  <div class="modal" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+    <div class="mhandle"></div>
+    <div class="mtitle">👥 Manage Members</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:12px" id="manageMembersSubtitle"></div>
+    <input class="member-search" type="text" placeholder="Search employees to add..." id="manageMembersSearch" oninput="renderManageMembersList()" style="margin-bottom:10px">
+    <div id="manageMembersList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+    <button class="btn-sec" onclick="closeModal('manageMembersModal')" style="margin-top:12px">Close</button>
   </div>
 </div>
 
@@ -1126,6 +1155,14 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
       <div class="selected-chips" id="selectedChips"></div>
       <input class="member-search" type="text" placeholder="Search employees..." id="memberSearchInp" oninput="filterMemberPicker()">
       <div class="member-list" id="memberPickerList"></div>
+    </div>
+
+    <!-- Group Maintainer -->
+    <div class="mg" style="margin-top:10px">
+      <label class="lbl">👑 Group Maintainer <span style="color:var(--t3);font-weight:400">(can pin messages & manage members)</span></label>
+      <select class="inp" id="gMaintainer" style="margin-bottom:0">
+        <option value="">— None (Admin only) —</option>
+      </select>
     </div>
 
     <button class="btn-pri" onclick="saveGroup()">💾 Save Group</button>
@@ -1764,7 +1801,9 @@ async function loadSupabaseData(isAdmin) {
     if (grpRes.data && grpRes.data.length > 0) {
       groups = grpRes.data.map(g => ({
         id: g.id, name: g.name, icon: g.icon, desc: g.description,
-        type: g.type, members: g.members || [], createdBy: g.created_by
+        type: g.type, members: g.members || [], createdBy: g.created_by,
+        maintainerId: g.maintainer_id || null,
+        pinnedMsg: g.pinned_msg || null  // { text, pinnedBy, pinnedAt }
       }));
     }
 
@@ -2704,8 +2743,21 @@ function openChat(id) {
   activeChat = id;
   const convo = CHATS[id];
   if (!convo) return;
+
+  // Hide group-specific UI for regular chats
+  const isGroupChat = id.startsWith('grp-');
+  if (!isGroupChat) {
+    activeGroupId = null;
+    const actionsBtn = document.getElementById('groupActionsBtn');
+    if (actionsBtn) actionsBtn.style.display = 'none';
+    const banner = document.getElementById('pinnedMsgBanner');
+    if (banner) banner.style.display = 'none';
+  }
+
   document.getElementById('chatAvEl').textContent = convo.av;
   document.getElementById('chatNameEl').textContent = lang === 'ar' ? (convo.nameAr || convo.name) : convo.name;
+  document.getElementById('chatSubEl').textContent = '● Online';
+
   const msgs = document.getElementById('chatMsgsEl');
   msgs.innerHTML = convo.msgs.map(m => `
     <div class="bubble ${m.rx ? 'rx' : 'tx'}">${lang === 'ar' ? (m.textAr || m.text) : m.text}<span class="bt">${m.t}</span></div>`).join('');
@@ -2713,7 +2765,10 @@ function openChat(id) {
   setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
 }
 
-function closeChat() { document.getElementById('chatPanel').classList.remove('open'); }
+function closeChat() {
+  document.getElementById('chatPanel').classList.remove('open');
+  closeGroupMenu();
+}
 
 function sendMsg() {
   const inp = document.getElementById('chatInpEl');
@@ -2770,6 +2825,15 @@ function submitBroadcast() {
 }
 
 document.querySelectorAll('.modal-bg').forEach(bg => bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); }));
+
+// Close group dropdown menu when clicking outside it
+document.addEventListener('click', e => {
+  const menu = document.getElementById('groupMenuDropdown');
+  const btn  = document.getElementById('groupActionsBtn');
+  if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && e.target !== btn) {
+    menu.style.display = 'none';
+  }
+});
 
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 let _tt;
@@ -3240,9 +3304,14 @@ function importCSV() {
 
 function exportEmployees() {
   const header = 'Name,ID,Department,Role,Phone,Start Date,Salary,Active';
-  const rows = employees.filter(e=>e.dept!=='admin').map(e => `${e.firstName} ${e.lastName},${e.id},${e.deptLabel},${e.role},${e.phone},${e.startDate},${e.salary},${e.active?'Yes':'No'}`);
+  const rows = employees.filter(e=>e.dept!=='admin').map(e => {
+    // Wrap fields that may contain commas or Arabic text in quotes
+    const q = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    return [q(e.firstName+' '+e.lastName), e.id, q(e.deptLabel), q(e.role), e.phone||'', e.startDate||'', e.salary||0, e.active?'Yes':'No'].join(',');
+  });
   const csv = [header, ...rows].join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
+  // \uFEFF = UTF-8 BOM — required for Excel to correctly read Arabic/Unicode characters
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'alhuda_employees.csv';
@@ -3533,11 +3602,14 @@ function renderSettingGroups() {
   }
   el.innerHTML = groups.map(g => {
     const memberCount = resolveGroupMembers(g).length;
+    const maintainer = g.maintainerId ? employees.find(e => e.id === g.maintainerId) : null;
+    const maintainerLabel = maintainer ? `👑 ${maintainer.firstName} ${maintainer.lastName}` : '👑 Admin only';
     return `<div class="grp-card">
       <div class="grp-av" style="background:rgba(255,193,40,.1);border:1px solid rgba(255,193,40,.2)">${g.icon}</div>
       <div class="grp-info">
-        <div class="grp-name">${g.name}${g.pinned ? ' 📌' : ''}</div>
+        <div class="grp-name">${g.name}${g.pinned ? ' 📌' : ''}${g.pinnedMsg ? ' 📍' : ''}</div>
         <div class="grp-meta">${g.desc || ''} · <strong style="color:var(--blue)">${memberCount}</strong> member${memberCount !== 1 ? 's' : ''}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${maintainerLabel}</div>
       </div>
       <div class="grp-actions">
         <div class="ea-btn edit" title="Edit group" onclick="openGroupModal('${g.id}')">✏️</div>
@@ -3575,11 +3647,9 @@ function openGroupModal(groupId) {
     document.getElementById('gDesc').value = g.desc || '';
     document.getElementById('gType').value = g.type || 'custom';
     pickerGroupType = g.type || 'custom';
-    // restore icon selection
     document.querySelectorAll('.icon-opt').forEach(o => {
       o.classList.toggle('sel', o.dataset.icon === g.icon);
     });
-    // restore members
     (g.members || []).forEach(id => pickerSelected.add(id));
   } else {
     document.getElementById('gName').value = '';
@@ -3592,7 +3662,23 @@ function openGroupModal(groupId) {
   onGroupTypeChange();
   renderMemberPicker('');
   renderSelectedChips();
+  refreshMaintainerDropdown(isNew ? null : (groups.find(gr => gr.id === groupId)?.maintainerId || ''));
   openModal('groupModal');
+}
+
+function refreshMaintainerDropdown(currentMaintainerId) {
+  const sel = document.getElementById('gMaintainer');
+  if (!sel) return;
+  // Build list from currently picked members (custom) or auto-resolved
+  let candidates;
+  if (pickerGroupType === 'custom') {
+    candidates = [...pickerSelected].map(id => employees.find(e => e.id === id)).filter(Boolean);
+  } else {
+    const temp = { type: pickerGroupType, members: [] };
+    candidates = resolveGroupMembers(temp);
+  }
+  sel.innerHTML = '<option value="">— None (Admin only) —</option>' +
+    candidates.map(e => `<option value="${e.id}" ${e.id === currentMaintainerId ? 'selected' : ''}>${e.firstName} ${e.lastName} (${e.role})</option>`).join('');
 }
 
 function onGroupTypeChange() {
@@ -3652,6 +3738,9 @@ function toggleMember(empId) {
   }
   renderSelectedChips();
   updateMemberCount();
+  // Keep maintainer dropdown in sync with selected members
+  const currentMaintainer = document.getElementById('gMaintainer')?.value || '';
+  refreshMaintainerDropdown(currentMaintainer);
 }
 
 function updateMemberCount() {
@@ -3683,12 +3772,15 @@ function saveGroup() {
   const groupType = document.getElementById('gType').value;
   const editId = document.getElementById('groupEditId').value;
 
+  const maintainerId = document.getElementById('gMaintainer')?.value || null;
+
   const data = {
     name,
     desc: document.getElementById('gDesc').value.trim(),
     icon: selectedIcon,
     type: groupType,
     members: groupType === 'custom' ? [...pickerSelected] : [],
+    maintainerId: maintainerId || null,
     createdBy: 'ADM-001',
   };
 
@@ -3696,13 +3788,13 @@ function saveGroup() {
     const idx = groups.findIndex(g => g.id === editId);
     if (idx > -1) { groups[idx] = { ...groups[idx], ...data }; }
     toast('✅ Group updated: ' + name);
-    sb.from('groups').update({ name: data.name, icon: data.icon, description: data.desc, type: data.type, members: data.members })
+    sb.from('groups').update({ name: data.name, icon: data.icon, description: data.desc, type: data.type, members: data.members, maintainer_id: data.maintainerId })
       .eq('id', editId).then(({ error }) => { if (error) console.warn('Supabase group update failed:', error); });
   } else {
     data.id = 'grp-' + String(Date.now()).slice(-6);
     groups.push(data);
     toast('✅ Group created: ' + name);
-    sb.from('groups').insert({ id: data.id, name: data.name, icon: data.icon, description: data.desc, type: data.type, members: data.members, created_by: data.createdBy })
+    sb.from('groups').insert({ id: data.id, name: data.name, icon: data.icon, description: data.desc, type: data.type, members: data.members, created_by: data.createdBy, maintainer_id: data.maintainerId })
       .then(({ error }) => { if (error) console.warn('Supabase group insert failed:', error); });
   }
 
@@ -5271,10 +5363,14 @@ renderChatList = function() {
 };
 
 // ─── GROUP CHAT ───────────────────────────────────────────────────────────────
+let activeGroupId = null; // track which group the open chat belongs to
+
 function openGroupChat(groupId) {
   const g = groups.find(gr => gr.id === groupId);
   if (!g) return;
   const members = resolveGroupMembers(g);
+  activeGroupId = groupId;
+
   // Initialise group chat history if not present
   if (!CHATS['grp-' + groupId]) {
     CHATS['grp-' + groupId] = {
@@ -5287,7 +5383,206 @@ function openGroupChat(groupId) {
       ]
     };
   }
-  openChat('grp-' + groupId);
+
+  // Open chat with group-specific UI
+  const convo = CHATS['grp-' + groupId];
+  activeChat = 'grp-' + groupId;
+  document.getElementById('chatAvEl').textContent = convo.av;
+  document.getElementById('chatNameEl').textContent = g.name;
+
+  // Show member count + maintainer in sub-line
+  const maintainer = g.maintainerId ? employees.find(e => e.id === g.maintainerId) : null;
+  const subLine = members.length + ' members' + (maintainer ? ` · 👑 ${maintainer.firstName} ${maintainer.lastName}` : '');
+  document.getElementById('chatSubEl').textContent = subLine;
+
+  // Show ⋮ menu button for admin and maintainer
+  const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
+  const actionsBtn = document.getElementById('groupActionsBtn');
+  if (actionsBtn) actionsBtn.style.display = isAdminOrMaintainer ? 'flex' : 'none';
+
+  // Pinned banner
+  updatePinnedBanner(g);
+
+  // Render messages with pin button for admin/maintainer
+  renderGroupMessages(groupId);
+
+  document.getElementById('chatPanel').classList.add('open');
+  setTimeout(() => {
+    const msgs = document.getElementById('chatMsgsEl');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 50);
+}
+
+function renderGroupMessages(groupId) {
+  const g = groups.find(gr => gr.id === groupId);
+  const convo = CHATS['grp-' + groupId];
+  if (!convo || !g) return;
+  const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
+  const msgs = document.getElementById('chatMsgsEl');
+  if (!msgs) return;
+  msgs.innerHTML = (convo.msgs || []).map((m, idx) => {
+    const pinBtn = isAdminOrMaintainer
+      ? `<button onclick="pinGroupMessage('${groupId}',${idx})" title="Pin this message" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:2px 4px;opacity:0.7" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">📌</button>`
+      : '';
+    const isPinned = g.pinnedMsg && g.pinnedMsg.msgIdx === idx;
+    return `<div class="bubble ${m.rx ? 'rx' : 'tx'}" id="groupmsg-${idx}" style="${isPinned ? 'outline:1px solid rgba(255,193,40,.4);' : ''}">
+      ${lang === 'ar' ? (m.textAr || m.text) : m.text}
+      <span class="bt">${m.t}</span>
+      ${pinBtn}
+    </div>`;
+  }).join('');
+}
+
+function updatePinnedBanner(g) {
+  const banner = document.getElementById('pinnedMsgBanner');
+  const textEl = document.getElementById('pinnedMsgText');
+  if (!banner || !textEl) return;
+  if (g.pinnedMsg) {
+    textEl.textContent = g.pinnedMsg.text;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+  // Show/hide unpin menu item
+  const unpinItem = document.getElementById('unpinMenuItem');
+  if (unpinItem) unpinItem.style.display = g.pinnedMsg ? 'flex' : 'none';
+}
+
+function pinGroupMessage(groupId, msgIdx) {
+  const g = groups.find(gr => gr.id === groupId);
+  const convo = CHATS['grp-' + groupId];
+  if (!g || !convo) return;
+  const msg = convo.msgs[msgIdx];
+  if (!msg) return;
+  g.pinnedMsg = { text: msg.text, msgIdx, pinnedBy: user?.id, pinnedAt: new Date().toISOString() };
+  // Save to Supabase
+  sb.from('groups').update({ pinned_msg: g.pinnedMsg }).eq('id', groupId)
+    .then(({ error }) => { if (error) console.warn('Supabase pin failed:', error); });
+  updatePinnedBanner(g);
+  renderGroupMessages(groupId);
+  renderSettingGroups();
+  toast('📌 Message pinned');
+  closeGroupMenu();
+}
+
+function unpinGroupMessage() {
+  if (!activeGroupId) return;
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+  g.pinnedMsg = null;
+  sb.from('groups').update({ pinned_msg: null }).eq('id', activeGroupId)
+    .then(({ error }) => { if (error) console.warn('Supabase unpin failed:', error); });
+  updatePinnedBanner(g);
+  renderGroupMessages(activeGroupId);
+  renderSettingGroups();
+  toast('📌 Message unpinned');
+  closeGroupMenu();
+}
+
+function scrollToPinnedMsg() {
+  if (!activeGroupId) return;
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g || !g.pinnedMsg) return;
+  const el = document.getElementById('groupmsg-' + g.pinnedMsg.msgIdx);
+  if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); el.style.outline = '2px solid var(--gold)'; setTimeout(() => { el.style.outline = ''; }, 1500); }
+}
+
+function toggleGroupMenu() {
+  const menu = document.getElementById('groupMenuDropdown');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeGroupMenu() {
+  const menu = document.getElementById('groupMenuDropdown');
+  if (menu) menu.style.display = 'none';
+}
+
+// ─── MANAGE MEMBERS MODAL ─────────────────────────────────────────────────────
+function openManageMembersModal() {
+  closeGroupMenu();
+  if (!activeGroupId) return;
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+  document.getElementById('manageMembersSubtitle').textContent = g.name + ' · ' + resolveGroupMembers(g).length + ' members';
+  renderManageMembersList();
+  openModal('manageMembersModal');
+}
+
+function renderManageMembersList() {
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+  const list = document.getElementById('manageMembersList');
+  if (!list) return;
+  const q = (document.getElementById('manageMembersSearch')?.value || '').toLowerCase();
+
+  // For non-custom groups, convert to custom so we can manage members
+  const currentMembers = new Set(g.type === 'custom' ? g.members : resolveGroupMembers(g).map(e => e.id));
+
+  const filtered = employees.filter(e => {
+    if (e.dept === 'admin') return false;
+    if (q) return (e.firstName + ' ' + e.lastName + ' ' + e.role + ' ' + (e.deptLabel||'')).toLowerCase().includes(q);
+    return true;
+  });
+
+  // Sort: current members first
+  filtered.sort((a,b) => (currentMembers.has(b.id) ? 1 : 0) - (currentMembers.has(a.id) ? 1 : 0));
+
+  list.innerHTML = filtered.map(e => {
+    const isMember = currentMembers.has(e.id);
+    const isMaintainer = g.maintainerId === e.id;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:${isMember ? 'rgba(59,130,246,.07)' : 'var(--bgc)'};border:1px solid ${isMember ? 'rgba(59,130,246,.2)' : 'var(--border)'};cursor:pointer" onclick="toggleGroupMember('${e.id}')">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--t2)">${e.init}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--t1)">${e.firstName} ${e.lastName}${isMaintainer ? ' 👑' : ''}</div>
+        <div style="font-size:11px;color:var(--t3)">${e.role} · ${e.deptLabel||''}</div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:${isMember ? 'var(--blue)' : 'var(--t3)'};">${isMember ? '✓ Member' : '+ Add'}</div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">No employees found</div>';
+}
+
+function toggleGroupMember(empId) {
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+
+  // Convert to custom if it's a dept-type group
+  if (g.type !== 'custom') {
+    g.members = resolveGroupMembers(g).map(e => e.id);
+    g.type = 'custom';
+  }
+
+  const idx = g.members.indexOf(empId);
+  const emp = employees.find(e => e.id === empId);
+  if (idx > -1) {
+    g.members.splice(idx, 1);
+    // If removing maintainer, clear maintainer
+    if (g.maintainerId === empId) g.maintainerId = null;
+    toast('👤 ' + (emp?.firstName || empId) + ' removed from group');
+  } else {
+    g.members.push(empId);
+    toast('✅ ' + (emp?.firstName || empId) + ' added to group');
+  }
+
+  // Save to Supabase
+  sb.from('groups').update({ type: g.type, members: g.members, maintainer_id: g.maintainerId || null })
+    .eq('id', activeGroupId)
+    .then(({ error }) => { if (error) console.warn('Supabase toggleGroupMember failed:', error); });
+
+  // Update chat sub-line
+  const members = resolveGroupMembers(g);
+  const maintainer = g.maintainerId ? employees.find(e => e.id === g.maintainerId) : null;
+  const subLine = members.length + ' members' + (maintainer ? ` · 👑 ${maintainer.firstName} ${maintainer.lastName}` : '');
+  const subEl = document.getElementById('chatSubEl');
+  if (subEl) subEl.textContent = subLine;
+
+  renderManageMembersList();
+  renderSettingGroups();
+  renderChatList();
+  // Refresh CHATS entry name
+  if (CHATS['grp-' + activeGroupId]) {
+    CHATS['grp-' + activeGroupId].name = g.name;
+  }
 }
 
 // ── Consolidated openAdmin patch — renders all settings sections ──────────────
