@@ -644,11 +644,22 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
     <div class="tab" id="tab-schedule">
       <h2 style="font-size:17px;font-weight:700;margin-bottom:12px" data-en="Schedule & Attendance" data-ar="الجدول والحضور">Schedule & Attendance</h2>
 
+      <!-- Special schedule notice (shown when HR has set a special timing) -->
+      <div id="specialScheduleNotice" style="display:none;background:rgba(255,193,40,.08);border:1px solid rgba(255,193,40,.25);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:16px">🗓️</span>
+          <span style="font-size:12px;font-weight:700;color:var(--gold)" data-en="Special Work Hours Notice" data-ar="إشعار أوقات عمل خاصة">Special Work Hours Notice</span>
+        </div>
+        <div id="specialScheduleNoticeText" style="font-size:12px;color:var(--t2);line-height:1.5"></div>
+      </div>
+
       <div class="clock-card">
         <div class="clock-time" id="liveClock">--:--:--</div>
         <div class="clock-date" id="liveDate">Loading...</div>
         <button class="clock-btn out" id="clockBtn" onclick="toggleClock()" data-en="Clock Out" data-ar="تسجيل الخروج">Clock Out</button>
         <div style="margin-top:8px;font-size:11px;color:var(--t2)" id="clockInfo" data-en="Clocked in at 08:02 AM" data-ar="تسجيل الدخول الساعة 08:02">Clocked in at 08:02 AM</div>
+        <!-- Location verification status shown inline under clock button -->
+        <div id="clockLocationStatus" style="font-size:10px;color:var(--t3);margin-top:4px;min-height:14px"></div>
       </div>
 
       <div class="stitle" data-en="THIS WEEK" data-ar="هذا الأسبوع">THIS WEEK</div>
@@ -1417,6 +1428,58 @@ body.rtl .chain{direction:ltr;} /* keep chain LTR */
         <div class="setting-row"><span class="setting-lbl">Night Shift</span><span class="setting-val">20:00 – 04:00</span><button class="setting-btn" onclick="toast('Shift editor: coming soon')">Edit</button></div>
       </div>
 
+      <!-- Clock-In Location / Geofence -->
+      <div class="setting-group" style="border-color:rgba(16,185,129,.2)">
+        <div class="setting-group-title" style="color:var(--green)">📍 Clock-In Location Verification</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Employees can only clock in when physically at the store. Set the store GPS location and allowed radius below.</div>
+        <div class="setting-row">
+          <span class="setting-lbl">Geofence Enabled</span>
+          <div class="tog" id="togGeofence" onclick="this.classList.toggle('on');saveGeofenceSettings()"></div>
+        </div>
+        <div id="geofenceDetails">
+          <div class="setting-row" style="flex-wrap:wrap;gap:6px">
+            <span class="setting-lbl">Store Latitude</span>
+            <input id="storeLat" type="number" step="0.000001" placeholder="e.g. 15.352850" style="background:var(--bgc);border:1px solid var(--border);border-radius:6px;color:var(--t1);padding:5px 8px;font-size:12px;outline:none;width:140px;font-family:inherit">
+          </div>
+          <div class="setting-row" style="flex-wrap:wrap;gap:6px">
+            <span class="setting-lbl">Store Longitude</span>
+            <input id="storeLng" type="number" step="0.000001" placeholder="e.g. 44.206650" style="background:var(--bgc);border:1px solid var(--border);border-radius:6px;color:var(--t1);padding:5px 8px;font-size:12px;outline:none;width:140px;font-family:inherit">
+          </div>
+          <div class="setting-row" style="flex-wrap:wrap;gap:6px">
+            <span class="setting-lbl">Allowed Radius (meters)</span>
+            <input id="storeRadius" type="number" value="300" min="50" max="2000" style="background:var(--bgc);border:1px solid var(--border);border-radius:6px;color:var(--t1);padding:5px 8px;font-size:12px;outline:none;width:80px;font-family:inherit">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="add-btn" onclick="detectStoreLocation()" style="flex:1;padding:9px;font-size:12px">📍 Use My Current Location as Store</button>
+            <button class="setting-btn" onclick="saveGeofenceSettings()" style="padding:9px 14px">💾 Save</button>
+          </div>
+          <div id="geofenceStatus" style="font-size:11px;color:var(--t3);margin-top:6px;text-align:center"></div>
+        </div>
+      </div>
+
+      <!-- Special Work Schedules (HR / Holiday overrides) -->
+      <div class="setting-group" style="border-color:rgba(255,193,40,.2)">
+        <div class="setting-group-title">🗓️ Special Work Hours</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Override normal shift times for special occasions (Eid, National Day, etc.). Affected employees are notified by push.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+          <input class="inp" id="ssDate" type="date" placeholder="Date" style="margin-bottom:0">
+          <div style="display:flex;gap:8px">
+            <input class="inp" id="ssStart" type="time" value="09:00" style="flex:1;margin-bottom:0">
+            <span style="align-self:center;color:var(--t3)">→</span>
+            <input class="inp" id="ssEnd" type="time" value="14:00" style="flex:1;margin-bottom:0">
+          </div>
+          <input class="inp" id="ssReason" type="text" placeholder="Reason (e.g. Eid Al-Fitr, National Day)" style="margin-bottom:0">
+          <select class="inp" id="ssTarget" style="margin-bottom:0" onchange="renderSsTargetDetails()">
+            <option value="all">All Staff</option>
+            <option value="dept">Specific Department</option>
+            <option value="employees">Specific Employees</option>
+          </select>
+          <div id="ssTargetDetails" style="display:none"></div>
+          <button class="btn-pri" onclick="addSpecialSchedule()" style="margin-top:4px">📅 Add Special Schedule &amp; Notify Staff</button>
+        </div>
+        <div id="specialScheduleList"></div>
+      </div>
+
       <!-- App Settings -->
       <div class="setting-group">
         <div class="setting-group-title">⚙️ App Settings</div>
@@ -2155,30 +2218,284 @@ function updateClock() {
   const gd = document.getElementById('greetDate');
   if (gd) gd.textContent = dateStr;
 }
-function toggleClock() {
-  clockedIn = !clockedIn;
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  if (clockedIn) {
+// ══════════════════════════════════════════════════════════════════════════
+// GEOFENCE — CLOCK-IN LOCATION VERIFICATION
+// ══════════════════════════════════════════════════════════════════════════
+let storeLocation = { lat: null, lng: null, radius: 300, enabled: false };
+
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Earth radius in metres
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function detectStoreLocation() {
+  const statusEl = document.getElementById('geofenceStatus');
+  if (!navigator.geolocation) { toast('⚠️ GPS not available on this device'); return; }
+  if (statusEl) statusEl.textContent = '📍 Detecting location...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('storeLat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('storeLng').value = pos.coords.longitude.toFixed(6);
+    if (statusEl) statusEl.textContent = `✅ Location detected: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+    toast('📍 Store location captured — click Save to apply');
+  }, err => {
+    if (statusEl) statusEl.textContent = '❌ Could not get location: ' + err.message;
+    toast('❌ GPS error: ' + err.message);
+  }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+function saveGeofenceSettings() {
+  const lat    = parseFloat(document.getElementById('storeLat')?.value);
+  const lng    = parseFloat(document.getElementById('storeLng')?.value);
+  const radius = parseInt(document.getElementById('storeRadius')?.value) || 300;
+  const enabled = document.getElementById('togGeofence')?.classList.contains('on');
+  if (enabled && (isNaN(lat) || isNaN(lng))) { toast('⚠️ Enter valid store coordinates first'); return; }
+  storeLocation = { lat: isNaN(lat) ? null : lat, lng: isNaN(lng) ? null : lng, radius, enabled };
+  sb.from('settings').upsert({ key: 'geofence', value: JSON.stringify(storeLocation) }, { onConflict: 'key' })
+    .then(({ error }) => { if (error) console.warn('Geofence save failed:', error); });
+  const statusEl = document.getElementById('geofenceStatus');
+  if (statusEl) statusEl.textContent = enabled ? `✅ Geofence active — ${radius}m radius` : '⚪ Geofence disabled';
+  toast('✅ ' + (enabled ? `Geofence enabled (${radius}m radius)` : 'Geofence disabled'));
+}
+
+function verifyClockInLocation() {
+  return new Promise(resolve => {
+    if (!storeLocation.enabled || !storeLocation.lat || !storeLocation.lng) {
+      resolve({ ok: true, distance: null, lat: null, lng: null });
+      return;
+    }
+    const locStatus = document.getElementById('clockLocationStatus');
+    if (locStatus) locStatus.textContent = '📍 Verifying your location...';
+    if (!navigator.geolocation) {
+      resolve({ ok: false, error: 'GPS not available on this device' });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(pos => {
+      const dist = Math.round(haversineDistance(pos.coords.latitude, pos.coords.longitude, storeLocation.lat, storeLocation.lng));
+      const ok = dist <= storeLocation.radius;
+      resolve({ ok, distance: dist, lat: pos.coords.latitude, lng: pos.coords.longitude });
+    }, err => {
+      resolve({ ok: false, error: 'Location access denied. Enable GPS to clock in.' });
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+}
+
+async function toggleClock() {
+  const locStatus = document.getElementById('clockLocationStatus');
+
+  if (!clockedIn) {
+    // ── Clocking IN — verify location first ──────────────────────────────
+    document.querySelectorAll('#clockBtn').forEach(btn => { btn.disabled = true; btn.textContent = '📍 Checking...'; });
+    const loc = await verifyClockInLocation();
+    document.querySelectorAll('#clockBtn').forEach(btn => { btn.disabled = false; });
+
+    if (!loc.ok) {
+      // Location check failed
+      document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn in'; btn.textContent = t('Clock In','تسجيل الدخول'); });
+      const msg = loc.error
+        ? `❌ ${loc.error}`
+        : `❌ ${t('You are','أنت على بُعد')} ${loc.distance}m ${t('from the store. Must be within','من المتجر. يجب أن تكون ضمن')} ${storeLocation.radius}m.`;
+      if (locStatus) locStatus.textContent = msg;
+      toast('❌ ' + (loc.error || `${loc.distance}m away — must be within ${storeLocation.radius}m`));
+      return;
+    }
+
+    // Passed — proceed with clock-in
+    clockedIn = true;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn out'; btn.textContent = t('Clock Out','تسجيل الخروج'); });
     document.querySelectorAll('#clockInfo').forEach(el => { el.textContent = t('Clocked in at ','تسجيل دخول الساعة ') + timeStr; });
+    const locMsg = loc.distance !== null ? `✅ ${t('Location verified','الموقع تم التحقق منه')} (${loc.distance}m ${t('from store','من المتجر')})` : '';
+    if (locStatus) locStatus.textContent = locMsg;
     toast('✅ ' + t('Clocked in successfully','تم تسجيل الدخول'));
-    // Save clock-in to Supabase
     if (user) {
       window._lastAttendanceClockIn = new Date().toISOString();
-      sb.from('attendance').insert({ emp_id: user.id || role, clock_in: window._lastAttendanceClockIn, date: new Date().toISOString().split('T')[0] })
-        .then(({ data, error }) => { if (error) console.warn('Supabase clock-in failed:', error); else window._lastAttendanceId = data?.[0]?.id; });
+      sb.from('attendance').insert({
+        emp_id: user.id || role,
+        clock_in: window._lastAttendanceClockIn,
+        date: new Date().toISOString().split('T')[0],
+        lat: loc.lat, lng: loc.lng, distance_m: loc.distance,
+        location_verified: loc.distance !== null
+      }).then(({ data, error }) => {
+        if (error) console.warn('Supabase clock-in failed:', error);
+        else window._lastAttendanceId = data?.[0]?.id;
+      });
     }
   } else {
+    // ── Clocking OUT — no location check needed ───────────────────────────
+    clockedIn = false;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
     document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn in'; btn.textContent = t('Clock In','تسجيل الدخول'); });
     document.querySelectorAll('#clockInfo').forEach(el => { el.textContent = t('Clocked out at ','تسجيل خروج الساعة ') + timeStr; });
+    if (locStatus) locStatus.textContent = '';
     toast('👋 ' + t('Clocked out. Have a good day!','تم تسجيل الخروج. أتمنى لك يوماً سعيداً!'));
-    // Save clock-out to Supabase
     if (user && window._lastAttendanceId) {
       sb.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', window._lastAttendanceId)
         .then(({ error }) => { if (error) console.warn('Supabase clock-out failed:', error); });
     }
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SPECIAL SCHEDULES — HR HOLIDAY / EID OVERRIDES
+// ══════════════════════════════════════════════════════════════════════════
+let specialSchedules = [];
+
+function renderSsTargetDetails() {
+  const type = document.getElementById('ssTarget')?.value;
+  const el = document.getElementById('ssTargetDetails');
+  if (!el) return;
+  if (type === 'all') { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+  if (type === 'dept') {
+    el.innerHTML = `<select class="inp" id="ssTargetDept" style="margin-bottom:0">
+      ${allDepts.flatMap(d => [
+        `<option value="${d.key}">${d.name}</option>`,
+        ...(d.subs||[]).map(s => `<option value="${s.key}">  └ ${s.name}</option>`)
+      ]).join('')}
+    </select>`;
+  } else {
+    // specific employees — multi-select checkboxes
+    el.innerHTML = `<div style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:6px">
+      ${employees.filter(e=>e.dept!=='admin').map(e =>
+        `<label style="display:flex;align-items:center;gap:8px;padding:5px 6px;cursor:pointer;font-size:12px">
+          <input type="checkbox" value="${e.id}" class="ss-emp-chk"> ${e.firstName} ${e.lastName} (${e.role})
+        </label>`).join('')}
+    </div>`;
+  }
+}
+
+function addSpecialSchedule() {
+  const date    = document.getElementById('ssDate')?.value;
+  const start   = document.getElementById('ssStart')?.value;
+  const end     = document.getElementById('ssEnd')?.value;
+  const reason  = document.getElementById('ssReason')?.value.trim();
+  const target  = document.getElementById('ssTarget')?.value;
+  if (!date || !start || !end) { toast('⚠️ Please fill in date and time'); return; }
+  if (!reason) { toast('⚠️ Please enter a reason (e.g. Eid Holiday)'); return; }
+
+  let targets = [];
+  if (target === 'dept') {
+    const deptVal = document.getElementById('ssTargetDept')?.value;
+    if (deptVal) targets = [deptVal];
+  } else if (target === 'employees') {
+    targets = [...document.querySelectorAll('.ss-emp-chk:checked')].map(c => c.value);
+    if (!targets.length) { toast('⚠️ Select at least one employee'); return; }
+  }
+
+  const ss = {
+    id: 'SS-' + Date.now(),
+    date, start, end, reason,
+    targetType: target,
+    targets,
+    createdBy: user?.id || 'ADM-001',
+    createdAt: new Date().toISOString()
+  };
+  specialSchedules.unshift(ss);
+
+  // Save to Supabase
+  sb.from('special_schedules').insert({
+    id: ss.id, date: ss.date, start_time: ss.start, end_time: ss.end,
+    reason: ss.reason, target_type: ss.targetType, targets: ss.targets, created_by: ss.createdBy
+  }).then(({ error }) => { if (error) console.warn('Supabase special_schedule insert failed:', error); });
+
+  // Push notify affected employees
+  const affectedTokens = getAffectedFCMTokens(ss);
+  const dateLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  sendPush(affectedTokens,
+    `🗓️ Special Work Hours: ${dateLabel}`,
+    `${reason} — Work hours changed to ${start}–${end}`
+  );
+
+  // Reset form
+  document.getElementById('ssDate').value = '';
+  document.getElementById('ssReason').value = '';
+  document.getElementById('ssTarget').value = 'all';
+  renderSsTargetDetails();
+  renderSpecialSchedules();
+  renderSpecialScheduleNotice();
+  toast(`✅ Special schedule saved. Staff notified 📩`);
+}
+
+function getAffectedFCMTokens(ss) {
+  let affected = employees.filter(e => e.dept !== 'admin' && e.active);
+  if (ss.targetType === 'dept' && ss.targets.length) {
+    affected = affected.filter(e => ss.targets.includes(e.dept_key || e.dept) || ss.targets.includes(e.dept));
+  } else if (ss.targetType === 'employees' && ss.targets.length) {
+    affected = affected.filter(e => ss.targets.includes(e.id));
+  }
+  return affected.map(e => e.fcm_token).filter(Boolean);
+}
+
+function isEmployeeAffected(ss, emp) {
+  if (!emp) return ss.targetType === 'all';
+  if (ss.targetType === 'all') return true;
+  if (ss.targetType === 'dept') return ss.targets.includes(emp.dept_key || emp.dept);
+  if (ss.targetType === 'employees') return ss.targets.includes(emp.id);
+  return false;
+}
+
+function deleteSpecialSchedule(ssId) {
+  if (!confirm('Delete this special schedule?')) return;
+  specialSchedules = specialSchedules.filter(s => s.id !== ssId);
+  sb.from('special_schedules').delete().eq('id', ssId).then(()=>{});
+  renderSpecialSchedules();
+  renderSpecialScheduleNotice();
+  toast('🗑 Special schedule removed');
+}
+
+function renderSpecialSchedules() {
+  const el = document.getElementById('specialScheduleList');
+  if (!el) return;
+  if (!specialSchedules.length) {
+    el.innerHTML = `<div style="text-align:center;padding:14px;color:var(--t3);font-size:12px">No special schedules set</div>`;
+    return;
+  }
+  el.innerHTML = specialSchedules.map(ss => {
+    const dateLabel = new Date(ss.date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const whoLabel = ss.targetType === 'all' ? 'All Staff' : ss.targetType === 'dept' ? `Dept: ${ss.targets.join(', ')}` : `${ss.targets.length} employee(s)`;
+    const isPast = new Date(ss.date) < new Date(new Date().toDateString());
+    return `<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;${isPast?'opacity:.5':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--gold)">🗓️ ${dateLabel}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:2px">${ss.reason}</div>
+          <div style="font-size:11px;color:var(--green);margin-top:2px">🕐 ${ss.start} – ${ss.end}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">👥 ${whoLabel}</div>
+        </div>
+        <button onclick="deleteSpecialSchedule('${ss.id}')" style="background:none;border:none;color:#f87171;font-size:14px;cursor:pointer;padding:2px">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Show notice on employee's Schedule tab for upcoming/today special schedules
+function renderSpecialScheduleNotice() {
+  const noticeEl = document.getElementById('specialScheduleNotice');
+  const noticeText = document.getElementById('specialScheduleNoticeText');
+  if (!noticeEl || !noticeText) return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const emp = user ? employees.find(e => e.id === user.id) : null;
+
+  const relevant = specialSchedules.filter(ss => {
+    if (ss.date < today || ss.date > nextWeek) return false;
+    return isEmployeeAffected(ss, emp);
+  }).sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!relevant.length) { noticeEl.style.display = 'none'; return; }
+
+  noticeEl.style.display = 'block';
+  noticeText.innerHTML = relevant.map(ss => {
+    const dateLabel = ss.date === today ? '📅 Today' : new Date(ss.date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+    return `<div style="margin-bottom:4px"><strong>${dateLabel}:</strong> ${ss.reason} — Work hours: <strong style="color:var(--green)">${ss.start} – ${ss.end}</strong></div>`;
+  }).join('');
 }
 
 // ─── ACTIVITY FEED ────────────────────────────────────────────────────────────
@@ -2902,6 +3219,19 @@ function switchAdminTab(tab) {
     try { renderReqPermSettings(); } catch(e) { console.warn('renderReqPermSettings err', e); }
     try { renderSettingGroups(); } catch(e) { console.warn('renderSettingGroups err', e); }
     try { renderDelegatedPermList(); } catch(e) { console.warn('renderDelegatedPermList err', e); }
+    try { renderSpecialSchedules(); } catch(e) { console.warn('renderSpecialSchedules err', e); }
+    // Populate geofence settings UI from loaded data
+    try {
+      const togGf = document.getElementById('togGeofence');
+      if (togGf) togGf.classList.toggle('on', !!storeLocation.enabled);
+      if (storeLocation.lat) document.getElementById('storeLat').value = storeLocation.lat;
+      if (storeLocation.lng) document.getElementById('storeLng').value = storeLocation.lng;
+      if (storeLocation.radius) document.getElementById('storeRadius').value = storeLocation.radius;
+      const gfStatus = document.getElementById('geofenceStatus');
+      if (gfStatus) gfStatus.textContent = storeLocation.enabled
+        ? `✅ Geofence active — ${storeLocation.radius}m radius around (${storeLocation.lat?.toFixed(4)}, ${storeLocation.lng?.toFixed(4)})`
+        : storeLocation.lat ? '⚪ Geofence configured but disabled' : '⚪ Not configured yet';
+    } catch(e) {}
   }
 }
 
@@ -4982,6 +5312,29 @@ loadSupabaseData = async function(isAdmin) {
   if (locData?.value && Array.isArray(locData.value)) allLocations = locData.value;
   const { data: jtData } = await sb.from('settings').select('value').eq('key','all_job_titles').single();
   if (jtData?.value && Array.isArray(jtData.value)) allJobTitles = jtData.value;
+
+  // Load geofence settings
+  const { data: gfData } = await sb.from('settings').select('value').eq('key','geofence').maybeSingle();
+  if (gfData?.value) {
+    try {
+      const parsed = typeof gfData.value === 'string' ? JSON.parse(gfData.value) : gfData.value;
+      storeLocation = { ...storeLocation, ...parsed };
+    } catch(e2) {}
+  }
+
+  // Load special schedules (only future + today)
+  const today = new Date().toISOString().split('T')[0];
+  const ssRes = await sb.from('special_schedules').select('*').gte('date', today).order('date', { ascending: true });
+  if (ssRes.data && ssRes.data.length > 0) {
+    specialSchedules = ssRes.data.map(s => ({
+      id: s.id, date: s.date, start: s.start_time, end: s.end_time,
+      reason: s.reason, targetType: s.target_type || 'all',
+      targets: s.targets || [], createdBy: s.created_by, createdAt: s.created_at
+    }));
+  }
+  // Show special schedule notice on schedule tab
+  setTimeout(() => { try { renderSpecialScheduleNotice(); } catch(e2) {} }, 500);
+
   // Check overdue requests after data loads (admin only — non-silent so reminders fire)
   if (isAdmin) {
     setTimeout(() => { try { checkAndNotifyOverdue(false); } catch(e) {} }, 1500);
