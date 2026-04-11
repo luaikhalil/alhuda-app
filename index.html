@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Alhuda Staff">
 <title>Alhuda Staff App</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -19,7 +19,7 @@
   --border: rgba(255,193,40,0.12);
   --r1:10px; --r2:16px; --r3:20px;
   --nav:72px; --hdr:60px;
-  --ff: 'Space Grotesk', sans-serif; --ffa: 'Noto Kufi Arabic', sans-serif;
+  --ff: 'Space Grotesk', sans-serif; --ffa: 'Cairo', sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--t1);font-family:var(--ff);min-height:100vh;overflow-x:hidden;}
@@ -776,6 +776,7 @@ body::before {
         <button class="demo-btn" onclick="login('hr_mgr')"><span>📋</span><span data-en="HR Manager" data-ar="مدير الموارد البشرية">HR Manager</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
         <button class="demo-btn" onclick="login('supervision')"><span>👁️</span><span data-en="Top Supervision" data-ar="الإشراف العام">Top Supervision</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
         <button class="demo-btn" onclick="login('security')"><span>🔒</span><span data-en="Security Guard" data-ar="حارس الأمن">Security Guard</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
+        <button class="demo-btn" onclick="login('security_sup')"><span>🛡️</span><span data-en="Security Supervisor" data-ar="مشرف الأمن">Security Supervisor</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
         <button class="demo-btn" onclick="login('it_staff')"><span>💻</span><span data-en="IT Staff" data-ar="موظف تقنية المعلومات">IT Staff</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
       </div>
       <!-- Admin button spans full width -->
@@ -829,7 +830,7 @@ body::before {
           <div class="sec-title">🔒 <span data-en="Office Pass Verification" data-ar="التحقق من تصريح الدخول">Office Pass Verification</span></div>
           <div class="sec-sub" data-en="Enter the serial number shown on the employee's pass" data-ar="أدخل الرقم التسلسلي الموجود على تصريح الموظف">Enter the serial number shown on the employee's pass</div>
           <div class="sec-inp-row">
-            <input class="sec-inp" type="text" id="secInput" placeholder="e.g. AH-20260409-743" maxlength="20" oninput="this.value=this.value.toUpperCase()">
+            <input class="sec-inp" type="number" id="secInput" placeholder="e.g. 20260409412837" inputmode="numeric" maxlength="14">
             <button class="sec-btn" onclick="verifyPass()">✓</button>
           </div>
           <div class="sec-result" id="secResult"></div>
@@ -1072,18 +1073,6 @@ body::before {
         <div id="profRecentTasks" style="margin-bottom:14px"></div>
       </div>
 
-      <div class="stitle" data-en="PAYSLIPS" data-ar="كشوف الرواتب">PAYSLIPS</div>
-      <div class="payslip-row" onclick="toast('Opening payslip...')">
-        <div class="payslip-ico">💰</div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600" data-en="March 2026" data-ar="مارس 2026">March 2026</div><div style="font-size:11px;color:var(--green);margin-top:1px" data-en="Net: YER 185,000" data-ar="الصافي: 185,000 ريال">Net: YER 185,000</div></div>
-        <span style="color:var(--t3)">›</span>
-      </div>
-      <div class="payslip-row" onclick="toast('Opening payslip...')">
-        <div class="payslip-ico">💰</div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600" data-en="February 2026" data-ar="فبراير 2026">February 2026</div><div style="font-size:11px;color:var(--green);margin-top:1px" data-en="Net: YER 185,000" data-ar="الصافي: 185,000 ريال">Net: YER 185,000</div></div>
-        <span style="color:var(--t3)">›</span>
-      </div>
-
       <div class="stitle" data-en="HR SERVICES" data-ar="خدمات الموارد البشرية">HR SERVICES</div>
       <div class="menu-row" onclick="openNewReqModal('leave')">
         <div class="menu-ico" style="background:rgba(255,193,40,.1)">📅</div>
@@ -1095,12 +1084,12 @@ body::before {
         <div style="flex:1;font-size:13px;font-weight:500" data-en="HR Inquiry" data-ar="استفسار الموارد البشرية">HR Inquiry</div>
         <span style="color:var(--t3)">›</span>
       </div>
-      <div class="menu-row" onclick="toast('Feature coming soon')">
+      <div class="menu-row" onclick="showAttendanceHistory()">
         <div class="menu-ico" style="background:rgba(245,158,11,.1)">📊</div>
         <div style="flex:1;font-size:13px;font-weight:500" data-en="Attendance History" data-ar="سجل الحضور">Attendance History</div>
         <span style="color:var(--t3)">›</span>
       </div>
-      <div class="menu-row" onclick="toast('Feature coming soon')">
+      <div class="menu-row" onclick="showPerformanceReview()">
         <div class="menu-ico" style="background:rgba(16,185,129,.1)">⭐</div>
         <div style="flex:1;font-size:13px;font-weight:500" data-en="Performance Review" data-ar="تقييم الأداء">Performance Review</div>
         <span style="color:var(--t3)">›</span>
@@ -1182,7 +1171,7 @@ body::before {
         <div class="pass-subtitle" data-en="OFFICE ACCESS PASS" data-ar="تصريح دخول المكتب">OFFICE ACCESS PASS</div>
       </div>
     </div>
-    <div class="pass-serial" id="passSerialEl">AH-20260409-743</div>
+    <div class="pass-serial" id="passSerialEl">20260409412837</div>
     <div class="pass-row"><span class="pass-key" data-en="Employee" data-ar="الموظف">Employee</span><span class="pass-val" id="passEmpEl">Ahmad Hassan</span></div>
     <div class="pass-row"><span class="pass-key" data-en="Department" data-ar="القسم">Department</span><span class="pass-val" id="passDeptEl">Ground Floor</span></div>
     <div class="pass-row"><span class="pass-key" data-en="Purpose" data-ar="الغرض">Purpose</span><span class="pass-val" id="passPurposeEl">HR Meeting</span></div>
@@ -1516,11 +1505,11 @@ body::before {
 
   <!-- Admin Tabs -->
   <div class="admin-tabs">
-    <div class="admin-tab active" id="atab-employees" onclick="switchAdminTab('employees')">👥 Employees</div>
-    <div class="admin-tab" id="atab-requests" onclick="switchAdminTab('requests')">📋 Requests</div>
-    <div class="admin-tab" id="atab-passes" onclick="switchAdminTab('passes')">🎫 Passes</div>
-    <div class="admin-tab" id="atab-changes" onclick="switchAdminTab('changes')">🔄 Changes <span id="changesBadge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:2px">0</span></div>
-    <div class="admin-tab" id="atab-settings" onclick="switchAdminTab('settings')">🔧 Settings</div>
+    <div class="admin-tab active" id="atab-employees" onclick="switchAdminTab('employees')" data-en="👥 Staff" data-ar="👥 الموظفون">👥 Staff</div>
+    <div class="admin-tab" id="atab-requests" onclick="switchAdminTab('requests')" data-en="📋 Requests" data-ar="📋 الطلبات">📋 Requests</div>
+    <div class="admin-tab" id="atab-coins" onclick="switchAdminTab('coins')" data-en="🪙 Coins" data-ar="🪙 العملات">🪙 Coins</div>
+    <div class="admin-tab" id="atab-passes" onclick="switchAdminTab('passes')" data-en="🎫 Passes" data-ar="🎫 التصاريح">🎫 Passes</div>
+    <div class="admin-tab" id="atab-settings" onclick="switchAdminTab('settings')" data-en="🔧 Settings" data-ar="🔧 الإعدادات">🔧 Settings</div>
   </div>
 
   <!-- Admin Body -->
@@ -1537,14 +1526,14 @@ body::before {
         <button style="padding:7px 12px;border-radius:20px;background:var(--bgc);color:var(--t2);border:1px solid var(--border);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" onclick="exportEmployees()">⬇️ Export</button>
       </div>
       <div class="admin-filters">
-        <div class="afc active" onclick="filterEmps('all',this)">All</div>
-        <div class="afc" onclick="filterEmps('active',this)">Active</div>
-        <div class="afc" onclick="filterEmps('inactive',this)">Inactive</div>
-        <div class="afc" onclick="filterEmps('office',this)">Office</div>
-        <div class="afc" onclick="filterEmps('gf',this)">Ground Floor</div>
-        <div class="afc" onclick="filterEmps('warehouse',this)">Warehouse</div>
-        <div class="afc" onclick="filterEmps('sf',this)">2nd Floor</div>
-        <div class="afc" onclick="filterEmps('security',this)">Security</div>
+        <div class="afc active" onclick="filterEmps('all',this)" data-en="All" data-ar="الكل">All</div>
+        <div class="afc" onclick="filterEmps('active',this)" data-en="Active" data-ar="نشط">Active</div>
+        <div class="afc" onclick="filterEmps('inactive',this)" data-en="Inactive" data-ar="غير نشط">Inactive</div>
+        <div class="afc" onclick="filterEmps('office',this)" data-en="Office" data-ar="المكتب">Office</div>
+        <div class="afc" onclick="filterEmps('gf',this)" data-en="Ground Floor" data-ar="الطابق الأرضي">Ground Floor</div>
+        <div class="afc" onclick="filterEmps('warehouse',this)" data-en="Warehouse" data-ar="المستودع">Warehouse</div>
+        <div class="afc" onclick="filterEmps('sf',this)" data-en="2nd Floor" data-ar="الطابق الثاني">2nd Floor</div>
+        <div class="afc" onclick="filterEmps('security',this)" data-en="Security" data-ar="الأمن">Security</div>
       </div>
       <div id="empList"></div>
     </div>
@@ -1561,24 +1550,58 @@ body::before {
         <span style="font-size:10px;opacity:.7">View all →</span>
       </div>
       <div class="admin-filters">
-        <div class="afc active" onclick="filterAdminReqs('all',this)">All</div>
-        <div class="afc" onclick="filterAdminReqs('pending',this)">Pending</div>
-        <div class="afc" data-f="overdue" onclick="filterAdminReqs('overdue',this)" style="color:#f87171;border-color:rgba(239,68,68,.25)">⏰ Overdue <span id="overdueTabCount" style="background:rgba(239,68,68,.2);border-radius:10px;padding:0 5px;font-size:10px;margin-left:2px">0</span></div>
-        <div class="afc" onclick="filterAdminReqs('in_progress',this)">In Progress</div>
-        <div class="afc" onclick="filterAdminReqs('resolved',this)">Resolved</div>
-        <div class="afc" onclick="filterAdminReqs('leave',this)">Leave</div>
-        <div class="afc" onclick="filterAdminReqs('incident',this)">Incidents</div>
-        <div class="afc" onclick="filterAdminReqs('it',this)">IT</div>
+        <div class="afc active" onclick="filterAdminReqs('all',this)" data-en="All" data-ar="الكل">All</div>
+        <div class="afc" onclick="filterAdminReqs('pending',this)" data-en="Pending" data-ar="قيد الانتظار">Pending</div>
+        <div class="afc" data-f="overdue" onclick="filterAdminReqs('overdue',this)" style="color:#f87171;border-color:rgba(239,68,68,.25)" data-en="⏰ Overdue" data-ar="⏰ متأخرة">⏰ Overdue <span id="overdueTabCount" style="background:rgba(239,68,68,.2);border-radius:10px;padding:0 5px;font-size:10px;margin-left:2px">0</span></div>
+        <div class="afc" onclick="filterAdminReqs('in_progress',this)" data-en="In Progress" data-ar="جارٍ">In Progress</div>
+        <div class="afc" onclick="filterAdminReqs('resolved',this)" data-en="Resolved" data-ar="محلولة">Resolved</div>
+        <div class="afc" onclick="filterAdminReqs('leave',this)" data-en="Leave" data-ar="إجازات">Leave</div>
+        <div class="afc" onclick="filterAdminReqs('incident',this)" data-en="Incidents" data-ar="الحوادث">Incidents</div>
+        <div class="afc" onclick="filterAdminReqs('it',this)" data-en="IT" data-ar="تقنية">IT</div>
       </div>
       <div id="adminReqList"></div>
     </div>
 
     <!-- ─── PASSES TAB ─── -->
     <div id="apane-passes" class="apane" style="display:none">
-      <div style="margin-bottom:12px">
+      <div id="issuePassBtnWrapper" style="margin-bottom:12px">
         <button class="add-btn" onclick="openIssuePassModal()" style="width:100%">🎫 Issue New Pass</button>
       </div>
+      <div id="passNoPermMsg" style="display:none;padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px;font-size:12px;color:var(--red);margin-bottom:12px">
+        🔒 Only the General Manager, Account Manager, or Secretary can issue passes.
+      </div>
       <div id="adminPassList"></div>
+    </div>
+
+    <!-- ─── COINS TAB ─── -->
+    <div id="apane-coins" class="apane" style="display:none">
+      <div style="margin-bottom:12px">
+        <input class="search-inp" type="text" id="coinsSearch" placeholder="Search employee..." oninput="renderAdminCoins()" style="width:100%">
+      </div>
+      <div id="adminCoinsList"></div>
+      <!-- Manage Coins Modal -->
+      <div class="modal-bg" id="manageCoinsModal">
+        <div class="modal" style="max-width:340px">
+          <div class="mhandle"></div>
+          <div class="mtitle" data-en="🪙 Manage Coins" data-ar="🪙 إدارة العملات">🪙 Manage Coins</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="mcEmpName">Employee</div>
+          <div style="font-size:28px;font-weight:800;color:var(--gold);text-align:center;margin:10px 0" id="mcBalance">0 🪙</div>
+          <div class="lbl" data-en="Action" data-ar="الإجراء">Action</div>
+          <select class="inp" id="mcAction" onchange="document.getElementById('mcAmountRow').style.display=(this.value==='double'||this.value==='reset')?'none':'block'">
+            <option value="add" data-en="➕ Add Coins" data-ar="➕ إضافة عملات">➕ Add Coins</option>
+            <option value="remove" data-en="➖ Remove Coins" data-ar="➖ خصم عملات">➖ Remove Coins</option>
+            <option value="double" data-en="×2 Double Reward" data-ar="×2 مضاعفة المكافأة">×2 Double Reward</option>
+            <option value="reset" data-en="🔄 Reset to Zero" data-ar="🔄 إعادة تصفير">🔄 Reset to Zero</option>
+          </select>
+          <div id="mcAmountRow" class="mg" style="margin-top:4px">
+            <label class="lbl" data-en="Amount" data-ar="المبلغ">Amount</label>
+            <input class="inp" type="number" id="mcAmount" placeholder="e.g. 10" min="1" style="margin-bottom:0">
+          </div>
+          <input type="hidden" id="mcEmpId">
+          <button class="btn-pri" onclick="applyCoinsAction()" style="margin-top:14px" data-en="💾 Apply" data-ar="💾 تطبيق">💾 Apply</button>
+          <button class="btn-sec" onclick="closeModal('manageCoinsModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── SETTINGS TAB ─── -->
@@ -1899,15 +1922,10 @@ body::before {
         </select>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <div class="mg">
-        <label class="lbl">Start Date</label>
-        <input class="inp" type="date" id="eStartDate" style="margin-bottom:0">
-      </div>
-      <div class="mg">
-        <label class="lbl">Salary (YER)</label>
-        <input class="inp" type="number" id="eSalary" placeholder="180000" style="margin-bottom:0">
-      </div>
+    <div class="mg" style="margin-top:8px">
+      <label class="lbl">Start Date</label>
+      <input class="inp" type="date" id="eStartDate" style="margin-bottom:0">
+      <input type="hidden" id="eSalary" value="0">
     </div>
     <div class="mg" style="margin-top:8px">
       <label class="lbl">Default Shift</label>
@@ -2153,6 +2171,7 @@ function empIdToRoleKey(e) {
     };
     return m[e.dept_key] || 'hr_mgr';
   }
+  if (e.emp_type === 'security' && (e.role_key === 'security_sup' || e.job_title === 'Security Supervisor')) return 'security_sup';
   if (e.emp_type === 'security')    return 'security';
   if (e.emp_type === 'supervisor')  return 'cashier_sup';
   return 'sales_staff';
@@ -2249,6 +2268,7 @@ const ROLES = {
   hr_mgr:      { id:'OFF-001', name:'Nadia Hassan', nameAr:'نادية حسن', role:'HR Manager', roleAr:'مدير الموارد البشرية', dept:'HR Department', deptAr:'قسم الموارد البشرية', init:'NH', type:'dept_officer', deptKey:'hr', area:'office' },
   supervision: { id:'OFF-005', name:'Fahad Al-Rashidi', nameAr:'فهد الراشدي', role:'Head of Supervision', roleAr:'رئيس الإشراف', dept:'Top Level Supervision', deptAr:'الإشراف العام', init:'FR', type:'dept_officer', deptKey:'supervision', area:'office' },
   security:    { id:'SEC-001', name:'Walid Nasser', nameAr:'وليد ناصر', role:'Security Guard', roleAr:'حارس الأمن', dept:'Security', deptAr:'الأمن', init:'WN', type:'security', area:'security' },
+  security_sup:{ id:'SEC-SUP', name:'Mahmoud Al-Qahtan', nameAr:'محمود القحطان', role:'Security Supervisor', roleAr:'مشرف الأمن', dept:'Security', deptAr:'الأمن', init:'MQ', type:'security_sup', area:'security', manages:['security'] },
   it_staff:    { id:'OFF-004', name:'Ayman Al-Zubairi', nameAr:'أيمن الزبيري', role:'IT Technician', roleAr:'فني تقنية المعلومات', dept:'IT Department', deptAr:'قسم تقنية المعلومات', init:'AZ', type:'dept_officer', deptKey:'it', area:'office' }
 };
 
@@ -2287,13 +2307,19 @@ const REQ_TYPES = {
     { key:'general',     icon:'📝', label:'General Memo',     labelAr:'مذكرة عامة',      to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
   ],
   security: [],
+  security_sup: [
+    { key:'incident',    icon:'⚠️', label:'Incident Report',  labelAr:'تقرير حادثة',    to:'supervision',      toLabel:'Top Level Supervision', toNote:'Goes directly to Top Level Supervision Team.' },
+    { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',               toLabel:'General Manager',       toNote:'Goes directly to the General Manager.' },
+    { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',      toNote:'Goes directly to Maintenance Department.' },
+    { key:'general',     icon:'📝', label:'General Report',   labelAr:'تقرير عام',       to:'supervision',      toLabel:'Supervision Team',      toNote:'Goes to Top Level Supervision.' },
+  ],
 };
 
 // Demo request data
 let requests = [
   { id:'REQ-001', type:'leave', typeLabel:'Leave Request', from:'sales_staff', fromName:'Ahmad Hassan', to:'manager_then_hr', toLabel:'Manager → HR', title:'Annual Leave Apr 12–14', date:'Apr 8', status:'pending_manager', chainStep:1, urgent:false, details:'Personal trip with family. 3 days annual leave.', chain:['Submitted','Manager Approval','HR Approval','Decision'], chainStatus:['done','active','pending','pending'] },
   { id:'REQ-002', type:'it', typeLabel:'IT Support', from:'sales_staff', fromName:'Ahmad Hassan', to:'it', toLabel:'IT Department', title:'Price scanner not working at Aisle 5', date:'Apr 7', status:'in_progress', chainStep:null, urgent:false, details:'The handheld scanner at Aisle 5 is showing error E22. Tried restart, still failing.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','active','pending'] },
-  { id:'REQ-003', type:'maintenance', typeLabel:'Maintenance', from:'sales_staff', fromName:'Ahmad Hassan', to:'maintenance', toLabel:'Maintenance Dept', title:'Broken shelf bracket — Aisle 3', date:'Apr 6', status:'resolved', chainStep:null, urgent:false, details:'Shelf bracket is cracked and may fall. Safety hazard.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','done','done'], resolvedNote:'Bracket replaced on Apr 7. Please check and confirm.', passGenerated:true, passSerial:'AH-20260407-291', passIssued:'Maintenance Dept', passPurpose:'Maintenance Meeting Follow-up' },
+  { id:'REQ-003', type:'maintenance', typeLabel:'Maintenance', from:'sales_staff', fromName:'Ahmad Hassan', to:'maintenance', toLabel:'Maintenance Dept', title:'Broken shelf bracket — Aisle 3', date:'Apr 6', status:'resolved', chainStep:null, urgent:false, details:'Shelf bracket is cracked and may fall. Safety hazard.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','done','done'], resolvedNote:'Bracket replaced on Apr 7. Please check and confirm.', passGenerated:true, passSerial:'20260407583721', passIssued:'Maintenance Dept', passPurpose:'Maintenance Meeting Follow-up' },
   // Manager's pending approvals
   { id:'REQ-004', type:'leave', typeLabel:'Leave Request', from:'other_emp', fromName:'Fatima Al-Zahra (EMP-004)', to:'manager_then_hr', toLabel:'Manager → HR', title:'Sick Leave Apr 10', date:'Apr 9', status:'pending_manager', chainStep:1, urgent:false, details:'Feeling unwell, doctor visit required.', chain:['Submitted','Manager Approval','HR Approval','Decision'], chainStatus:['done','active','pending','pending'], forManager:'gf_mgr' },
   { id:'REQ-005', type:'incident', typeLabel:'Incident Report', from:'cashier_sup', fromName:'Sara Al-Amri (Cashier Sup)', to:'supervision', toLabel:'Top Level Supervision', title:'Cash discrepancy at Register #3 — Apr 9 10:15 AM', date:'Apr 9', status:'pending', chainStep:null, urgent:true, details:'Discrepancy of YER 5,200 found at register #3 during shift change. Customer dispute involved. Security footage requested.', chain:['Submitted','Under Review','Decision'], chainStatus:['done','active','pending'], forDept:'supervision' },
@@ -2302,7 +2328,7 @@ let requests = [
 
 // Office passes
 let passes = [
-  { serial:'AH-20260407-291', empName:'Ahmad Hassan', empDept:'Ground Floor', purpose:'Maintenance Meeting Follow-up', issuedBy:'Maintenance Dept', date:'Apr 7, 2026', valid:true, roleKey:'sales_staff' }
+  { serial:'20260407583721', empName:'Ahmad Hassan', empDept:'Ground Floor', purpose:'Maintenance Meeting Follow-up', issuedBy:'Maintenance Dept', date:'Apr 7, 2026', valid:true, roleKey:'sales_staff' }
 ];
 
 // Conversations
@@ -2473,15 +2499,16 @@ function login(roleKey) {
   const isManager = user.type === 'manager';
   const isDeptOfficer = user.type === 'dept_officer';
   const isSecurity = user.type === 'security';
+  const isSecuritySup = user.type === 'security_sup';
   const isEmployee = user.type === 'employee' || user.type === 'supervisor';
 
-  document.getElementById('secVerifyBlock').style.display = isSecurity ? 'block' : 'none';
-  document.getElementById('mgrHomeBlock').style.display = isManager ? 'block' : 'none';
+  document.getElementById('secVerifyBlock').style.display = (isSecurity || isSecuritySup) ? 'block' : 'none';
+  document.getElementById('mgrHomeBlock').style.display = (isManager || isSecuritySup) ? 'block' : 'none';
   document.getElementById('deptHomeBlock').style.display = isDeptOfficer ? 'block' : 'none';
-  document.getElementById('empStatsRow').style.display = isSecurity ? 'none' : 'flex';
+  document.getElementById('empStatsRow').style.display = (isSecurity || isSecuritySup) ? 'none' : 'flex';
   document.getElementById('newReqBtn').style.display = isSecurity ? 'none' : 'block';
   document.getElementById('myReqsSection').style.display = 'block';
-  document.getElementById('incomingReqsSection').style.display = (isManager || isDeptOfficer) ? 'block' : 'none';
+  document.getElementById('incomingReqsSection').style.display = (isManager || isDeptOfficer || isSecuritySup) ? 'block' : 'none';
   document.getElementById('broadcastBtn').style.display = (isManager || isDeptOfficer) ? 'block' : 'none';
 
   // Check for passes
@@ -2972,7 +2999,7 @@ function renderActivity() {
     { ico:'📋', ic:'b', title:t('Leave request submitted','تم تقديم طلب الإجازة'), sub:t('REQ-001 · Pending manager approval','REQ-001 · في انتظار موافقة المدير'), time:t('9:00 AM','9:00 ص') },
     { ico:'💬', ic:'o', title:t('Message from Manager','رسالة من المدير'), sub:t('Stock Aisle 3 before 9 AM','تخزين الممر 3 قبل 9 صباحاً'), time:t('8:05 AM','8:05 ص') },
     { ico:'💻', ic:'b', title:t('IT Support in progress','دعم تقني قيد التنفيذ'), sub:t('REQ-002 · Technician visiting today','REQ-002 · الفني يزور اليوم'), time:t('Yesterday','أمس') },
-    { ico:'🎫', ic:'gold', title:t('Office pass received','تم استلام تصريح المكتب'), sub:t('REQ-003 resolved · Pass AH-20260407-291','REQ-003 محلول · التصريح AH-20260407-291'), time:t('Apr 7','7 أبريل') },
+    { ico:'🎫', ic:'gold', title:t('Office pass received','تم استلام تصريح المكتب'), sub:t('REQ-003 resolved · Pass 20260407583721','REQ-003 محلول · التصريح 20260407583721'), time:t('Apr 7','7 أبريل') },
   ];
   feed.innerHTML = items.map(i => `
     <div class="ait">
@@ -3160,7 +3187,7 @@ function handleReq(id, action) {
     sendPush(getEmpFCMToken(req.fromEmpId || req.from), '❌ Request Rejected', req.title || req.typeLabel);
   } else if (action === 'call') {
     // Generate pass
-    const serial = generateSerial(req.fromName);
+    const serial = generateSerial();
     req.passGenerated = true; req.passSerial = serial;
     req.passIssued = user.dept; req.passPurpose = req.title;
     passes.push({ serial, empName:req.fromName, empDept:req.fromName, purpose:req.title, issuedBy:user.dept, date:'Apr 9, 2026', valid:true, roleKey:req.from });
@@ -3404,10 +3431,13 @@ function submitRequest() {
     forDept = rt.to;
   }
 
-  // Generate pass if dept officer is calling in
-  if (callToOffice) {
-    serial = generateSerial(user.name);
-    passes.push({ serial, empName:user.name, empDept:user.dept, purpose:title, issuedBy:user.dept, date:'Apr 9, 2026', valid:true, roleKey:role });
+  // Generate pass only if authorised role is calling in (GM, Account Manager, Secretary)
+  const isPassAuthorised = role === 'admin' || (user && (user.role === 'Account Manager' || user.role === 'Secretary' || user.role === 'General Manager'));
+  if (callToOffice && isPassAuthorised) {
+    serial = generateSerial();
+    passes.push({ serial, empName:user.name, empDept:user.dept, purpose:title, issuedBy:user.dept, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), valid:true, roleKey:role });
+  } else if (callToOffice && !isPassAuthorised) {
+    toast(t('⚠️ Only GM, Account Manager, or Secretary can issue passes.','⚠️ التصاريح تُصدر من المدير العام أو مدير الحسابات أو السكرتيرة فقط.'));
   }
 
   const newReq = { id:newId, type:selectedReqType, typeLabel:rt.label, typeLabelAr: AR_MAP[rt.label] || rt.label, from:role, fromName:lang==='ar'?user.nameAr:user.name, fromEmpId:user.id, to:rt.to, toLabel:rt.toLabel, title, date:'Today', status:reqStatus, chainStep:isLeave?1:null, details:document.getElementById('fDetails').value || title, chain, chainStatus, forManager, forDept, urgent:selectedReqType==='incident', passGenerated:!!serial, passSerial:serial, passIssued:serial?user.dept:null, passPurpose:serial?title:null };
@@ -3463,11 +3493,10 @@ function submitRequest() {
 }
 
 // ─── OFFICE PASS ──────────────────────────────────────────────────────────────
-function generateSerial(name) {
-  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+function generateSerial() {
   const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  const num = String(Math.floor(100 + Math.random() * 900));
-  return initials + '-' + date + '-' + num;
+  const num = String(Math.floor(100000 + Math.random() * 900000));
+  return date + num;
 }
 
 function showPass(serial, empName, empDept, purpose, issuedBy) {
@@ -3489,7 +3518,7 @@ function showPassList() {
 
 // ─── SECURITY VERIFY ──────────────────────────────────────────────────────────
 function verifyPass() {
-  const input = document.getElementById('secInput').value.trim().toUpperCase();
+  const input = document.getElementById('secInput').value.trim();
   const result = document.getElementById('secResult');
   const pass = passes.find(p => p.serial === input);
   if (!pass) {
@@ -3497,29 +3526,50 @@ function verifyPass() {
     result.innerHTML = `<div style="font-size:14px;font-weight:700;color:var(--red)">❌ ${t('Invalid Pass','تصريح غير صالح')}</div><div style="font-size:12px;color:var(--t2);margin-top:4px">${t('Serial number not found. Do not allow entry.','الرقم التسلسلي غير موجود. لا تسمح بالدخول.')}</div>`;
   } else if (!pass.valid) {
     result.className = 'sec-result invalid';
-    result.innerHTML = `<div style="font-size:14px;font-weight:700;color:var(--red)">⚠️ ${t('Pass Expired','التصريح منتهي')}</div><div style="font-size:12px;color:var(--t2);margin-top:4px">${t('This pass is no longer valid.','هذا التصريح لم يعد صالحاً.')}</div>`;
+    result.innerHTML = `<div style="font-size:14px;font-weight:700;color:var(--red)">⚠️ ${t('Pass Already Used','التصريح مستخدم مسبقاً')}</div><div style="font-size:12px;color:var(--t2);margin-top:4px">${t('This pass has already been used and is no longer valid.','تم استخدام هذا التصريح من قبل ولم يعد صالحاً.')}</div>`;
   } else {
+    // Mark pass as used/invalid immediately
+    pass.valid = false;
+    sb.from('passes').update({ valid: false }).eq('serial', input)
+      .then(({ error }) => { if (error) console.warn('Supabase verifyPass invalidate failed:', error); });
     result.className = 'sec-result valid';
     result.innerHTML = `
-      <div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">✅ ${t('VALID PASS — Allow Entry','تصريح صالح — اسمح بالدخول')}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--green);margin-bottom:8px">✅ ${t('VALID PASS — Entry Allowed','تصريح صالح — الدخول مسموح')}</div>
       <div style="display:flex;flex-direction:column;gap:4px">
         <div style="font-size:12px"><strong>${t('Employee:','الموظف:')}</strong> ${pass.empName}</div>
         <div style="font-size:12px"><strong>${t('Department:','القسم:')}</strong> ${pass.empDept}</div>
         <div style="font-size:12px"><strong>${t('Purpose:','الغرض:')}</strong> ${pass.purpose}</div>
         <div style="font-size:12px"><strong>${t('Issued by:','صادر من:')}</strong> ${pass.issuedBy}</div>
         <div style="font-size:12px"><strong>${t('Date:','التاريخ:')}</strong> ${pass.date}</div>
-      </div>`;
+      </div>
+      <div style="margin-top:10px;padding:6px 10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;font-size:11px;color:var(--red)">🔒 ${t('Pass has been marked as USED — one-time entry only.','تم تسجيل هذا التصريح كمستخدم — دخول مرة واحدة فقط.')}</div>`;
+    document.getElementById('secInput').value = '';
   }
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────────────────────
+// Track which chats have been read this session
+const chatReadState = { manager:true, hr:false, it:true };
+function markChatRead(id) {
+  chatReadState[id] = true;
+  renderChatList();
+  // Recount total unread and update header badge
+  const total = Object.values(chatReadState).filter(v => !v).length;
+  const badge = document.getElementById('msgBadge');
+  if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'flex' : 'none'; }
+  const sMsgs = document.getElementById('sMsgs');
+  if (sMsgs) sMsgs.textContent = total;
+  // Also update bottom nav badge
+  const nb = document.querySelector('#ni-msgs .nb');
+  if (nb) { nb.textContent = total; nb.style.display = total > 0 ? 'flex' : 'none'; }
+}
 function renderChatList() {
   const list = document.getElementById('chatList');
   if (!list) return;
   const chats = [
-    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread:0 },
-    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread:1 },
-    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread:0 },
+    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread: chatReadState.manager ? 0 : 1 },
+    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread: chatReadState.hr ? 0 : 1 },
+    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread: chatReadState.it ? 0 : 1 },
   ];
   list.innerHTML = chats.map(c => `
     <div class="chat-row" onclick="openChat('${c.id}')">
@@ -3539,6 +3589,9 @@ function openChat(id) {
   activeChat = id;
   const convo = CHATS[id];
   if (!convo) return;
+
+  // Mark as read
+  if (id in chatReadState) markChatRead(id);
 
   // Hide group-specific UI for regular chats
   const isGroupChat = id.startsWith('grp-');
@@ -3583,11 +3636,7 @@ function sendMsg() {
       body: txt
     }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
   }
-  const reps = [t("Got it, I'll look into it.","حسناً، سأتحقق من ذلك."), t("Understood, thank you.","مفهوم، شكراً."), t("On it!","حاضر!"), t("I'll get back to you shortly.","سأرد عليك قريباً.")];
-  if (activeChat !== 'mgmt') setTimeout(() => {
-    msgs.innerHTML += `<div class="bubble rx">${reps[Math.floor(Math.random()*reps.length)]}<span class="bt">Just now</span></div>`;
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 900 + Math.random() * 800);
+  // No auto-reply — messages are real conversations
 }
 
 // ─── MODALS ───────────────────────────────────────────────────────────────────
@@ -3674,7 +3723,16 @@ function switchAdminTab(tab) {
   document.getElementById('apane-' + tab).style.display = 'block';
   if (tab === 'employees') renderEmployees();
   if (tab === 'requests') { renderAdminRequests(); try { checkAndNotifyOverdue(true); } catch(e) {} }
-  if (tab === 'passes') renderAdminPasses();
+  if (tab === 'coins') { renderAdminCoins(); }
+  if (tab === 'passes') {
+    renderAdminPasses();
+    // Check pass-issuing permission: only GM (admin), Account Manager, Secretary
+    const canIssuePass = role === 'admin' || (user && (user.role === 'Account Manager' || user.role === 'Secretary' || user.role === 'General Manager'));
+    const btnW = document.getElementById('issuePassBtnWrapper');
+    const noPermMsg = document.getElementById('passNoPermMsg');
+    if (btnW) btnW.style.display = canIssuePass ? 'block' : 'none';
+    if (noPermMsg) noPermMsg.style.display = canIssuePass ? 'none' : 'block';
+  }
   if (tab === 'changes') {
     try { renderPendingChanges(); } catch(e) { console.warn('renderPendingChanges err', e); }
   }
@@ -4347,6 +4405,64 @@ function deleteReq(id) {
     .then(({ error }) => { if (error) console.warn('Supabase deleteReq failed:', error); });
 }
 
+// ─── ADMIN COINS ──────────────────────────────────────────────────────────────
+function renderAdminCoins() {
+  const list = document.getElementById('adminCoinsList');
+  if (!list) return;
+  const query = (document.getElementById('coinsSearch')?.value || '').toLowerCase();
+  const sorted = employees
+    .filter(e => e.active && (e.dept !== 'admin'))
+    .filter(e => !query || (e.firstName + ' ' + e.lastName + ' ' + e.id).toLowerCase().includes(query))
+    .sort((a,b) => (employeePoints[b.id]||0) - (employeePoints[a.id]||0));
+  if (sorted.length === 0) { list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">No employees found</div>`; return; }
+  list.innerHTML = sorted.map((e, i) => {
+    const coins = employeePoints[e.id] || 0;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    return `
+    <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+      <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,193,40,.12);border:1px solid rgba(255,193,40,.25);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">${medal || e.init}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.firstName} ${e.lastName}</div>
+        <div style="font-size:11px;color:var(--t2)">${e.deptLabel} · ${e.id}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:18px;font-weight:800;color:var(--gold)">${coins} <span style="font-size:13px">🪙</span></div>
+        <button onclick="openManageCoins('${e.id}','${e.firstName} ${e.lastName}')" style="margin-top:4px;padding:4px 10px;border-radius:8px;background:rgba(255,193,40,.1);border:1px solid rgba(255,193,40,.3);color:var(--gold);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit" data-en="Manage" data-ar="إدارة">Manage</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openManageCoins(empId, empName) {
+  document.getElementById('mcEmpId').value = empId;
+  document.getElementById('mcEmpName').textContent = empName;
+  document.getElementById('mcBalance').textContent = (employeePoints[empId] || 0) + ' 🪙';
+  document.getElementById('mcAction').value = 'add';
+  document.getElementById('mcAmount').value = '';
+  document.getElementById('mcAmountRow').style.display = 'block';
+  openModal('manageCoinsModal');
+}
+
+function applyCoinsAction() {
+  const empId = document.getElementById('mcEmpId').value;
+  const action = document.getElementById('mcAction').value;
+  const amount = parseInt(document.getElementById('mcAmount').value) || 0;
+  const current = employeePoints[empId] || 0;
+  let newVal = current;
+
+  if (action === 'add')    { if (!amount) { toast('⚠️ Enter amount'); return; } newVal = current + amount; }
+  if (action === 'remove') { if (!amount) { toast('⚠️ Enter amount'); return; } newVal = Math.max(0, current - amount); }
+  if (action === 'double') { newVal = current * 2; }
+  if (action === 'reset')  { newVal = 0; }
+
+  employeePoints[empId] = newVal;
+  closeModal('manageCoinsModal');
+  renderAdminCoins();
+  toast(`🪙 Updated: ${current} → ${newVal} coins`);
+  sb.from('employee_points').upsert({ emp_id: empId, total_points: newVal }, { onConflict: 'emp_id' })
+    .then(({ error }) => { if (error) console.warn('Supabase applyCoinsAction failed:', error); });
+}
+
 // ─── ADMIN PASSES ─────────────────────────────────────────────────────────────
 function renderAdminPasses() {
   const list = document.getElementById('adminPassList');
@@ -4394,7 +4510,7 @@ function adminIssuePass() {
   if (!purpose) { toast('⚠️ Please enter a purpose'); return; }
   const emp = employees.find(e => e.id === empId);
   if (!emp) return;
-  const serial = generateSerial(emp.firstName + ' ' + emp.lastName);
+  const serial = generateSerial();
   const passDate = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const newPass = { serial, empName:emp.firstName+' '+emp.lastName, empDept:emp.deptLabel, empId:emp.id, purpose, issuedBy, date:passDate, valid:true, roleKey:emp.id };
   passes.push(newPass);
@@ -6279,6 +6395,64 @@ function showCoinHistory() {
     });
 }
 
+// ─── ATTENDANCE HISTORY ───────────────────────────────────────────────────────
+function showAttendanceHistory() {
+  const clockIns = [
+    { day: t('Today','اليوم'),      ci:'08:02 AM', co:'04:00 PM', hrs:'7h 58m', status:'present' },
+    { day: t('Yesterday','أمس'),   ci:'07:58 AM', co:'04:05 PM', hrs:'8h 07m', status:'present' },
+    { day: t('Apr 9','9 أبريل'),   ci:'08:11 AM', co:'04:00 PM', hrs:'7h 49m', status:'present' },
+    { day: t('Apr 8','8 أبريل'),   ci:'08:00 AM', co:'04:00 PM', hrs:'8h 00m', status:'present' },
+    { day: t('Apr 7','7 أبريل'),   ci:'—', co:'—', hrs:'—', status:'leave' },
+    { day: t('Apr 6','6 أبريل'),   ci:'08:03 AM', co:'03:58 PM', hrs:'7h 55m', status:'present' },
+  ];
+  const rows = clockIns.map(d => {
+    const clr = d.status === 'present' ? 'var(--green)' : 'var(--orange)';
+    const icon = d.status === 'present' ? '✅' : '📅';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+      <div style="font-weight:600">${icon} ${d.day}</div>
+      <div style="text-align:right;font-size:11px;color:var(--t2)">${d.ci} → ${d.co}<br><span style="color:${clr};font-weight:700">${d.hrs}</span></div>
+    </div>`;
+  }).join('');
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.style.cssText = 'display:flex;z-index:9999';
+  modal.innerHTML = `<div class="modal"><div class="mhandle"></div><div class="mtitle">📊 ${t('Attendance History','سجل الحضور')}</div>${rows}<button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:10px">${t('Close','إغلاق')}</button></div>`;
+  document.body.appendChild(modal);
+}
+
+function showPerformanceReview() {
+  const myId = user ? (user.id || role) : role;
+  const coins = employeePoints[myId] || 0;
+  const myTasks = tasks ? tasks.filter(tk => tk.assigned_to === myId || tk.assigned_to === role) : [];
+  const done = myTasks.filter(tk => tk.status === 'confirmed').length;
+  const total = myTasks.length;
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  const rank = (() => { const s = Object.entries(employeePoints).sort((a,b)=>b[1]-a[1]); const i = s.findIndex(e=>e[0]===myId); return i >= 0 ? i+1 : '—'; })();
+  const rating = coins >= 50 ? '⭐⭐⭐⭐⭐' : coins >= 30 ? '⭐⭐⭐⭐' : coins >= 15 ? '⭐⭐⭐' : coins >= 5 ? '⭐⭐' : '⭐';
+  const html = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:36px;font-weight:800;color:var(--gold)">${coins} 🪙</div>
+      <div style="font-size:14px;color:var(--t2)">${t('Total Coins Earned','إجمالي العملات المكتسبة')}</div>
+      <div style="font-size:22px;margin-top:6px">${rating}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:rgba(255,193,40,.08);border:1px solid rgba(255,193,40,.2);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--gold)">#${rank}</div>
+        <div style="font-size:11px;color:var(--t2)">${t('Leaderboard Rank','ترتيب المتصدرين')}</div>
+      </div>
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--green)">${pct}%</div>
+        <div style="font-size:11px;color:var(--t2)">${t('Tasks Completed','المهام المنجزة')}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--t2)">${t('Tasks:','المهام:')} <strong>${done}/${total}</strong> ${t('completed','منجزة')}</div>`;
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.style.cssText = 'display:flex;z-index:9999';
+  modal.innerHTML = `<div class="modal"><div class="mhandle"></div><div class="mtitle">⭐ ${t('Performance Review','تقييم الأداء')}</div>${html}<button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:10px">${t('Close','إغلاق')}</button></div>`;
+  document.body.appendChild(modal);
+}
+
 // ─── AUTO-CREATE DEPT GROUPS ──────────────────────────────────────────────────
 function autoCreateDeptGroups() {
   const depts = [
@@ -6311,9 +6485,9 @@ renderChatList = function() {
 
   // Static DM chats
   const dmChats = [
-    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread:0 },
-    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread:1 },
-    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread:0 },
+    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread: chatReadState.manager ? 0 : 1 },
+    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread: chatReadState.hr ? 0 : 1 },
+    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread: chatReadState.it ? 0 : 1 },
   ];
 
   const dmHTML = dmChats.map(c => `
