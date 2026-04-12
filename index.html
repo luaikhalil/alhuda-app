@@ -2532,8 +2532,14 @@ function login(roleKey) {
   showTab('home');
   // Admin-specific post-login
   setTimeout(() => _postLoginAdmin(roleKey), 50);
-  // Request notification permission + save FCM token
-  setTimeout(() => initFCMToken(), 1500);
+  // Show notification enable banner if permission not yet granted
+  setTimeout(() => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { initFCMToken(); return; }
+    if (Notification.permission === 'denied') return;
+    // Show friendly banner to request permission
+    showNotifBanner();
+  }, 2000);
 }
 
 function logout() {
@@ -6099,6 +6105,33 @@ async function initFirebase() {
     _fbApp = firebase.initializeApp(FB_CONFIG);
     _fbMsg  = firebase.messaging(_fbApp);
   } catch(e) { console.warn('Firebase init:', e); }
+}
+
+function showNotifBanner() {
+  if (document.getElementById('notifBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'notifBanner';
+  banner.style.cssText = 'position:fixed;bottom:85px;left:12px;right:12px;z-index:9999;background:linear-gradient(135deg,rgba(20,16,40,.97),rgba(13,11,26,.97));border:1px solid rgba(255,193,40,.35);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.5);backdrop-filter:blur(20px);animation:slideUp .3s ease';
+  banner.innerHTML = `
+    <div style="font-size:24px">🔔</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px">${t('Enable Notifications','تفعيل الإشعارات')}</div>
+      <div style="font-size:11px;color:var(--t2)">${t('Get notified about tasks and updates','احصل على إشعارات المهام والتحديثات')}</div>
+    </div>
+    <button onclick="enableNotifs()" style="padding:8px 14px;border-radius:20px;background:linear-gradient(135deg,#ffc128,#cc8800);border:none;color:#000;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">${t('Enable','تفعيل')}</button>
+    <div onclick="document.getElementById('notifBanner').remove()" style="font-size:18px;color:var(--t3);cursor:pointer;padding:4px">×</div>`;
+  document.body.appendChild(banner);
+}
+
+async function enableNotifs() {
+  const banner = document.getElementById('notifBanner');
+  if (banner) banner.remove();
+  await initFCMToken();
+  if (Notification.permission === 'granted') {
+    toast('🔔 ' + t('Notifications enabled!','تم تفعيل الإشعارات!'));
+  } else {
+    toast('⚠️ ' + t('Notifications blocked. Please allow in browser settings.','الإشعارات محظورة. يرجى السماح في إعدادات المتصفح.'));
+  }
 }
 
 // Called after login — asks permission and saves device token to Supabase
