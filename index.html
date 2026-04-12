@@ -2243,21 +2243,27 @@ async function loadSupabaseData(isAdmin) {
       }));
     }
 
-    if (isAdmin) {
-      const empRes = await sb.from('employees').select('*').order('id');
+    // Load employees for everyone — admins get full data, others get basic info only
+    {
+      const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label';
+      const empRes = await sb.from('employees').select(empFields).eq('active', true).order('id');
       if (empRes.data && empRes.data.length > 0) {
         employees = empRes.data.map(e => ({
           id: e.id, firstName: e.first_name, lastName: e.last_name,
           dept: e.dept, dept_key: e.dept_key || e.dept, deptLabel: e.dept_label,
           role: e.role, emp_type: e.emp_type,
-          supervisor_id: e.supervisor_id, report_to: e.report_to,
+          supervisor_id: e.supervisor_id || null, report_to: e.report_to || null,
           location: e.location, locationLabel: e.location_label,
-          phone: e.phone, salary: e.salary, password: e.password,
-          startDate: e.start_date, active: e.active, init: e.init,
+          phone: e.phone || null, salary: isAdmin ? e.salary : null,
+          password: isAdmin ? e.password : null,
+          startDate: e.start_date || null, active: e.active, init: e.init,
           fcm_token: e.fcm_token || null,
           defaultShift: e.default_shift || null
         }));
       }
+    }
+
+    if (isAdmin) {
 
       // Load delegated permissions
       const dpRes = await sb.from('settings').select('value').eq('key', 'delegated_permissions').maybeSingle();
