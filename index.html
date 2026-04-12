@@ -1104,6 +1104,21 @@ body::before {
         <span style="color:var(--t3)">›</span>
       </div>
       <div style="height:6px"></div>
+
+      <!-- Notification Settings -->
+      <div class="stitle" data-en="SETTINGS" data-ar="الإعدادات">SETTINGS</div>
+      <div class="menu-row" style="cursor:default">
+        <div class="menu-ico" style="background:rgba(255,193,40,.1)">🔔</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500" data-en="Push Notifications" data-ar="الإشعارات الفورية">Push Notifications</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px" id="notifStatusLabel" data-en="Receive task and update alerts" data-ar="استقبال تنبيهات المهام والتحديثات">Receive task and update alerts</div>
+        </div>
+        <div id="notifToggle" onclick="togglePushNotifications()" style="width:46px;height:26px;border-radius:13px;background:#2a2040;border:1px solid rgba(255,255,255,.1);cursor:pointer;position:relative;transition:.3s;flex-shrink:0">
+          <div id="notifToggleThumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#555;transition:.3s"></div>
+        </div>
+      </div>
+
+      <div style="height:6px"></div>
       <div class="menu-row" onclick="logout()" style="border-color:rgba(239,68,68,.18)">
         <div class="menu-ico" style="background:rgba(239,68,68,.1)">🚪</div>
         <div style="flex:1;font-size:13px;font-weight:500;color:var(--red)" data-en="Sign Out" data-ar="تسجيل الخروج">Sign Out</div>
@@ -5940,6 +5955,7 @@ showTab = function(id) {
   _origShowTab(id);
   if (id === 'tasks') renderTasks();
   if (id === 'schedule') { try { renderWeeklySchedule(); renderSpecialScheduleNotice(); } catch(e) {} }
+  if (id === 'profile') { setTimeout(updateNotifToggleUI, 100); }
 };
 
 // openAdmin rendering is consolidated in the final patch below
@@ -6127,10 +6143,62 @@ async function enableNotifs() {
   const banner = document.getElementById('notifBanner');
   if (banner) banner.remove();
   await initFCMToken();
+  updateNotifToggleUI();
   if (Notification.permission === 'granted') {
     toast('🔔 ' + t('Notifications enabled!','تم تفعيل الإشعارات!'));
   } else {
     toast('⚠️ ' + t('Notifications blocked. Please allow in browser settings.','الإشعارات محظورة. يرجى السماح في إعدادات المتصفح.'));
+  }
+}
+
+async function togglePushNotifications() {
+  if (!('Notification' in window)) {
+    toast('⚠️ ' + t('Notifications not supported on this device','الإشعارات غير مدعومة على هذا الجهاز'));
+    return;
+  }
+  const current = Notification.permission;
+  if (current === 'denied') {
+    toast('⚠️ ' + t('Notifications blocked. Go to browser settings to allow.','الإشعارات محظورة. افتح إعدادات المتصفح للسماح.'));
+    return;
+  }
+  if (current === 'granted' && user?.fcmToken) {
+    // Turn OFF — remove token from Supabase
+    await sb.from('employees').update({ fcm_token: null }).eq('id', user.id);
+    user.fcmToken = null;
+    const emp = employees.find(e => e.id === user.id);
+    if (emp) emp.fcm_token = null;
+    toast('🔕 ' + t('Notifications disabled','تم إيقاف الإشعارات'));
+    updateNotifToggleUI();
+    return;
+  }
+  // Turn ON
+  await initFCMToken();
+  updateNotifToggleUI();
+  if (Notification.permission === 'granted') {
+    toast('🔔 ' + t('Notifications enabled!','تم تفعيل الإشعارات!'));
+  } else {
+    toast('⚠️ ' + t('Please allow notifications when prompted','يرجى السماح بالإشعارات عند الطلب'));
+  }
+}
+
+function updateNotifToggleUI() {
+  const toggle = document.getElementById('notifToggle');
+  const thumb = document.getElementById('notifToggleThumb');
+  const label = document.getElementById('notifStatusLabel');
+  if (!toggle || !thumb) return;
+  const isOn = Notification.permission === 'granted' && !!(user?.fcmToken);
+  toggle.style.background = isOn ? 'linear-gradient(135deg,#ffc128,#cc8800)' : '#2a2040';
+  toggle.style.borderColor = isOn ? 'rgba(255,193,40,.4)' : 'rgba(255,255,255,.1)';
+  thumb.style.left = isOn ? '25px' : '3px';
+  thumb.style.background = isOn ? '#000' : '#555';
+  if (label) {
+    if (Notification.permission === 'denied') {
+      label.textContent = t('Blocked — change in browser settings','محظور — غيّر في إعدادات المتصفح');
+      label.style.color = 'var(--red)';
+    } else {
+      label.textContent = isOn ? t('Enabled — you will receive alerts','مفعّل — ستتلقى التنبيهات') : t('Tap to enable push notifications','اضغط لتفعيل الإشعارات الفورية');
+      label.style.color = isOn ? 'var(--green)' : 'var(--t3)';
+    }
   }
 }
 
