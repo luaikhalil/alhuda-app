@@ -805,10 +805,19 @@ body::before {
     </div>
     <div class="hdr-right">
       <div class="lang-pill" id="langPill" onclick="toggleLang()">EN</div>
+      <div class="icon-btn" id="bellBtn" onclick="toggleNotifPanel()" style="position:relative">🔔<div class="nbadge" id="bellBadge" style="display:none">0</div></div>
       <div class="icon-btn" onclick="showTab('msgs')">💬<div class="nbadge" id="msgBadge">2</div></div>
       <div class="icon-btn" onclick="showPassList()">🎫<div class="nbadge" id="passBadge" style="display:none">1</div></div>
       <div class="icon-btn" id="adminBtn" style="display:none;background:rgba(255,193,40,.1);border-color:rgba(255,193,40,.3)" onclick="openAdmin()">⚙️</div>
     </div>
+  <!-- Notification Panel -->
+  <div id="notifPanel" style="display:none;position:fixed;top:64px;right:10px;width:300px;max-height:420px;overflow-y:auto;background:rgba(13,11,26,.97);border:1px solid rgba(255,193,40,.25);border-radius:16px;z-index:999;box-shadow:0 8px 40px rgba(0,0,0,.6);backdrop-filter:blur(20px)">
+    <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:700" id="notifTitle">🔔 Notifications</span>
+      <span style="font-size:11px;color:var(--t3);cursor:pointer" onclick="clearAllNotifs()">Clear all</span>
+    </div>
+    <div id="notifList" style="padding:8px"></div>
+  </div>
   </div>
 
   <!-- CONTENT -->
@@ -5518,6 +5527,105 @@ function saveReqTypeLabels() {
 // ══════════════════════════════════════════════════════════════════════════
 let tasks = [];
 let employeePoints = {};   // { empId: totalPoints }
+let notifDismissed = JSON.parse(localStorage.getItem('notifDismissed') || '[]');
+
+function updateBellBadge() {
+  if (!user) return;
+  const isManager = user.type === 'manager' || user.type === 'admin';
+  let count = 0;
+  if (!isManager) {
+    // For employees: count pending tasks assigned to them
+    const myPending = tasks.filter(tk => tk.assigned_to === (user.id || role) && (tk.status === 'pending' || tk.status === 'in_progress') && !notifDismissed.includes(tk.id));
+    count += myPending.length;
+  } else {
+    // For managers: count tasks submitted for review
+    const pendingReview = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifDismissed.includes(tk.id));
+    count += pendingReview.length;
+  }
+  const badge = document.getElementById('bellBadge');
+  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  if (isOpen) { panel.style.display = 'none'; return; }
+  renderNotifPanel();
+  panel.style.display = 'block';
+  // Close on outside click
+  setTimeout(() => { document.addEventListener('click', closeNotifOnOutside); }, 100);
+}
+
+function closeNotifOnOutside(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('bellBtn');
+  if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display = 'none';
+    document.removeEventListener('click', closeNotifOnOutside);
+  }
+}
+
+function renderNotifPanel() {
+  if (!user) return;
+  const isManager = user.type === 'manager' || user.type === 'admin';
+  const list = document.getElementById('notifList');
+  const title = document.getElementById('notifTitle');
+  title.textContent = '🔔 ' + t('Notifications', 'الإشعارات');
+  let items = [];
+  if (!isManager) {
+    const myTasks = tasks.filter(tk => tk.assigned_to === (user.id || role) && !notifDismissed.includes(tk.id));
+    myTasks.forEach(tk => {
+      const icon = tk.status === 'pending' ? '📋' : tk.status === 'in_progress' ? '▶' : '✅';
+      const statusLabel = tk.status === 'pending' ? t('New task assigned','مهمة جديدة مُسندة') : tk.status === 'in_progress' ? t('Task in progress','مهمة قيد التنفيذ') : t('Task completed','مهمة مكتملة');
+      items.push({ id: tk.id, icon, title: tk.title, sub: statusLabel, action: () => { showTab('tasks'); closeNotifPanel(); } });
+    });
+  } else {
+    const review = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifDismissed.includes(tk.id));
+    review.forEach(tk => {
+      items.push({ id: tk.id, icon: '📤', title: tk.title, sub: t('Submitted for review by','أُرسلت للمراجعة من') + ' ' + tk.assigned_to_name, action: () => { showTab('tasks'); closeNotifPanel(); } });
+    });
+  }
+  if (!items.length) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px">${t('No new notifications','لا توجد إشعارات جديدة')}</div>`;
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;transition:.15s" onmouseover="this.style.background='rgba(255,193,40,.06)'" onmouseout="this.style.background=''" onclick="(${item.action.toString()})()">
+      <div style="font-size:20px;margin-top:2px">${item.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title}</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:2px">${item.sub}</div>
+      </div>
+      <div style="font-size:16px;color:var(--t3);padding:2px 4px" onclick="event.stopPropagation();dismissNotif('${item.id}')">×</div>
+    </div>`).join('');
+}
+
+function closeNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (panel) panel.style.display = 'none';
+  document.removeEventListener('click', closeNotifOnOutside);
+}
+
+function dismissNotif(id) {
+  if (!notifDismissed.includes(id)) notifDismissed.push(id);
+  localStorage.setItem('notifDismissed', JSON.stringify(notifDismissed));
+  renderNotifPanel();
+  updateBellBadge();
+}
+
+function clearAllNotifs() {
+  if (!user) return;
+  const isManager = user.type === 'manager' || user.type === 'admin';
+  if (!isManager) {
+    tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifDismissed.includes(tk.id)) notifDismissed.push(tk.id); });
+  } else {
+    tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review').forEach(tk => { if (!notifDismissed.includes(tk.id)) notifDismissed.push(tk.id); });
+  }
+  localStorage.setItem('notifDismissed', JSON.stringify(notifDismissed));
+  renderNotifPanel();
+  updateBellBadge();
+}
 let selectedTaskPoints = 5;
 
 function setTaskPoints(pts, el) {
@@ -5539,6 +5647,7 @@ function renderTasks() {
   document.getElementById('createTaskBtn').style.display = isManager ? 'block' : 'none';
   document.getElementById('myTasksSection').style.display = isManager ? 'none' : 'block';
   document.getElementById('mgrTasksSection').style.display = isManager ? 'block' : 'none';
+  updateBellBadge();
 
   if (isManager) {
     renderMgrTasks();
