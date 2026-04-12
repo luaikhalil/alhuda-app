@@ -5680,7 +5680,8 @@ function renderMyTasks() {
   if (ptEl) ptEl.textContent = coins;
 
   if (!myTasks.length) {
-    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">${t('No tasks assigned to you yet','لا توجد مهام مُسندة إليك بعد')}</div>`;
+    const debugId = user.id || role;
+    list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">${t('No tasks assigned to you yet','لا توجد مهام مُسندة إليك بعد')}<br><span style="font-size:10px;opacity:.5">ID: ${debugId} · Tasks in memory: ${tasks.length}</span></div>`;
     const badge = document.getElementById('taskBadge');
     if (badge) { badge.textContent = ''; badge.style.display = 'none'; }
     return;
@@ -5868,7 +5869,8 @@ async function saveTask() {
   closeModal('taskModal');
   renderTasks();
   toast('✅ ' + t('Task assigned to ','مهمة أُسندت إلى ') + (emp ? emp.firstName : assignTo));
-  await sb.from('tasks').insert(task).then(({ error }) => { if (error) console.warn('Task insert failed:', error); });
+  const { error: taskErr } = await sb.from('tasks').insert(task);
+  if (taskErr) { toast('⚠️ Save failed: ' + taskErr.message); console.error('Task insert failed:', taskErr); }
 }
 
 async function updateTaskStatus(taskId, newStatus) {
