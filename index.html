@@ -713,6 +713,194 @@ body::before {
 .login-card { background: rgba(14,12,26,.88); border: 1px solid rgba(255,193,40,.25); box-shadow: 0 8px 48px rgba(0,0,0,.5), 0 0 0 1px rgba(255,193,40,.08); backdrop-filter: blur(20px); }
 .demo-btn { background: rgba(14,12,26,.8); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; backdrop-filter: blur(4px); }
 .demo-btn:hover { background: rgba(40,30,0,.85); border-color: rgba(255,193,40,.45); }
+
+/* ════════ HEADER AVATAR ════════ */
+.hdr-av {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,193,40,.35), rgba(139,92,246,.3));
+  border: 2px solid rgba(255,193,40,.55);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #ffd060;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(255,193,40,.25);
+  overflow: hidden;
+}
+.hdr-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* ════════ HERO GREETING CARD ════════ */
+.hero-card {
+  position: relative; overflow: hidden;
+  border-radius: 22px; padding: 20px 18px 16px;
+  margin-bottom: 14px;
+  background: linear-gradient(160deg, rgba(30,22,0,.95) 0%, rgba(15,8,30,.9) 60%, rgba(5,20,15,.9) 100%);
+  border: 1px solid rgba(255,193,40,.35);
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 30px rgba(255,193,40,.08), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.hero-mountain {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 70px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,18,12,.7) 60%, rgba(0,12,8,.9) 100%);
+  z-index: 0;
+}
+.hero-mountain::before {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 55px;
+  background: linear-gradient(to top, rgba(16,185,129,.08) 0%, transparent 100%);
+  clip-path: polygon(0 100%, 8% 40%, 18% 65%, 30% 20%, 42% 55%, 55% 15%, 65% 50%, 78% 25%, 88% 55%, 100% 30%, 100% 100%);
+}
+.hero-mountain::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  background: linear-gradient(to top, rgba(255,193,40,.06) 0%, transparent 100%);
+  clip-path: polygon(0 100%, 12% 50%, 25% 75%, 40% 30%, 52% 65%, 63% 20%, 75% 60%, 85% 35%, 100% 55%, 100% 100%);
+}
+.hero-glow {
+  position: absolute; top: -40px; right: -40px;
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,193,40,.12) 0%, transparent 70%);
+  z-index: 0;
+}
+.hero-glow2 {
+  position: absolute; bottom: -30px; left: -30px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(16,185,129,.09) 0%, transparent 70%);
+  z-index: 0;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.hero-greeting { font-size: 11px; color: rgba(255,193,40,.7); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.hero-name { font-size: 21px; font-weight: 800; color: #fff8e8; margin-top: 2px; text-shadow: 0 0 20px rgba(255,193,40,.25); line-height: 1.2; }
+.hero-role { font-size: 11px; color: rgba(255,193,40,.6); margin-top: 3px; }
+.hero-time-badge {
+  background: rgba(14,12,26,.8); border: 1px solid rgba(255,193,40,.3);
+  border-radius: 12px; padding: 6px 12px; text-align: center;
+  backdrop-filter: blur(8px); flex-shrink: 0;
+}
+.hero-time-val { font-size: 18px; font-weight: 800; color: #ffd060; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.hero-time-lbl { font-size: 9px; color: rgba(255,193,40,.5); margin-top: 1px; text-transform: uppercase; letter-spacing: .05em; }
+.hero-date { font-size: 11px; color: rgba(255,255,255,.3); margin-bottom: 14px; }
+.hero-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white; font-size: 13px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 4px 16px rgba(16,185,129,.35), 0 0 24px rgba(16,185,129,.2);
+}
+.hero-btn.clocked-in {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 16px rgba(239,68,68,.35), 0 0 24px rgba(239,68,68,.2);
+}
+.hero-btn:active { opacity: .85; transform: scale(.97); }
+.hero-sub { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 6px; }
+
+/* ════════ PROFILE REDESIGN ════════ */
+.prof-hero {
+  border-radius: 22px; padding: 24px 18px 20px;
+  margin-bottom: 14px;
+  background: linear-gradient(160deg, rgba(50,38,0,.9), rgba(20,10,40,.85));
+  border: 1px solid rgba(255,193,40,.3);
+  box-shadow: 0 0 40px rgba(255,193,40,.1);
+  text-align: center; position: relative; overflow: hidden;
+}
+.prof-hero::before {
+  content: ''; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,193,40,.07) 0%, transparent 70%);
+}
+.prof-circle-wrap {
+  display: inline-flex; position: relative; margin-bottom: 12px;
+}
+.prof-circle {
+  width: 82px; height: 82px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(60,46,0,.9), rgba(30,16,60,.9));
+  border: 3px solid rgba(255,193,40,.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; color: #ffd060;
+  box-shadow: 0 0 30px rgba(255,193,40,.3), 0 0 60px rgba(255,193,40,.1);
+  overflow: hidden; flex-shrink: 0;
+}
+.prof-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.prof-online-dot {
+  position: absolute; bottom: 4px; right: 4px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #10b981; border: 2px solid var(--bg);
+  box-shadow: 0 0 8px rgba(16,185,129,.6);
+}
+.prof-hero-name { font-size: 18px; font-weight: 800; color: #fff8e8; }
+.prof-hero-role { font-size: 12px; color: rgba(255,193,40,.7); margin-top: 3px; }
+.prof-hero-id { font-size: 10px; color: rgba(255,255,255,.3); margin-top: 4px; }
+
+/* Worked time display */
+.worked-card {
+  background: linear-gradient(135deg, rgba(0,28,20,.9), rgba(0,18,12,.85));
+  border: 1px solid rgba(16,185,129,.4);
+  border-radius: 18px; padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 30px rgba(16,185,129,.1), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.worked-lbl { font-size: 10px; color: rgba(16,185,129,.6); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; margin-bottom: 4px; }
+.worked-time { font-size: 40px; font-weight: 800; color: #10b981; letter-spacing: -1px; font-variant-numeric: tabular-nums; text-shadow: 0 0 20px rgba(16,185,129,.6), 0 0 40px rgba(16,185,129,.3); line-height: 1; }
+.worked-sub { font-size: 11px; color: rgba(16,185,129,.5); margin-top: 4px; }
+
+/* Slide-to-confirm clock out */
+.slide-wrap {
+  position: relative; height: 52px; border-radius: 26px;
+  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35);
+  margin: 14px 0; overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.3);
+}
+.slide-track {
+  position: absolute; inset: 0;
+  display: flex; align-items: center;
+  padding: 0 20px 0 62px;
+  font-size: 13px; font-weight: 700; color: rgba(239,68,68,.6);
+  letter-spacing: .03em; pointer-events: none; user-select: none;
+}
+.slide-handle {
+  position: absolute; top: 4px; left: 4px;
+  width: 44px; height: 44px; border-radius: 22px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: grab; z-index: 2;
+  box-shadow: 0 4px 16px rgba(239,68,68,.5);
+  transition: transform .1s;
+  touch-action: none;
+}
+.slide-handle:active { cursor: grabbing; }
+.slide-bg-fill {
+  position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+  background: rgba(239,68,68,.15); transition: width .05s;
+  border-radius: 26px 0 0 26px;
+}
+
+/* Weekly bar chart */
+.week-chart { display: flex; align-items: flex-end; gap: 6px; height: 70px; padding: 4px 0 0; margin-bottom: 6px; }
+.week-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.week-bar {
+  width: 100%; border-radius: 4px 4px 0 0;
+  background: rgba(255,193,40,.3); border: 1px solid rgba(255,193,40,.15);
+  transition: height .4s ease, background .2s;
+  min-height: 4px;
+}
+.week-bar.today { background: linear-gradient(180deg, #ffc128, #cc7700); border-color: rgba(255,193,40,.6); box-shadow: 0 0 12px rgba(255,193,40,.3); }
+.week-bar-lbl { font-size: 9px; color: var(--t3); font-weight: 600; }
+.week-bar-val { font-size: 8px; color: var(--t2); }
+
+/* Leave cards with emoji */
+.leave-card {
+  flex: 1; border-radius: 14px; padding: 12px 8px; text-align: center;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(14,12,26,.8); backdrop-filter: blur(6px);
+}
+.leave-card.annual { border-color: rgba(255,193,40,.4); background: rgba(40,30,0,.7); box-shadow: 0 0 16px rgba(255,193,40,.1); }
+.leave-card.sick { border-color: rgba(239,68,68,.4); background: rgba(30,6,6,.7); box-shadow: 0 0 16px rgba(239,68,68,.1); }
+.leave-card.emergency { border-color: rgba(139,92,246,.4); background: rgba(20,10,40,.7); box-shadow: 0 0 16px rgba(139,92,246,.1); }
+.leave-emoji { font-size: 22px; margin-bottom: 4px; }
+.leave-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.leave-card.annual .leave-val { color: #ffc128; text-shadow: 0 0 10px rgba(255,193,40,.5); }
+.leave-card.sick .leave-val { color: #ef4444; text-shadow: 0 0 10px rgba(239,68,68,.5); }
+.leave-card.emergency .leave-val { color: #a78bfa; text-shadow: 0 0 10px rgba(139,92,246,.5); }
+.leave-lbl { font-size: 10px; color: var(--t2); margin-top: 3px; font-weight: 600; }
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -797,7 +985,7 @@ body::before {
   <!-- HEADER -->
   <div class="hdr">
     <div class="hdr-left">
-      <div class="hdr-icon">🏪</div>
+      <div class="hdr-av" id="hdrAv">AH</div>
       <div>
         <div class="hdr-name" id="hdrName">Ahmad Hassan</div>
         <div class="hdr-role" id="hdrRole">Sales Staff</div>
@@ -826,11 +1014,32 @@ body::before {
     <!-- ─── HOME ─── -->
     <div class="tab active" id="tab-home">
 
-      <div class="greet">
-        <div class="greet-name" id="greetName">Good morning, Ahmad 👋</div>
-        <div class="greet-role" id="greetRole">Sales Staff</div>
-        <div class="greet-dept" id="greetDept">Ground Floor · Grocery Section</div>
-        <div class="greet-date" id="greetDate">Wednesday, April 9, 2026</div>
+      <!-- HERO CARD -->
+      <div class="hero-card">
+        <div class="hero-mountain"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-glow2"></div>
+        <div class="hero-content">
+          <div class="hero-top">
+            <div>
+              <div class="hero-greeting" id="greetName">Good morning 👋</div>
+              <div class="hero-name" id="greetRole">Ahmad Hassan</div>
+              <div class="hero-role" id="greetDept">Ground Floor · Sales Staff</div>
+            </div>
+            <div class="hero-time-badge">
+              <div class="hero-time-val" id="heroTime">--:--</div>
+              <div class="hero-time-lbl" data-en="Live Time" data-ar="الوقت">Live Time</div>
+            </div>
+          </div>
+          <div class="hero-date" id="greetDate">Wednesday, April 9, 2026</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="hero-btn" id="heroClockBtn" onclick="toggleClock()">
+              <span id="heroClockIcon">🟢</span>
+              <span id="heroClockLabel" data-en="Start Shift" data-ar="بدء الوردية">Start Shift</span>
+            </button>
+            <div style="font-size:11px;color:rgba(255,255,255,.3)" id="heroClockSub"></div>
+          </div>
+        </div>
       </div>
 
       <!-- SECURITY SPECIAL VIEW -->
@@ -1012,29 +1221,72 @@ body::before {
 
     <!-- ─── PROFILE TAB ─── -->
     <div class="tab" id="tab-profile">
-      <div class="prof-hdr">
-        <div class="prof-av" id="profAv">AH</div>
-        <div style="flex:1">
-          <div style="font-size:16px;font-weight:700" id="profName">Ahmad Hassan</div>
-          <div style="font-size:11px;color:var(--blue);margin-top:2px" id="profDept">Ground Floor · Sales Staff</div>
-          <div style="font-size:10px;color:var(--t3);margin-top:1px" id="profId">EMP-001 · Since Jan 2023</div>
+
+      <!-- Profile Hero Card -->
+      <div class="prof-hero">
+        <div class="prof-circle-wrap">
+          <div class="prof-circle" id="profAv">AH</div>
+          <div class="prof-online-dot" id="profOnlineDot"></div>
         </div>
-        <button onclick="logout()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer" data-en="🚪 Sign Out" data-ar="🚪 خروج">🚪 Sign Out</button>
+        <div class="prof-hero-name" id="profName">Ahmad Hassan</div>
+        <div class="prof-hero-role" id="profDept">Ground Floor · Sales Staff</div>
+        <div class="prof-hero-id" id="profId">EMP-001 · Since Jan 2023</div>
+        <button onclick="logout()" style="margin-top:14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:20px;padding:6px 18px;font-size:12px;font-weight:600;cursor:pointer" data-en="🚪 Sign Out" data-ar="🚪 خروج">🚪 Sign Out</button>
       </div>
 
-      <!-- Clock-in (moved from Schedule) -->
-      <div class="clock-card" style="margin-bottom:14px">
-        <div class="clock-time" id="liveClock">--:--:--</div>
-        <div class="clock-date" id="liveDate">Loading...</div>
-        <button class="clock-btn out" id="clockBtn" onclick="toggleClock()" data-en="Clock Out" data-ar="تسجيل الخروج">Clock Out</button>
-        <div style="margin-top:8px;font-size:11px;color:var(--t2)" id="clockInfo" data-en="Clocked in at 08:02 AM" data-ar="تسجيل الدخول الساعة 08:02">Clocked in at 08:02 AM</div>
+      <!-- Today Worked / Clock Card -->
+      <div class="worked-card">
+        <div class="worked-lbl" data-en="TODAY WORKED" data-ar="ساعات عمل اليوم">TODAY WORKED</div>
+        <div class="worked-time" id="workedTime">00:00:00</div>
+        <div class="worked-sub" id="clockInfo" data-en="Clocked in at 08:02 AM" data-ar="تسجيل الدخول الساعة 08:02">Clocked in at 08:02 AM</div>
+        <!-- Live Clock hidden display (used by startClock) -->
+        <div style="display:none">
+          <div id="liveClock">--:--:--</div>
+          <div id="liveDate">Loading...</div>
+        </div>
+        <!-- Slide-to-confirm clock out -->
+        <div id="slideClockOut" style="display:none">
+          <div class="slide-wrap" id="slideWrap">
+            <div class="slide-bg-fill" id="slideFill"></div>
+            <div class="slide-handle" id="slideHandle">🔴</div>
+            <div class="slide-track" data-en="← Slide to Clock Out" data-ar="← اسحب للخروج">← Slide to Clock Out</div>
+          </div>
+        </div>
+        <button class="clock-btn in" id="clockBtn" onclick="toggleClock()" style="margin-top:12px;width:100%;padding:11px;border-radius:12px;border:none;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer" data-en="🟢 Start Shift" data-ar="🟢 بدء الوردية">🟢 Start Shift</button>
+      </div>
+
+      <!-- Weekly Hours Chart -->
+      <div class="stitle" data-en="THIS WEEK" data-ar="هذا الأسبوع">THIS WEEK</div>
+      <div class="card" style="padding:14px">
+        <div class="week-chart" id="weekChart">
+          <div class="week-bar-wrap"><div class="week-bar" style="height:60%"></div><div class="week-bar-lbl">Mon</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:75%"></div><div class="week-bar-lbl">Tue</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:55%"></div><div class="week-bar-lbl">Wed</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:80%"></div><div class="week-bar-lbl">Thu</div></div>
+          <div class="week-bar-wrap"><div class="week-bar today" style="height:45%"></div><div class="week-bar-lbl" style="color:var(--blue)">Today</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%"></div><div class="week-bar-lbl">Sat</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%"></div><div class="week-bar-lbl">Sun</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--t3);text-align:center" data-en="Weekly attendance — hours worked per day" data-ar="الحضور الأسبوعي — ساعات العمل يومياً">Weekly attendance — hours worked per day</div>
       </div>
 
       <div class="stitle" data-en="LEAVE BALANCE" data-ar="رصيد الإجازات">LEAVE BALANCE</div>
-      <div class="srow" style="margin-bottom:14px">
-        <div class="schip b"><div class="sv">14</div><div class="sl" data-en="Annual" data-ar="سنوية">Annual</div></div>
-        <div class="schip g"><div class="sv">6</div><div class="sl" data-en="Sick" data-ar="مرضية">Sick</div></div>
-        <div class="schip o"><div class="sv">2</div><div class="sl" data-en="Emergency" data-ar="طارئة">Emergency</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div class="leave-card annual">
+          <div class="leave-emoji">🌴</div>
+          <div class="leave-val" id="leaveAnnual">14</div>
+          <div class="leave-lbl" data-en="Annual" data-ar="سنوية">Annual</div>
+        </div>
+        <div class="leave-card sick">
+          <div class="leave-emoji">🏥</div>
+          <div class="leave-val" id="leaveSick">6</div>
+          <div class="leave-lbl" data-en="Sick" data-ar="مرضية">Sick</div>
+        </div>
+        <div class="leave-card emergency">
+          <div class="leave-emoji">🚨</div>
+          <div class="leave-val" id="leaveEmergency">2</div>
+          <div class="leave-lbl" data-en="Emergency" data-ar="طارئة">Emergency</div>
+        </div>
       </div>
 
       <!-- Coins & Performance -->
@@ -2495,16 +2747,36 @@ function refreshDynamic() {
   const now = new Date();
   const h = now.getHours();
   const greeting = h < 12 ? t('Good morning', 'صباح الخير') : h < 17 ? t('Good afternoon', 'مساء الخير') : t('Good evening', 'مساء الخير');
+  // Hero card elements (repurposed greetName/greetRole/greetDept)
   const gn = document.getElementById('greetName');
-  if (gn) gn.textContent = greeting + ', ' + (lang === 'ar' ? user.nameAr : user.name) + ' 👋';
+  if (gn) gn.textContent = greeting + ' 👋';
   const gr = document.getElementById('greetRole');
-  if (gr) gr.textContent = lang === 'ar' ? user.roleAr : user.role;
+  if (gr) gr.textContent = lang === 'ar' ? user.nameAr : user.name;
   const gd = document.getElementById('greetDept');
-  if (gd) gd.textContent = lang === 'ar' ? user.deptAr : user.dept;
+  if (gd) gd.textContent = (lang === 'ar' ? user.deptAr : user.dept) + ' · ' + (lang === 'ar' ? user.roleAr : user.role);
+  // Update hero clock button state
+  updateHeroClockBtn();
   renderActivity();
   renderMyRequests();
   renderIncoming();
   renderChatList();
+}
+
+function updateHeroClockBtn() {
+  const btn = document.getElementById('heroClockBtn');
+  const ico = document.getElementById('heroClockIcon');
+  const lbl = document.getElementById('heroClockLabel');
+  const sub = document.getElementById('heroClockSub');
+  if (!btn) return;
+  if (clockedIn) {
+    btn.classList.add('clocked-in');
+    if (ico) ico.textContent = '🔴';
+    if (lbl) lbl.setAttribute('data-en','End Shift'), lbl.textContent = t('End Shift','إنهاء الوردية');
+  } else {
+    btn.classList.remove('clocked-in');
+    if (ico) ico.textContent = '🟢';
+    if (lbl) lbl.setAttribute('data-en','Start Shift'), lbl.textContent = t('Start Shift','بدء الوردية');
+  }
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -2518,6 +2790,8 @@ function login(roleKey) {
   // Header
   document.getElementById('hdrName').textContent = lang === 'ar' ? user.nameAr : user.name;
   document.getElementById('hdrRole').textContent = lang === 'ar' ? user.roleAr : user.role;
+  const hdrAv = document.getElementById('hdrAv');
+  if (hdrAv) hdrAv.textContent = user.init;
 
   // Profile
   document.getElementById('profAv').textContent = user.init;
@@ -2585,6 +2859,22 @@ function showTab(id) {
 function startClock() {
   updateClock();
   clockTimer = setInterval(updateClock, 1000);
+  // Initialize clock button states based on clockedIn
+  setTimeout(() => {
+    document.querySelectorAll('#clockBtn').forEach(btn => {
+      if (clockedIn) {
+        btn.className = 'clock-btn out'; btn.style.background='linear-gradient(135deg,#ef4444,#dc2626)';
+        btn.textContent = t('🔴 End Shift','🔴 إنهاء الوردية');
+      } else {
+        btn.className = 'clock-btn in'; btn.style.background='linear-gradient(135deg,#10b981,#059669)';
+        btn.textContent = t('🟢 Start Shift','🟢 بدء الوردية');
+      }
+    });
+    if (clockedIn) {
+      document.getElementById('slideClockOut') && (document.getElementById('slideClockOut').style.display = 'block');
+    }
+    updateHeroClockBtn();
+  }, 50);
 }
 function updateClock() {
   const now = new Date();
@@ -2598,6 +2888,22 @@ function updateClock() {
   document.querySelectorAll('#liveDate').forEach(el => { el.textContent = dateStr; });
   const gd = document.getElementById('greetDate');
   if (gd) gd.textContent = dateStr;
+  // Hero card time badge
+  const heroTime = document.getElementById('heroTime');
+  if (heroTime) heroTime.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  // Worked time counter
+  if (clockedIn && window._lastAttendanceClockIn) {
+    const start = new Date(window._lastAttendanceClockIn);
+    const diff = Math.floor((now - start) / 1000);
+    const wh = pad(Math.floor(diff / 3600));
+    const wm = pad(Math.floor((diff % 3600) / 60));
+    const ws = pad(diff % 60);
+    const wt = document.getElementById('workedTime');
+    if (wt) wt.textContent = wh + ':' + wm + ':' + ws;
+  } else if (!clockedIn) {
+    const wt = document.getElementById('workedTime');
+    if (wt && wt.textContent === '00:00:00') wt.textContent = '00:00:00';
+  }
 }
 // ══════════════════════════════════════════════════════════════════════════
 // GEOFENCE — CLOCK-IN LOCATION VERIFICATION
@@ -2688,8 +2994,10 @@ async function toggleClock() {
     clockedIn = true;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn out'; btn.textContent = t('Clock Out','تسجيل الخروج'); });
+    document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn out'; btn.style.background='linear-gradient(135deg,#ef4444,#dc2626)'; btn.textContent = t('🔴 End Shift','🔴 إنهاء الوردية'); });
     document.querySelectorAll('#clockInfo').forEach(el => { el.textContent = t('Clocked in at ','تسجيل دخول الساعة ') + timeStr; });
+    document.getElementById('slideClockOut') && (document.getElementById('slideClockOut').style.display = 'block');
+    updateHeroClockBtn();
     const locMsg = loc.distance !== null ? `✅ ${t('Location verified','الموقع تم التحقق منه')} (${loc.distance}m ${t('from store','من المتجر')})` : '';
     if (locStatus) locStatus.textContent = locMsg;
     toast('✅ ' + t('Clocked in successfully','تم تسجيل الدخول'));
@@ -2711,9 +3019,12 @@ async function toggleClock() {
     clockedIn = false;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn in'; btn.textContent = t('Clock In','تسجيل الدخول'); });
+    document.querySelectorAll('#clockBtn').forEach(btn => { btn.className = 'clock-btn in'; btn.style.background='linear-gradient(135deg,#10b981,#059669)'; btn.textContent = t('🟢 Start Shift','🟢 بدء الوردية'); });
     document.querySelectorAll('#clockInfo').forEach(el => { el.textContent = t('Clocked out at ','تسجيل خروج الساعة ') + timeStr; });
     if (locStatus) locStatus.textContent = '';
+    document.getElementById('slideClockOut') && (document.getElementById('slideClockOut').style.display = 'none');
+    const wt = document.getElementById('workedTime'); if (wt) wt.textContent = '00:00:00';
+    updateHeroClockBtn();
     toast('👋 ' + t('Clocked out. Have a good day!','تم تسجيل الخروج. أتمنى لك يوماً سعيداً!'));
     if (user && window._lastAttendanceId) {
       sb.from('attendance').update({ clock_out: new Date().toISOString() }).eq('id', window._lastAttendanceId)
@@ -7046,7 +7357,97 @@ function _postLoginAdmin(roleKey) {
 }
 
 // ─── AUTO-LOGIN ON PAGE LOAD ───────────────────────────────────────────────
-window.addEventListener('load', () => { tryAutoLogin(); });
+window.addEventListener('load', () => { tryAutoLogin(); initSlideButton(); });
+
+// ════════ SLIDE-TO-CONFIRM CLOCK OUT ════════
+function initSlideButton() {
+  const handle = document.getElementById('slideHandle');
+  const wrap = document.getElementById('slideWrap');
+  const fill = document.getElementById('slideFill');
+  if (!handle || !wrap) return;
+  let dragging = false, startX = 0, curX = 0;
+  const MAX_SLIDE = () => wrap.offsetWidth - handle.offsetWidth - 8;
+
+  function startDrag(e) {
+    if (!clockedIn) return;
+    dragging = true;
+    startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    handle.style.transition = 'none';
+  }
+  function moveDrag(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    curX = Math.max(0, Math.min(x - startX, MAX_SLIDE()));
+    handle.style.left = (4 + curX) + 'px';
+    if (fill) fill.style.width = (4 + curX) + 'px';
+  }
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    handle.style.transition = 'left .3s';
+    if (fill) fill.style.transition = 'width .3s';
+    if (curX >= MAX_SLIDE() * 0.85) {
+      // Confirmed — trigger clock out
+      handle.style.left = (4 + MAX_SLIDE()) + 'px';
+      if (fill) fill.style.width = wrap.offsetWidth + 'px';
+      setTimeout(() => {
+        toggleClock();
+        handle.style.left = '4px';
+        if (fill) fill.style.width = '4px';
+      }, 300);
+    } else {
+      handle.style.left = '4px';
+      if (fill) fill.style.width = '4px';
+    }
+    curX = 0;
+  }
+  handle.addEventListener('mousedown', startDrag);
+  handle.addEventListener('touchstart', startDrag, {passive:true});
+  document.addEventListener('mousemove', moveDrag);
+  document.addEventListener('touchmove', moveDrag, {passive:false});
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchend', endDrag);
+}
+
+// ════════ WEEKLY HOURS CHART (profile) ════════
+function renderWeekChart(attendance) {
+  const chart = document.getElementById('weekChart');
+  if (!chart) return;
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const arDays = ['اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت','أحد'];
+  const now = new Date();
+  const todayIdx = (now.getDay() + 6) % 7; // 0=Mon
+  // Build hours per day from attendance array (if provided)
+  const hours = [0,0,0,0,0,0,0];
+  if (attendance && Array.isArray(attendance)) {
+    attendance.forEach(rec => {
+      if (rec.clock_in && rec.clock_out) {
+        const d = new Date(rec.clock_in);
+        const idx = (d.getDay() + 6) % 7;
+        const h = (new Date(rec.clock_out) - d) / 3600000;
+        hours[idx] = Math.min(12, hours[idx] + h);
+      }
+    });
+  }
+  // Today partial
+  if (clockedIn && window._lastAttendanceClockIn) {
+    const h = (now - new Date(window._lastAttendanceClockIn)) / 3600000;
+    hours[todayIdx] = Math.min(12, hours[todayIdx] + h);
+  }
+  const maxH = Math.max(...hours, 1);
+  chart.innerHTML = days.map((d,i) => {
+    const pct = Math.max(4, Math.round((hours[i] / maxH) * 100));
+    const isToday = i === todayIdx;
+    const lbl = lang === 'ar' ? arDays[i] : d;
+    const valStr = hours[i] > 0 ? hours[i].toFixed(1) + 'h' : '';
+    return `<div class="week-bar-wrap">
+      <div class="week-bar-val">${valStr}</div>
+      <div class="week-bar${isToday?' today':''}" style="height:${pct}%"></div>
+      <div class="week-bar-lbl" style="${isToday?'color:var(--blue)':''}">${lbl}</div>
+    </div>`;
+  }).join('');
+}
 </script>
 
 <!-- ✦ LIVE PARTICLE NETWORK BACKGROUND ─────────────────────────────────── -->
