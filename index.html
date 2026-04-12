@@ -6158,6 +6158,27 @@ async function enableNotifs() {
 }
 
 async function togglePushNotifications() {
+  // ── Native Android APK ─────────────────────────────────────────────────
+  if (window.Android && window.Android.isNativeApp && window.Android.isNativeApp()) {
+    if (user?.fcmToken) {
+      // Turn OFF
+      await sb.from('employees').update({ fcm_token: null }).eq('id', user.id);
+      user.fcmToken = null;
+      const emp = employees.find(e => e.id === user.id);
+      if (emp) emp.fcm_token = null;
+      toast('🔕 ' + t('Notifications disabled','تم إيقاف الإشعارات'));
+    } else {
+      // Turn ON — get native FCM token
+      await initFCMToken();
+      toast(user?.fcmToken
+        ? '🔔 ' + t('Notifications enabled!','تم تفعيل الإشعارات!')
+        : '⚠️ ' + t('Could not get device token. Try again.','تعذّر الحصول على رمز الجهاز. حاول مرة أخرى.'));
+    }
+    updateNotifToggleUI();
+    return;
+  }
+
+  // ── Browser / PWA ──────────────────────────────────────────────────────
   if (!('Notification' in window)) {
     toast('⚠️ ' + t('Notifications not supported on this device','الإشعارات غير مدعومة على هذا الجهاز'));
     return;
@@ -6168,7 +6189,7 @@ async function togglePushNotifications() {
     return;
   }
   if (current === 'granted' && user?.fcmToken) {
-    // Turn OFF — remove token from Supabase
+    // Turn OFF
     await sb.from('employees').update({ fcm_token: null }).eq('id', user.id);
     user.fcmToken = null;
     const emp = employees.find(e => e.id === user.id);
@@ -6192,13 +6213,14 @@ function updateNotifToggleUI() {
   const thumb = document.getElementById('notifToggleThumb');
   const label = document.getElementById('notifStatusLabel');
   if (!toggle || !thumb) return;
-  const isOn = Notification.permission === 'granted' && !!(user?.fcmToken);
+  const notifPerm = (window.Android?.isNativeApp?.()) ? window.Android.getNotificationPermission() : (window.Notification?.permission || 'default');
+  const isOn = notifPerm === 'granted' && !!(user?.fcmToken);
   toggle.style.background = isOn ? 'linear-gradient(135deg,#ffc128,#cc8800)' : '#2a2040';
   toggle.style.borderColor = isOn ? 'rgba(255,193,40,.4)' : 'rgba(255,255,255,.1)';
   thumb.style.left = isOn ? '25px' : '3px';
   thumb.style.background = isOn ? '#000' : '#555';
   if (label) {
-    if (Notification.permission === 'denied') {
+    if (notifPerm === 'denied') {
       label.textContent = t('Blocked — change in browser settings','محظور — غيّر في إعدادات المتصفح');
       label.style.color = 'var(--red)';
     } else {
@@ -6210,8 +6232,26 @@ function updateNotifToggleUI() {
 
 // Called after login — asks permission and saves device token to Supabase
 async function initFCMToken() {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
   try {
+    // ── Native Android APK path ──────────────────────────────────────────
+    if (window.Android && window.Android.isNativeApp && window.Android.isNativeApp()) {
+      let token = window.Android.getFCMToken();
+      if (!token) {
+        // Token may not be ready on very first launch — wait a moment
+        await new Promise(r => setTimeout(r, 2000));
+        token = window.Android.getFCMToken();
+      }
+      if (token && user?.id) {
+        await sb.from('employees').update({ fcm_token: token }).eq('id', user.id);
+        user.fcmToken = token;
+        const emp = employees.find(e => e.id === user.id);
+        if (emp) emp.fcm_token = token;
+      }
+      return;
+    }
+
+    // ── Browser / PWA path ───────────────────────────────────────────────
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
     await initFirebase();
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;
