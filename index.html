@@ -5528,6 +5528,7 @@ function saveReqTypeLabels() {
 let tasks = [];
 let employeePoints = {};   // { empId: totalPoints }
 let notifDismissed = JSON.parse(localStorage.getItem('notifDismissed') || '[]');
+let notifRead = JSON.parse(localStorage.getItem('notifRead') || '[]');
 
 function updateBellBadge() {
   if (!user) return;
@@ -5535,11 +5536,11 @@ function updateBellBadge() {
   let count = 0;
   if (!isManager) {
     // For employees: count pending tasks assigned to them
-    const myPending = tasks.filter(tk => tk.assigned_to === (user.id || role) && (tk.status === 'pending' || tk.status === 'in_progress') && !notifDismissed.includes(tk.id));
+    const myPending = tasks.filter(tk => tk.assigned_to === (user.id || role) && (tk.status === 'pending' || tk.status === 'in_progress') && !notifRead.includes(tk.id));
     count += myPending.length;
   } else {
     // For managers: count tasks submitted for review
-    const pendingReview = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifDismissed.includes(tk.id));
+    const pendingReview = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifRead.includes(tk.id));
     count += pendingReview.length;
   }
   const badge = document.getElementById('bellBadge');
@@ -5551,9 +5552,19 @@ function toggleNotifPanel() {
   if (!panel) return;
   const isOpen = panel.style.display !== 'none';
   if (isOpen) { panel.style.display = 'none'; return; }
+  // Mark all current notifications as read (clears badge)
+  if (user) {
+    const isManager = user.type === 'manager' || user.type === 'admin';
+    if (!isManager) {
+      tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+    } else {
+      tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review').forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+    }
+    localStorage.setItem('notifRead', JSON.stringify(notifRead));
+    updateBellBadge();
+  }
   renderNotifPanel();
   panel.style.display = 'block';
-  // Close on outside click
   setTimeout(() => { document.addEventListener('click', closeNotifOnOutside); }, 100);
 }
 
@@ -5878,7 +5889,11 @@ async function updateTaskStatus(taskId, newStatus) {
   if (!tk) return;
   tk.status = newStatus;
   if (newStatus === 'pending_review') tk.submitted_at = new Date().toISOString();
+  // Remove from notifRead so manager gets re-notified when status changes
+  notifRead = notifRead.filter(id => id !== taskId);
+  localStorage.setItem('notifRead', JSON.stringify(notifRead));
   renderMyTasks();
+  updateBellBadge();
   await sb.from('tasks').update({ status: newStatus, submitted_at: tk.submitted_at || null }).eq('id', taskId);
   if (newStatus === 'pending_review') toast('📤 ' + t('Work submitted for review! Your manager will rate it.','تم إرسال العمل للمراجعة! سيقيّمه مديرك.'));
   if (newStatus === 'in_progress') toast('▶ ' + t('Task started!','بدأت المهمة!'));
@@ -5927,7 +5942,7 @@ showTab = function(id) {
 const _origLogin2 = login;
 login = function(roleKey) {
   _origLogin2(roleKey);
-  loadTasks();
+  loadTasks().then(() => { renderTasks(); updateBellBadge(); });
   loadReqPermissions();
 };
 
