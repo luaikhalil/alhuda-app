@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1b1b1b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -227,7 +227,7 @@ select.inp{appearance:none;}
 #mainApp{display:none;position:relative;z-index:1;min-height:100vh;}
 #mainApp.on{display:block;}
 
-.hdr{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--hdr);background:rgba(27,27,27,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-shadow:0 1px 20px rgba(0,0,0,.2);}
+.hdr{position:fixed;top:0;left:0;right:0;z-index:200;height:calc(var(--hdr) + env(safe-area-inset-top,0px));background:rgba(27,27,27,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 14px 0;box-shadow:0 1px 20px rgba(0,0,0,.2);}
 .hdr-left{display:flex;align-items:center;gap:10px;}
 .hdr-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#ffc12822,#cc880044);border:1px solid rgba(255,193,40,.3);display:flex;align-items:center;justify-content:center;font-size:16px;}
 .hdr-name{font-size:13px;font-weight:700;}
@@ -238,7 +238,7 @@ select.inp{appearance:none;}
 .nbadge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--red);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg);}
 .lang-pill{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bgc);color:var(--t2);cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;}
 
-.content{padding-top:calc(var(--hdr) + 12px);padding-bottom:calc(var(--nav) + 16px);padding-left:14px;padding-right:14px;min-height:100vh;}
+.content{padding-top:calc(var(--hdr) + env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(var(--nav) + 16px);padding-left:14px;padding-right:14px;min-height:100vh;}
 
 .bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--nav);background:rgba(27,27,27,.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 4px 8px;}
 .ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:var(--r1);cursor:pointer;transition:all .2s;flex:1;position:relative;}
@@ -1279,7 +1279,6 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       </div>
     </div>
     <div class="hdr-right">
-      <div class="lang-pill" id="langPill" onclick="toggleLang()">EN</div>
       <div class="icon-btn" id="bellBtn" onclick="toggleNotifPanel()" style="position:relative">🔔<div class="nbadge" id="bellBadge" style="display:none">0</div></div>
       <div class="icon-btn" onclick="showTab('msgs')">💬<div class="nbadge" id="msgBadge">2</div></div>
       <div class="icon-btn" onclick="showPassList()">🎫<div class="nbadge" id="passBadge" style="display:none">1</div></div>
@@ -1520,6 +1519,32 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <div class="prof-hero-role" id="profDept">Ground Floor · Sales Staff</div>
         <div class="prof-hero-id" id="profId">EMP-001 · Since Jan 2023</div>
         <button onclick="logout()" style="margin-top:14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#ef4444;border-radius:20px;padding:6px 18px;font-size:12px;font-weight:600;cursor:pointer" data-en="🚪 Sign Out" data-ar="🚪 خروج">🚪 Sign Out</button>
+      </div>
+
+      <!-- Language & Theme Settings Card -->
+      <div class="card" style="padding:14px;margin-bottom:12px">
+        <!-- Language row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1)" data-en="Language" data-ar="اللغة">Language</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px" data-en="English / عربي" data-ar="English / عربي">English / عربي</div>
+          </div>
+          <div style="display:flex;gap:4px;background:var(--bg2);border-radius:22px;padding:3px">
+            <button id="langBtnEn" onclick="setLang('en');saveLangPref('en')" style="padding:6px 16px;border-radius:19px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">EN</button>
+            <button id="langBtnAr" onclick="setLang('ar');saveLangPref('ar')" style="padding:6px 16px;border-radius:19px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--ffa);transition:all .2s">عربي</button>
+          </div>
+        </div>
+        <!-- Theme row -->
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1)" data-en="Theme" data-ar="المظهر">Theme</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px" data-en="Light / Dark" data-ar="فاتح / داكن">Light / Dark</div>
+          </div>
+          <div onclick="toggleTheme()" id="themeToggleRow" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:var(--bg2);border-radius:22px;padding:6px 14px">
+            <span id="themeLabelRow" style="font-size:12px;font-weight:700;color:var(--t2)">Dark</span>
+            <span id="themeIconRow" style="font-size:16px">🌙</span>
+          </div>
+        </div>
       </div>
 
       <!-- Today Worked / Clock Card -->
@@ -2357,7 +2382,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </div>
         <div class="setting-row">
           <span class="setting-lbl">Arabic Mode Default</span>
-          <div class="tog" id="togArabic" onclick="this.classList.toggle('on');toast('Setting saved')"></div>
+          <div class="tog" id="togArabic" onclick="this.classList.toggle('on');saveLangPref(this.classList.contains('on')?'ar':'en');toast('Setting saved — will apply on next login')"></div>
         </div>
         <div class="setting-row">
           <span class="setting-lbl">Allow Employee Self Clock-out</span>
@@ -6664,6 +6689,8 @@ function applyArTranslations() {
 const _origSetLang = setLang;
 setLang = function(l, container) {
   _origSetLang(l, container);
+  // Update language toggle buttons in profile tab
+  updateLangButtons(l);
   // Re-update profile page elements (not handled by refreshDynamic)
   if (user) {
     const profName = document.getElementById('profName');
@@ -6685,6 +6712,22 @@ setLang = function(l, container) {
 const _origLoadSupabaseData = loadSupabaseData;
 loadSupabaseData = async function(isAdmin) {
   await _origLoadSupabaseData(isAdmin);
+  // Load app language default (set by admin)
+  try {
+    const { data: langData } = await sb.from('settings').select('value').eq('key','app_lang_default').maybeSingle();
+    if (langData?.value) {
+      // Only apply if user hasn't manually overridden in this session
+      const localLang = localStorage.getItem('alhuda_lang');
+      if (!localLang) {
+        localStorage.setItem('alhuda_lang', langData.value);
+        if (langData.value === 'ar' && lang !== 'ar') setLang('ar');
+        else if (langData.value === 'en' && lang !== 'en') setLang('en');
+      }
+      // Sync the admin toggle state
+      const tog = document.getElementById('togArabic');
+      if (tog) tog.classList.toggle('on', langData.value === 'ar');
+    }
+  } catch(e2) {}
   // Load req permissions
   const { data: permData } = await sb.from('settings').select('value').eq('key','req_permissions').single();
   if (permData?.value) reqPermissions = permData.value;
@@ -7680,12 +7723,18 @@ function _postLoginAdmin(roleKey) {
 // ─── DARK / LIGHT MODE ────────────────────────────────────────────────────
 function applyTheme(theme) {
   const btn = document.getElementById('themeBtn');
+  const lbl = document.getElementById('themeLabelRow');
+  const ico = document.getElementById('themeIconRow');
   if (theme === 'light') {
     document.body.classList.add('light');
     if (btn) btn.textContent = '☀️';
+    if (lbl) lbl.textContent = lang === 'ar' ? 'فاتح' : 'Light';
+    if (ico) ico.textContent = '☀️';
   } else {
     document.body.classList.remove('light');
     if (btn) btn.textContent = '🌙';
+    if (lbl) lbl.textContent = lang === 'ar' ? 'داكن' : 'Dark';
+    if (ico) ico.textContent = '🌙';
   }
 }
 function toggleTheme() {
@@ -7695,9 +7744,39 @@ function toggleTheme() {
   applyTheme(next);
 }
 
+// ─── LANGUAGE PREFERENCE ──────────────────────────────────────────────────
+function saveLangPref(l) {
+  localStorage.setItem('alhuda_lang', l);
+  // Save to Supabase as app-wide default (admin only)
+  try {
+    if (user && user.type === 'admin') {
+      sb.from('settings').upsert({ key:'app_lang_default', value:l }, { onConflict:'key' });
+      const tog = document.getElementById('togArabic');
+      if (tog) { tog.classList.toggle('on', l === 'ar'); }
+    }
+  } catch(e) {}
+}
+
+function updateLangButtons(l) {
+  const en = document.getElementById('langBtnEn');
+  const ar = document.getElementById('langBtnAr');
+  if (!en || !ar) return;
+  const activeStyle = 'background:var(--blue);color:#fff;';
+  const inactiveStyle = 'background:transparent;color:var(--t2);';
+  en.style.cssText = en.style.cssText.replace(/background:[^;]+;color:[^;]+;/, '') + (l === 'en' ? activeStyle : inactiveStyle);
+  ar.style.cssText = ar.style.cssText.replace(/background:[^;]+;color:[^;]+;/, '') + (l === 'ar' ? activeStyle : inactiveStyle);
+  // Also update the theme label in case language switched
+  const isLight = document.body.classList.contains('light');
+  const lbl = document.getElementById('themeLabelRow');
+  if (lbl) lbl.textContent = l === 'ar' ? (isLight ? 'فاتح' : 'داكن') : (isLight ? 'Light' : 'Dark');
+}
+
 // ─── AUTO-LOGIN ON PAGE LOAD ───────────────────────────────────────────────
 window.addEventListener('load', () => {
   applyTheme(localStorage.getItem('alhuda_theme') || 'dark');
+  // Apply saved language preference (default Arabic if admin set it)
+  const savedLang = localStorage.getItem('alhuda_lang') || 'en';
+  if (savedLang === 'ar') setLang('ar');
   tryAutoLogin();
   initSlideButton();
 });
