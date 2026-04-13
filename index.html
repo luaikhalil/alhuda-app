@@ -3008,10 +3008,24 @@ const AR_MAP = {
   'Submitted':'تم الإرسال','Manager Approval':'موافقة المدير','HR Approval':'موافقة الموارد البشرية',
   'Decision':'القرار','Under Review':'قيد المراجعة','Forwarded to HR':'أُحيل إلى الموارد البشرية',
   'GM Approval':'موافقة المدير العام','Dept Approval':'موافقة القسم',
+  // Request type labels (all variants)
+  'My Leave Request':'طلب إجازتي','Leave Request':'طلب إجازة',
+  'General Manager':'المدير العام','Supervision':'الإشراف',
   // toLabel values
-  'Manager → HR':'المدير ← الموارد البشرية','IT Department':'قسم تقنية المعلومات',
-  'Maintenance Dept':'قسم الصيانة','Top Level Supervision':'الإشراف العليا',
-  'HR Department':'قسم الموارد البشرية','Accounting Dept':'قسم المحاسبة',
+  'Manager → HR':'المدير ← الموارد البشرية',
+  'Supervision → HR':'الإشراف ← الموارد البشرية',
+  'General Manager':'المدير العام',
+  'IT Department':'قسم تقنية المعلومات',
+  'Maintenance Dept':'قسم الصيانة','Maintenance Department':'قسم الصيانة',
+  'Top Level Supervision':'الإشراف العليا',
+  'HR Department':'قسم الموارد البشرية','HR Dept':'قسم الموارد البشرية',
+  'Accounting Dept':'قسم المحاسبة','Accounting Department':'قسم المحاسبة',
+  'IT Dept':'قسم تقنية المعلومات',
+  'Marketing Dept':'قسم التسويق','Marketing Department':'قسم التسويق',
+  'Ground Floor Department':'قسم الطابق الأرضي',
+  'Warehouse Department':'قسم المستودع',
+  'Restaurant Department':'قسم المطعم',
+  'Security Department':'قسم الأمن',
 };
 
 // Translate a known term — falls back to original if not in map
@@ -3092,7 +3106,7 @@ function login(roleKey) {
   // Profile
   document.getElementById('profAv').textContent = user.init;
   document.getElementById('profName').textContent = lang === 'ar' ? (user.nameAr || user.name) : user.name;
-  document.getElementById('profDept').textContent = lang === 'ar' ? (user.deptAr || user.dept) : user.dept;
+  document.getElementById('profDept').textContent = lang === 'ar' ? (user.deptAr || tr(user.dept) || user.dept) : user.dept;
   document.getElementById('profId').textContent = user.id + ' · ' + t('Since Jan 2023', 'منذ يناير 2023');
 
   // Role-specific UI
@@ -3680,7 +3694,7 @@ function renderMyRequests() {
     <div class="req-card ${r.urgent ? 'urgent' : ''}" onclick="openReqDetail('${r.id}')">
       <div class="req-top">
         <div>
-          <div class="req-type">${r.urgent ? '🔴 ' : ''}${tr(r.typeLabel)}</div>
+          <div class="req-type">${r.urgent ? '🔴 ' : ''}${lang==='ar' ? (r.typeLabelAr || tr(r.typeLabel)) : r.typeLabel}</div>
           <div class="req-from">→ ${tr(r.toLabel)} · ${r.date}</div>
         </div>
         <span class="bdg ${statusBdg[r.status] || 'o'}">${statusLbl[r.status] || tr(r.status)}</span>
@@ -3753,7 +3767,7 @@ function renderIncoming() {
     <div class="req-card ${r.urgent ? 'urgent' : ''}" style="cursor:default">
       <div class="req-top">
         <div>
-          <div class="req-type">${r.urgent ? '🔴 ' : ''}${tr(r.typeLabel)}</div>
+          <div class="req-type">${r.urgent ? '🔴 ' : ''}${lang==='ar' ? (r.typeLabelAr || tr(r.typeLabel)) : r.typeLabel}</div>
           <div class="req-from">👤 ${r.fromName} · ${r.date}</div>
         </div>
         <span class="bdg ${r.status === 'escalated' ? 'r' : 'o'}">${r.status === 'escalated' ? t('Escalated','مُصعَّد') : t('Pending Review','بانتظار المراجعة')}</span>
@@ -3968,7 +3982,7 @@ function openReqDetail(id) {
   const statusC = { pending_manager:'o', pending_hr:'o', pending:'o', in_progress:'b', resolved:'g', approved:'g', rejected:'r', escalated:'r' };
   const el = document.getElementById('reqDetailContent');
   el.innerHTML = `
-    <div class="mtitle">${req.urgent ? '🔴 ' : ''}${tr(req.typeLabel) || req.typeLabel}</div>
+    <div class="mtitle">${req.urgent ? '🔴 ' : ''}${lang==='ar' ? (req.typeLabelAr || tr(req.typeLabel) || req.typeLabel) : req.typeLabel}</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
       <span class="bdg ${statusC[req.status] || 'o'}">${statusLbl[req.status] || req.status}</span>
       <span style="font-size:11px;color:var(--t3)">${req.id} · ${req.date}</span>
@@ -6656,7 +6670,7 @@ setLang = function(l, container) {
     const profDept = document.getElementById('profDept');
     const profId   = document.getElementById('profId');
     if (profName) profName.textContent = l === 'ar' ? (user.nameAr || user.name) : user.name;
-    if (profDept) profDept.textContent = l === 'ar' ? (user.deptAr || user.dept) : user.dept;
+    if (profDept) profDept.textContent = l === 'ar' ? (user.deptAr || tr(user.dept) || user.dept) : user.dept;
     if (profId)   profId.textContent   = user.id + ' · ' + (l === 'ar' ? 'منذ يناير 2023' : 'Since Jan 2023');
   }
   renderMyRequests();
