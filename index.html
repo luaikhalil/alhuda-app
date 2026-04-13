@@ -1239,7 +1239,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <input class="inp" type="password" placeholder="••••••••" id="lpw" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="btn-pri" id="loginBtn" onclick="doLogin()" data-en="🔓  Sign In" data-ar="🔓  تسجيل الدخول">🔓  Sign In</button>
     <div id="loginErr" style="display:none;color:var(--red);font-size:12px;text-align:center;margin-top:6px;padding:8px;background:rgba(239,68,68,.08);border-radius:8px;border:1px solid rgba(239,68,68,.2)"></div>
-    <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px" data-en="Employee ID format: EMP-001, MGR-001, ADM-001" data-ar="صيغة رقم الموظف: EMP-001 أو MGR-001">Employee ID format: EMP-001, MGR-001, ADM-001</div>
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px" data-en="Enter your employee number" data-ar="أدخل رقم الموظف">Enter your employee number</div>
 
     <div class="demo-section">
       <div class="demo-lbl" data-en="Quick Demo — Select Your Role" data-ar="تجريبي سريع — اختر دورك">Quick Demo — Select Your Role</div>
@@ -2682,7 +2682,7 @@ async function doLogin() {
     };
 
     // Load live data from Supabase
-    await loadSupabaseData(data.emp_type === 'admin');
+    await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
 
     // Save session so page refresh keeps user logged in
     localStorage.setItem('alhuda_session', JSON.stringify({ empId, pw }));
@@ -2727,7 +2727,7 @@ async function tryAutoLogin() {
       reportTo: data.report_to, area: data.area, deptKey: data.dept_key,
       canIncident: !!(data.emp_type === 'supervisor')
     };
-    await loadSupabaseData(data.emp_type === 'admin');
+    await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
     document.getElementById('autoLoginSplash').style.display = 'none';
     login(roleKey);
   } catch(e) {
@@ -2749,7 +2749,7 @@ function showLoginErr(msg) {
 
 // Map employee DB record to a role key so existing UI logic works
 function empIdToRoleKey(e) {
-  if (e.id === 'ADM-001' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
+  if (e.id === 'ADM-001' || e.id === '1' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
   // Derive from emp_type + dept_key
   if (e.emp_type === 'manager')     return 'gf_mgr';
   if (e.emp_type === 'dept_officer') {
@@ -4107,7 +4107,7 @@ function submitRequest() {
     chain = [t('Submitted','مُقدَّم'), t('GM Review','مراجعة المدير العام'), t('Decision','القرار')];
     chainStatus = ['done','active','pending'];
     reqStatus = 'pending_manager';
-    forManager = 'ADM-001'; // always goes to Luai
+    forManager = (employees.find(e => e.emp_type === 'admin' || e.id === '1' || e.id === 'ADM-001') || {id:'1'}).id; // always goes to GM
   } else {
     chain = [t('Submitted','مُقدَّم'), t('In Review','قيد المراجعة'), t('Resolved','محلول')];
     chainStatus = ['done','active','pending'];
@@ -4540,7 +4540,7 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
   // Helper — determine if a given employee is a supervisor or manager
   const getLevel = e => {
     // Admin account = General Manager, always appears in manager dropdown
-    if (e.emp_type === 'admin' || e.id === 'ADM-001') return 'manager';
+    if (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '1') return 'manager';
     const jt = allJobTitles.find(j => j.name === e.role || j.nameAr === e.role || j.key === e.role);
     if (jt) return jt.type;
     if (e.emp_type === 'manager') return 'manager';
@@ -4809,7 +4809,7 @@ function toggleEmpActive(empId) {
 async function deleteEmployee(empId) {
   const e = employees.find(emp => emp.id === empId);
   if (!e) return;
-  if (empId === 'ADM-001') { toast('⚠️ ' + t('Cannot delete the admin account','لا يمكن حذف حساب المدير')); return; }
+  if (empId === 'ADM-001' || empId === '1') { toast('⚠️ ' + t('Cannot delete the admin account','لا يمكن حذف حساب المدير')); return; }
   const name = e.firstName + ' ' + e.lastName;
   if (!confirm(t(`Delete ${name} (${empId}) permanently? This cannot be undone.`,
                  `حذف ${name} (${empId}) نهائياً؟ لا يمكن التراجع عن هذا.`))) return;
@@ -6956,7 +6956,7 @@ async function sendPush(tokens, title, body) {
 // Helpers to collect FCM tokens from the employees array
 function getAdminFCMTokens() {
   return employees
-    .filter(e => e.active && (e.emp_type === 'admin' || e.id === 'ADM-001'))
+    .filter(e => e.active && (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '1'))
     .map(e => e.fcm_token).filter(Boolean);
 }
 function getEmpFCMToken(empId) {
