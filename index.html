@@ -517,7 +517,8 @@ select.inp{appearance:none;}
 
 /* ── RTL OVERRIDES ── */
 body.rtl .chat-unread{margin-left:0;margin-right:auto;}
-body.rtl .chain{flex-direction:row-reverse;}
+/* RTL chain: direction:rtl on body already reverses flex row (step1 on right).
+   Just fix the connector ::after to extend leftward instead of rightward. */
 body.rtl .cstep::after{left:auto;right:50%;}
 
 /* ══════════════════════════════════════════
@@ -3003,6 +3004,14 @@ const AR_MAP = {
   'Leave':'إجازة','Approved':'معتمد','Rejected':'مرفوض',
   'No requests yet':'لا توجد طلبات بعد','No tasks yet':'لا توجد مهام بعد',
   'Office':'المكتب','Operations':'العمليات',
+  // Chain step labels
+  'Submitted':'تم الإرسال','Manager Approval':'موافقة المدير','HR Approval':'موافقة الموارد البشرية',
+  'Decision':'القرار','Under Review':'قيد المراجعة','Forwarded to HR':'أُحيل إلى الموارد البشرية',
+  'GM Approval':'موافقة المدير العام','Dept Approval':'موافقة القسم',
+  // toLabel values
+  'Manager → HR':'المدير ← الموارد البشرية','IT Department':'قسم تقنية المعلومات',
+  'Maintenance Dept':'قسم الصيانة','Top Level Supervision':'الإشراف العليا',
+  'HR Department':'قسم الموارد البشرية','Accounting Dept':'قسم المحاسبة',
 };
 
 // Translate a known term — falls back to original if not in map
@@ -3650,7 +3659,7 @@ function chainHTML(chain, chainStatus) {
   return `<div class="chain">${chain.map((step, i) => `
     <div class="cstep">
       <div class="cstep-dot ${chainStatus[i]}">${icons[chainStatus[i]] || '○'}</div>
-      <div class="cstep-lbl ${chainStatus[i]}">${step}</div>
+      <div class="cstep-lbl ${chainStatus[i]}">${tr(step)}</div>
     </div>`).join('')}</div>`;
 }
 
@@ -3959,12 +3968,12 @@ function openReqDetail(id) {
   const statusC = { pending_manager:'o', pending_hr:'o', pending:'o', in_progress:'b', resolved:'g', approved:'g', rejected:'r', escalated:'r' };
   const el = document.getElementById('reqDetailContent');
   el.innerHTML = `
-    <div class="mtitle">${req.urgent ? '🔴 ' : ''}${req.typeLabel}</div>
+    <div class="mtitle">${req.urgent ? '🔴 ' : ''}${tr(req.typeLabel) || req.typeLabel}</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
       <span class="bdg ${statusC[req.status] || 'o'}">${statusLbl[req.status] || req.status}</span>
       <span style="font-size:11px;color:var(--t3)">${req.id} · ${req.date}</span>
     </div>
-    <div style="font-size:14px;font-weight:600;margin-bottom:8px">${req.title}</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px">${(lang==='ar' && req.titleAr) ? req.titleAr : req.title}</div>
     <div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:14px">${req.details}</div>
     <div style="font-size:11px;color:var(--t3);margin-bottom:4px">${t('Routing:','التوجيه:')} ${req.toLabel}</div>
     ${chainHTML(req.chain, req.chainStatus)}
@@ -6641,6 +6650,15 @@ function applyArTranslations() {
 const _origSetLang = setLang;
 setLang = function(l, container) {
   _origSetLang(l, container);
+  // Re-update profile page elements (not handled by refreshDynamic)
+  if (user) {
+    const profName = document.getElementById('profName');
+    const profDept = document.getElementById('profDept');
+    const profId   = document.getElementById('profId');
+    if (profName) profName.textContent = l === 'ar' ? (user.nameAr || user.name) : user.name;
+    if (profDept) profDept.textContent = l === 'ar' ? (user.deptAr || user.dept) : user.dept;
+    if (profId)   profId.textContent   = user.id + ' · ' + (l === 'ar' ? 'منذ يناير 2023' : 'Since Jan 2023');
+  }
   renderMyRequests();
   renderIncoming();
   renderChatList();
