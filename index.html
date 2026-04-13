@@ -1066,6 +1066,122 @@ body::before {
 .leave-card.sick .leave-val { color: #ef4444; text-shadow: 0 0 10px rgba(239,68,68,.5); }
 .leave-card.emergency .leave-val { color: #a78bfa; text-shadow: 0 0 10px rgba(139,92,246,.5); }
 .leave-lbl { font-size: 10px; color: var(--t2); margin-top: 3px; font-weight: 600; }
+
+/* ══════════════════════════════════════════════════════════════════
+   LIGHT MODE — FINAL OVERRIDES (placed last to win the cascade)
+   ══════════════════════════════════════════════════════════════════ */
+body.light { background:#f6f6f4!important; color:#1c1c1c!important; }
+body.light::before { display:none!important; }
+body.light #bgCanvas { display:none!important; }
+
+/* Structure */
+body.light .hdr { background:#ffffff!important; border-bottom:1px solid #e3e0da!important; box-shadow:0 1px 4px rgba(0,0,0,.06)!important; }
+body.light .bnav { background:#ffffff!important; border-top:1px solid #e3e0da!important; box-shadow:0 -1px 4px rgba(0,0,0,.06)!important; }
+body.light .content { background:transparent!important; }
+
+/* Cards — all white */
+body.light .card,
+body.light .req-card,
+body.light .task-card,
+body.light .chat-row,
+body.light .menu-row,
+body.light .payslip-row,
+body.light .lb-row,
+body.light .emp-card,
+body.light .grp-card,
+body.light .req-row,
+body.light .shift-item,
+body.light .ann-card,
+body.light .modal,
+body.light .setting-group,
+body.light .rtype-btn,
+body.light .leave-card { background:#ffffff!important; border-color:#e3e0da!important; box-shadow:0 1px 4px rgba(0,0,0,.05)!important; color:#1c1c1c!important; }
+
+/* Stat chips */
+body.light .schip { background:#ffffff!important; border-color:#e3e0da!important; box-shadow:0 1px 4px rgba(0,0,0,.05)!important; }
+body.light .schip.b { background:#fffbeb!important; border-color:rgba(202,138,4,.3)!important; }
+body.light .schip.g { background:#f0fdf4!important; border-color:rgba(16,185,129,.3)!important; }
+body.light .schip.o { background:#fffbeb!important; border-color:rgba(245,158,11,.3)!important; }
+body.light .schip.p { background:#faf5ff!important; border-color:rgba(139,92,246,.3)!important; }
+body.light .schip.r { background:#fef2f2!important; border-color:rgba(239,68,68,.3)!important; }
+body.light .schip .sv,
+body.light .schip .sl { text-shadow:none!important; }
+
+/* Clock & shift */
+body.light .clock-card { background:#f0fdf4!important; border-color:rgba(16,185,129,.3)!important; box-shadow:0 1px 6px rgba(0,0,0,.05)!important; }
+body.light .clock-time { color:#065f46!important; text-shadow:none!important; }
+body.light .clock-date { color:#059669!important; }
+body.light .slide-wrap { background:#f6f6f4!important; border:1px solid #e3e0da!important; }
+body.light .sday { background:#fffbeb!important; border-color:rgba(202,138,4,.25)!important; }
+body.light .sday .dn { color:#92400e!important; text-shadow:none!important; }
+
+/* Coin display */
+body.light .coin-display { background:#fffbeb!important; border-color:rgba(202,138,4,.3)!important; box-shadow:none!important; }
+body.light .coin-display * { text-shadow:none!important; }
+
+/* Profile hero */
+body.light .prof-hero { background:#ffffff!important; border-color:#e3e0da!important; box-shadow:0 1px 6px rgba(0,0,0,.06)!important; }
+body.light .prof-hero::before { display:none!important; }
+body.light .prof-hero-name { color:#1c1c1c!important; text-shadow:none!important; }
+body.light .prof-hero-role { color:#b45309!important; }
+body.light .prof-hero-id { color:#888!important; }
+body.light .prof-circle { background:#fde68a!important; border-color:rgba(202,138,4,.5)!important; box-shadow:none!important; color:#92400e!important; }
+
+/* Hero card (home banner) */
+body.light .hero-card { background:#ffffff!important; border-color:#e3e0da!important; box-shadow:0 1px 6px rgba(0,0,0,.06)!important; }
+body.light .hero-mountain { display:none!important; }
+body.light .hero-glow, body.light .hero-glow2 { display:none!important; }
+body.light .hero-name { color:#1c1c1c!important; text-shadow:none!important; }
+body.light .hero-greeting { color:#b45309!important; }
+body.light .hero-role { color:#b45309!important; }
+body.light .hero-date { color:#666!important; }
+body.light .hero-time-badge { background:#fffbeb!important; border-color:rgba(202,138,4,.3)!important; }
+body.light .hero-time-val { color:#92400e!important; }
+body.light .hero-time-lbl { color:#b45309!important; }
+
+/* Inputs */
+body.light .inp,
+body.light .search-inp,
+body.light .chat-inp { background:#ffffff!important; border-color:#d1cdc6!important; color:#1c1c1c!important; }
+
+/* All generic text */
+body.light .task-title,
+body.light .task-meta,
+body.light .atitle,
+body.light .asub,
+body.light .req-type,
+body.light .hdr-name { color:#1c1c1c!important; text-shadow:none!important; }
+body.light .hdr-role { color:#b45309!important; }
+
+/* Chat & admin */
+body.light .chat-hdr,
+body.light .chat-input-row,
+body.light .admin-hdr,
+body.light .admin-overlay { background:#f6f6f4!important; border-color:#e3e0da!important; }
+body.light .admin-tabs { background:#eeece8!important; border-color:#e3e0da!important; }
+body.light .bubble.rx { background:#f6f6f4!important; border-color:#e3e0da!important; color:#1c1c1c!important; }
+body.light .bubble.tx { background:#fef3c7!important; border-color:#f59e0b!important; color:#1c1c1c!important; }
+
+/* Leave cards */
+body.light .leave-card.annual { background:#fffbeb!important; border-color:rgba(202,138,4,.3)!important; box-shadow:none!important; }
+body.light .leave-card.sick { background:#fef2f2!important; border-color:rgba(239,68,68,.3)!important; box-shadow:none!important; }
+body.light .leave-card.emergency { background:#faf5ff!important; border-color:rgba(139,92,246,.3)!important; box-shadow:none!important; }
+body.light .leave-val { text-shadow:none!important; }
+
+/* Misc */
+body.light .icon-btn { background:#f6f6f4!important; border-color:#e3e0da!important; }
+body.light .lang-pill { background:#f6f6f4!important; border-color:#e3e0da!important; color:#4a4a4a!important; }
+body.light .nbadge { border-color:#ffffff!important; }
+body.light .greet { background:#ffffff!important; border-color:#e3e0da!important; }
+body.light .greet-name { color:#1c1c1c!important; text-shadow:none!important; }
+body.light .greet-role { color:#b45309!important; }
+body.light #notifPanel { background:#ffffff!important; border-color:#e3e0da!important; }
+body.light .toast { background:#ffffff!important; border-color:#e3e0da!important; color:#1c1c1c!important; box-shadow:0 2px 12px rgba(0,0,0,.1)!important; }
+body.light .stitle { color:#888!important; text-shadow:none!important; }
+body.light .ni.active { background:rgba(180,100,0,.1)!important; border-color:rgba(180,100,0,.3)!important; box-shadow:none!important; }
+body.light .ni.active .nlbl { color:#92400e!important; text-shadow:none!important; }
+body.light .ni.active .ico { filter:none!important; }
+body.light .hdr-av { background:#fde68a!important; color:#92400e!important; }
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
