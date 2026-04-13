@@ -1346,10 +1346,10 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div id="mgrHomeBlock" style="display:none">
         <div class="stitle" data-en="TEAM OVERVIEW" data-ar="نظرة على الفريق">TEAM OVERVIEW</div>
         <div class="srow">
-          <div class="schip b"><div class="sv" id="mStat1">18</div><div class="sl" data-en="On Duty" data-ar="في الخدمة">On Duty</div></div>
-          <div class="schip r"><div class="sv" id="mStat2">3</div><div class="sl" data-en="Absent" data-ar="غائب">Absent</div></div>
-          <div class="schip o"><div class="sv" id="mStat3">5</div><div class="sl" data-en="Pending Approval" data-ar="بانتظار الموافقة">Pending</div></div>
-          <div class="schip g"><div class="sv" id="mStat4">9</div><div class="sl" data-en="Tasks Done" data-ar="مهام منجزة">Tasks Done</div></div>
+          <div class="schip b" style="cursor:pointer" onclick="showTab('tasks')"><div class="sv" id="mStat1">18</div><div class="sl" data-en="On Duty" data-ar="في الخدمة">On Duty</div></div>
+          <div class="schip r" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="mStat2">3</div><div class="sl" data-en="Absent" data-ar="غائب">Absent</div></div>
+          <div class="schip o" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="mStat3">5</div><div class="sl" data-en="Pending Approval" data-ar="بانتظار الموافقة">Pending</div></div>
+          <div class="schip g" style="cursor:pointer" onclick="showTab('tasks')"><div class="sv" id="mStat4">9</div><div class="sl" data-en="Tasks Done" data-ar="مهام منجزة">Tasks Done</div></div>
         </div>
       </div>
 
@@ -1357,16 +1357,16 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div id="deptHomeBlock" style="display:none">
         <div class="stitle" data-en="INCOMING REQUESTS" data-ar="الطلبات الواردة">INCOMING REQUESTS</div>
         <div class="srow">
-          <div class="schip o"><div class="sv" id="dStat1">3</div><div class="sl" data-en="New Requests" data-ar="طلبات جديدة">New Requests</div></div>
-          <div class="schip b"><div class="sv" id="dStat2">7</div><div class="sl" data-en="In Progress" data-ar="قيد المعالجة">In Progress</div></div>
-          <div class="schip g"><div class="sv" id="dStat3">24</div><div class="sl" data-en="Resolved" data-ar="تم الحل">Resolved</div></div>
+          <div class="schip o" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="dStat1">3</div><div class="sl" data-en="New Requests" data-ar="طلبات جديدة">New Requests</div></div>
+          <div class="schip b" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="dStat2">7</div><div class="sl" data-en="In Progress" data-ar="قيد المعالجة">In Progress</div></div>
+          <div class="schip g" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="dStat3">24</div><div class="sl" data-en="Resolved" data-ar="تم الحل">Resolved</div></div>
         </div>
       </div>
 
       <div class="srow" id="empStatsRow">
-        <div class="schip b"><div class="sv" id="sReqs">3</div><div class="sl" data-en="My Requests" data-ar="طلباتي">My Requests</div></div>
-        <div class="schip g"><div class="sv" id="homeShiftStart">--:--</div><div class="sl" data-en="Shift Start" data-ar="بدء الوردية">Shift Start</div></div>
-        <div class="schip o"><div class="sv" id="sMsgs">2</div><div class="sl" data-en="Messages" data-ar="رسائل">Messages</div></div>
+        <div class="schip b" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="sReqs">3</div><div class="sl" data-en="My Requests" data-ar="طلباتي">My Requests</div></div>
+        <div class="schip g" style="cursor:pointer" onclick="showTab('profile')"><div class="sv" id="homeShiftStart">--:--</div><div class="sl" data-en="Shift Start" data-ar="بدء الوردية">Shift Start</div></div>
+        <div class="schip o" style="cursor:pointer" onclick="showTab('msgs')"><div class="sv" id="sMsgs">2</div><div class="sl" data-en="Messages" data-ar="رسائل">Messages</div></div>
       </div>
 
       <div class="stitle" data-en="RECENT ACTIVITY" data-ar="النشاط الأخير">RECENT ACTIVITY</div>
@@ -1379,7 +1379,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <h2 style="font-size:17px;font-weight:700" data-en="Requests" data-ar="الطلبات">Requests</h2>
         <div id="newReqBtn" style="display:none">
-          <button style="padding:7px 14px;border-radius:20px;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;color:#1b1b1b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openNewReqModal()" data-en="+ New Request" data-ar="+ طلب جديد">+ New Request</button>
+          <button style="padding:7px 14px;border-radius:20px;background:linear-gradient(135deg,#ffc128,#e6a800);border:none;color:#1a1000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openNewReqModal()" data-en="+ New Request" data-ar="+ طلب جديد">+ New Request</button>
         </div>
       </div>
 
