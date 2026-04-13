@@ -23,40 +23,41 @@
 }
 /* ══ LIGHT MODE ══════════════════════════════════════════════════════ */
 body.light {
-  --bg: #ece8df; --bg2: #e4dfd5; --bgc: #ffffff; --bgch: rgba(180,130,0,0.08);
-  --t1: #111111; --t2: #444444; --t3: #888888;
-  --border: rgba(0,0,0,0.1);
+  --bg: #f6f6f4; --bg2: #eeece8; --bgc: #ffffff; --bgch: rgba(180,130,0,0.06);
+  --t1: #1c1c1c; --t2: #4a4a4a; --t3: #8a8a8a;
+  --border: #e3e0da;
+  --blue: #b45309; --cyan: #92400e;
 }
-/* Hide the dark particle canvas in light mode */
-body.light #bgCanvas{opacity:0!important;}
+/* Kill the canvas completely in light mode */
+body.light #bgCanvas{display:none!important;}
 /* Remove the dot-grid overlay */
 body.light::before{display:none;}
 
 /* ── Header & bottom nav ── */
-body.light .hdr{background:#ece8df;border-bottom:1px solid rgba(0,0,0,.1);box-shadow:0 1px 8px rgba(0,0,0,.06);}
-body.light .bnav{background:#ece8df;border-top:1px solid rgba(0,0,0,.1);box-shadow:0 -2px 8px rgba(0,0,0,.06);}
-body.light .icon-btn{background:#fff;border:1px solid rgba(0,0,0,.12);}
-body.light .lang-pill{background:#fff;border:1px solid rgba(0,0,0,.12);color:#333;}
-body.light .nbadge{border-color:#ece8df;}
-body.light .hdr-name{color:#111;}
-body.light .hdr-role{color:#c89000;}
-body.light .hdr-av{background:#fde68a;color:#111;}
+body.light .hdr{background:#ffffff;border-bottom:1px solid #e3e0da;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+body.light .bnav{background:#ffffff;border-top:1px solid #e3e0da;box-shadow:0 -1px 4px rgba(0,0,0,.06);}
+body.light .icon-btn{background:#f6f6f4;border:1px solid #e3e0da;color:#1c1c1c;}
+body.light .lang-pill{background:#f6f6f4;border:1px solid #e3e0da;color:#4a4a4a;}
+body.light .nbadge{border-color:#ffffff;}
+body.light .hdr-name{color:#1c1c1c;}
+body.light .hdr-role{color:#b45309;}
+body.light .hdr-av{background:#fde68a;color:#92400e;}
 
 /* ── Cards & containers ── */
-body.light .card{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 6px rgba(0,0,0,.06);}
-body.light .card:hover{border-color:rgba(0,0,0,.15);}
-body.light .req-card{background:#fff;border:1px solid rgba(0,0,0,.09);box-shadow:0 1px 6px rgba(0,0,0,.06);}
-body.light .task-card{background:#fff;border:1px solid rgba(0,0,0,.09);box-shadow:0 1px 6px rgba(0,0,0,.06);}
-body.light .req-card:hover{border-color:rgba(0,0,0,.18);}
-body.light .task-card:hover{border-color:rgba(0,0,0,.18);}
-body.light .chat-row{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .menu-row{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .payslip-row{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .lb-row{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .emp-card{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .grp-card{background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.05);}
-body.light .shift-item{background:#fff;border:1px solid rgba(0,0,0,.09);}
-body.light .req-row{background:#fff;border:1px solid rgba(0,0,0,.09);}
+body.light .card{background:#fff;border:1px solid #e3e0da;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+body.light .card:hover{border-color:#c9c5be;}
+body.light .req-card{background:#fff;border:1px solid #e3e0da;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+body.light .task-card{background:#fff;border:1px solid #e3e0da;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+body.light .req-card:hover{border-color:#b45309;}
+body.light .task-card:hover{border-color:#b45309;}
+body.light .chat-row{background:#fff;border:1px solid #e3e0da;}
+body.light .menu-row{background:#fff;border:1px solid #e3e0da;}
+body.light .payslip-row{background:#fff;border:1px solid #e3e0da;}
+body.light .lb-row{background:#fff;border:1px solid #e3e0da;}
+body.light .emp-card{background:#fff;border:1px solid #e3e0da;}
+body.light .grp-card{background:#fff;border:1px solid #e3e0da;}
+body.light .shift-item{background:#fff;border:1px solid #e3e0da;}
+body.light .req-row{background:#fff;border:1px solid #e3e0da;}
 body.light .ann-card{background:#fff;border:1px solid rgba(139,92,246,.3);}
 
 /* ── Stat chips ── */
@@ -113,20 +114,20 @@ body.light .btn-sec{background:#fff;border:1px solid rgba(0,0,0,.15);color:#444;
 body.light .btn-pri{box-shadow:0 2px 8px rgba(0,0,0,.15);}
 
 /* ── Modal ── */
-body.light .modal{background:#ece8df;border:1px solid rgba(0,0,0,.12);box-shadow:0 -4px 24px rgba(0,0,0,.1);}
+body.light .modal{background:#ffffff;border:1px solid #e3e0da;box-shadow:0 -4px 24px rgba(0,0,0,.1);}
 body.light .modal-bg{background:rgba(0,0,0,.4);}
-body.light .mhandle{background:rgba(0,0,0,.2);}
+body.light .mhandle{background:#c9c5be;}
 
 /* ── Admin panel ── */
-body.light .admin-overlay{background:#ece8df;}
-body.light .admin-hdr{background:#ece8df;border-bottom:1px solid rgba(0,0,0,.1);box-shadow:0 1px 8px rgba(0,0,0,.06);}
-body.light .admin-tabs{background:#e4dfd5;border-bottom:1px solid rgba(0,0,0,.08);}
-body.light .admin-tab{color:#666;}
-body.light .admin-tab.active{color:#92400e;background:rgba(180,100,0,.08);border-bottom:2px solid #b45309;text-shadow:none;}
-body.light .setting-group{background:#fff;border:1px solid rgba(0,0,0,.09);}
-body.light .setting-group-title{color:#92400e;text-shadow:none;border-bottom:1px solid rgba(0,0,0,.08);}
-body.light .setting-row{border-color:rgba(0,0,0,.07);}
-body.light .setting-btn{background:rgba(180,100,0,.08);border:1px solid rgba(180,100,0,.25);color:#92400e;}
+body.light .admin-overlay{background:#f6f6f4;}
+body.light .admin-hdr{background:#ffffff;border-bottom:1px solid #e3e0da;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+body.light .admin-tabs{background:#f6f6f4;border-bottom:1px solid #e3e0da;}
+body.light .admin-tab{color:#6a6a6a;}
+body.light .admin-tab.active{color:#92400e;background:rgba(180,100,0,.07);border-bottom:2px solid #b45309;text-shadow:none;}
+body.light .setting-group{background:#fff;border:1px solid #e3e0da;}
+body.light .setting-group-title{color:#92400e;text-shadow:none;border-bottom:1px solid #e3e0da;}
+body.light .setting-row{border-color:#e3e0da;}
+body.light .setting-btn{background:rgba(180,100,0,.07);border:1px solid rgba(180,100,0,.25);color:#92400e;}
 
 /* ── Filter chips ── */
 body.light .afc{background:#fff;border:1px solid rgba(0,0,0,.12);color:#444;}
@@ -135,14 +136,14 @@ body.light .lang-btn{background:#fff;border:1px solid rgba(0,0,0,.12);}
 body.light .lang-btn.active{background:#fef3c7;border-color:#b45309;color:#92400e;box-shadow:none;}
 
 /* ── Chat ── */
-body.light .chat-hdr{background:#ece8df;border-bottom:1px solid rgba(0,0,0,.1);}
-body.light .chat-input-row{background:#ece8df;border-top:1px solid rgba(0,0,0,.1);}
-body.light .bubble.rx{background:#fff;border:1px solid rgba(0,0,0,.1);color:#111;}
-body.light .bubble.tx{background:#fef3c7;border:1px solid rgba(180,130,0,.25);color:#111;}
-body.light .chat-inp{background:#fff;border:1px solid rgba(0,0,0,.12);color:#111;}
+body.light .chat-hdr{background:#ffffff;border-bottom:1px solid #e3e0da;}
+body.light .chat-input-row{background:#ffffff;border-top:1px solid #e3e0da;}
+body.light .bubble.rx{background:#f6f6f4;border:1px solid #e3e0da;color:#1c1c1c;}
+body.light .bubble.tx{background:#fef3c7;border:1px solid #f59e0b;color:#1c1c1c;}
+body.light .chat-inp{background:#f6f6f4;border:1px solid #e3e0da;color:#1c1c1c;}
 
 /* ── Notification panel ── */
-body.light #notifPanel{background:#ece8df!important;border:1px solid rgba(0,0,0,.12)!important;box-shadow:0 4px 20px rgba(0,0,0,.1)!important;}
+body.light #notifPanel{background:#ffffff!important;border:1px solid #e3e0da!important;box-shadow:0 4px 20px rgba(0,0,0,.1)!important;}
 
 /* ── Clock & shift ── */
 body.light .clock-card{background:#fff;border:1px solid rgba(16,185,129,.25);}
@@ -7706,6 +7707,11 @@ function renderWeekChart(attendance) {
   }
 
   function tick() {
+    if (document.body.classList.contains('light')) {
+      ctx.clearRect(0, 0, W, H);
+      requestAnimationFrame(tick);
+      return;
+    }
     for (const p of pts) {
       p.x += p.vx;
       p.y += p.vy;
