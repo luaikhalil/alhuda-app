@@ -2382,7 +2382,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </div>
         <div class="setting-row">
           <span class="setting-lbl">Arabic Mode Default</span>
-          <div class="tog" id="togArabic" onclick="this.classList.toggle('on');saveLangPref(this.classList.contains('on')?'ar':'en');toast('Setting saved — will apply on next login')"></div>
+          <div class="tog" id="togArabic" onclick="this.classList.toggle('on');saveLangPref(this.classList.contains('on')?'ar':'en',true);toast('Setting saved — all users will see this language by default')"></div>
         </div>
         <div class="setting-row">
           <span class="setting-lbl">Allow Employee Self Clock-out</span>
@@ -3160,6 +3160,8 @@ function login(roleKey) {
   startClock();
   refreshDynamic();
   showTab('home');
+  // Apply saved language preference AFTER the app is rendered (avoids login-screen freeze)
+  setTimeout(() => applyPostLoginLang(), 100);
   // Admin-specific post-login
   setTimeout(() => _postLoginAdmin(roleKey), 50);
   // Show notification enable banner if permission not yet granted
@@ -6712,16 +6714,13 @@ setLang = function(l, container) {
 const _origLoadSupabaseData = loadSupabaseData;
 loadSupabaseData = async function(isAdmin) {
   await _origLoadSupabaseData(isAdmin);
-  // Load app language default (set by admin)
+  // Load app language default (set by admin) — sync admin toggle & localStorage
   try {
     const { data: langData } = await sb.from('settings').select('value').eq('key','app_lang_default').maybeSingle();
     if (langData?.value) {
-      // Only apply if user hasn't manually overridden in this session
-      const localLang = localStorage.getItem('alhuda_lang');
-      if (!localLang) {
+      // Only update localStorage if user hasn't manually chosen a language this session
+      if (!localStorage.getItem('alhuda_lang_manual')) {
         localStorage.setItem('alhuda_lang', langData.value);
-        if (langData.value === 'ar' && lang !== 'ar') setLang('ar');
-        else if (langData.value === 'en' && lang !== 'en') setLang('en');
       }
       // Sync the admin toggle state
       const tog = document.getElementById('togArabic');
@@ -7745,8 +7744,9 @@ function toggleTheme() {
 }
 
 // ─── LANGUAGE PREFERENCE ──────────────────────────────────────────────────
-function saveLangPref(l) {
+function saveLangPref(l, fromAdmin) {
   localStorage.setItem('alhuda_lang', l);
+  if (!fromAdmin) localStorage.setItem('alhuda_lang_manual', '1'); // user manually chose
   // Save to Supabase as app-wide default (admin only)
   try {
     if (user && user.type === 'admin') {
@@ -7774,12 +7774,19 @@ function updateLangButtons(l) {
 // ─── AUTO-LOGIN ON PAGE LOAD ───────────────────────────────────────────────
 window.addEventListener('load', () => {
   applyTheme(localStorage.getItem('alhuda_theme') || 'dark');
-  // Apply saved language preference (default Arabic if admin set it)
-  const savedLang = localStorage.getItem('alhuda_lang') || 'en';
-  if (savedLang === 'ar') setLang('ar');
+  // NOTE: language is applied AFTER login (see applyPostLoginLang) — not here,
+  // because running setLang on the login screen causes slow DOM reflow on phones.
   tryAutoLogin();
   initSlideButton();
 });
+
+// Apply saved language once the app is fully loaded after login
+function applyPostLoginLang() {
+  const savedLang = localStorage.getItem('alhuda_lang') || 'en';
+  if (savedLang === 'ar' && lang !== 'ar') setLang('ar');
+  else if (savedLang === 'en' && lang !== 'en') setLang('en');
+  updateLangButtons(lang);
+}
 
 // ════════ SLIDE-TO-CONFIRM CLOCK OUT ════════
 function initSlideButton() {
