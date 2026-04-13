@@ -517,7 +517,8 @@ select.inp{appearance:none;}
 
 /* ── RTL OVERRIDES ── */
 body.rtl .chat-unread{margin-left:0;margin-right:auto;}
-body.rtl .chain{direction:ltr;} /* keep chain LTR */
+body.rtl .chain{flex-direction:row-reverse;}
+body.rtl .cstep::after{left:auto;right:50%;}
 
 /* ══════════════════════════════════════════
    ADMIN PANEL
@@ -3081,9 +3082,9 @@ function login(roleKey) {
 
   // Profile
   document.getElementById('profAv').textContent = user.init;
-  document.getElementById('profName').textContent = user.name;
-  document.getElementById('profDept').textContent = user.dept;
-  document.getElementById('profId').textContent = user.id + ' · Since Jan 2023';
+  document.getElementById('profName').textContent = lang === 'ar' ? (user.nameAr || user.name) : user.name;
+  document.getElementById('profDept').textContent = lang === 'ar' ? (user.deptAr || user.dept) : user.dept;
+  document.getElementById('profId').textContent = user.id + ' · ' + t('Since Jan 2023', 'منذ يناير 2023');
 
   // Role-specific UI
   const isManager = user.type === 'manager';
@@ -5273,12 +5274,12 @@ function confirmDanger(action) {
 // ══════════════════════════════════════════════════════════════════════════
 
 let groups = [
-  { id:'grp-001', name:'All Staff',       desc:'Everyone in the organisation', icon:'📢', type:'all',           members:[], createdBy:'ADM-001', pinned:true },
-  { id:'grp-002', name:'Ground Floor',    desc:'GF managers, supervisors & staff', icon:'🏪', type:'dept_gf',   members:['EMP-001','EMP-002','EMP-003','EMP-004','MGR-001'], createdBy:'ADM-001' },
-  { id:'grp-003', name:'Warehouse Team',  desc:'Warehouse staff',              icon:'📦', type:'dept_warehouse', members:['EMP-005','MGR-002'], createdBy:'ADM-001' },
-  { id:'grp-004', name:'Security Team',   desc:'All security personnel',       icon:'🔒', type:'dept_security',  members:['SEC-001','SEC-002'], createdBy:'ADM-001' },
-  { id:'grp-005', name:'Office Staff',    desc:'All office department staff',  icon:'💼', type:'dept_office',    members:['OFF-001','OFF-002','OFF-003','OFF-004','OFF-005'], createdBy:'ADM-001' },
-  { id:'grp-006', name:'Managers Group',  desc:'All store & department managers', icon:'⭐', type:'dept_managers', members:['MGR-001','MGR-002','MGR-003'], createdBy:'ADM-001' },
+  { id:'grp-001', name:'All Staff',       nameAr:'جميع الموظفين',    desc:'Everyone in the organisation',        descAr:'جميع موظفي المنظمة',            icon:'📢', type:'all',           members:[], createdBy:'ADM-001', pinned:true },
+  { id:'grp-002', name:'Ground Floor',    nameAr:'الطابق الأرضي',    desc:'GF managers, supervisors & staff',    descAr:'مدراء ومشرفو الطابق الأرضي',    icon:'🏪', type:'dept_gf',        members:['EMP-001','EMP-002','EMP-003','EMP-004','MGR-001'], createdBy:'ADM-001' },
+  { id:'grp-003', name:'Warehouse Team',  nameAr:'فريق المستودع',    desc:'Warehouse staff',                     descAr:'موظفو المستودع',                 icon:'📦', type:'dept_warehouse', members:['EMP-005','MGR-002'], createdBy:'ADM-001' },
+  { id:'grp-004', name:'Security Team',   nameAr:'فريق الأمن',       desc:'All security personnel',              descAr:'جميع أفراد الأمن',               icon:'🔒', type:'dept_security',  members:['SEC-001','SEC-002'], createdBy:'ADM-001' },
+  { id:'grp-005', name:'Office Staff',    nameAr:'موظفو المكتب',     desc:'All office department staff',         descAr:'جميع موظفي الأقسام المكتبية',    icon:'💼', type:'dept_office',    members:['OFF-001','OFF-002','OFF-003','OFF-004','OFF-005'], createdBy:'ADM-001' },
+  { id:'grp-006', name:'Managers Group',  nameAr:'مجموعة المدراء',   desc:'All store & department managers',     descAr:'جميع مدراء المتجر والأقسام',    icon:'⭐', type:'dept_managers', members:['MGR-001','MGR-002','MGR-003'], createdBy:'ADM-001' },
 ];
 
 // Track selected members in the group modal
@@ -7375,14 +7376,16 @@ renderChatList = function() {
   });
 
   const grpHTML = myGroups.length > 0 ? `
-    <div class="stitle" style="margin-top:14px">GROUPS</div>
+    <div class="stitle" style="margin-top:14px">${t('GROUPS','المجموعات')}</div>
     ${myGroups.map(g => {
       const cnt = resolveGroupMembers(g).length;
+      const grpName = lang === 'ar' ? (g.nameAr || g.name) : g.name;
+      const grpDesc = lang === 'ar' ? (g.descAr || g.desc) : g.desc;
       return `<div class="chat-row" onclick="openGroupChat('${g.id}')">
         <div class="chat-av-sm b" style="font-size:20px">${g.icon}</div>
         <div class="chat-info">
-          <div class="chat-name">${g.name}</div>
-          <div class="chat-prev">${g.desc || cnt + ' members'}</div>
+          <div class="chat-name">${grpName}</div>
+          <div class="chat-prev">${grpDesc || cnt + t(' members',' عضو')}</div>
         </div>
         <div class="chat-meta">
           <span class="bdg b" style="font-size:10px">${cnt}</span>
