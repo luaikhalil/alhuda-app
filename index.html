@@ -1316,6 +1316,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <button class="demo-btn" onclick="login('security')"><span>🔒</span><span data-en="Security Guard" data-ar="حارس الأمن">Security Guard</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
         <button class="demo-btn" onclick="login('security_sup')"><span>🛡️</span><span data-en="Security Supervisor" data-ar="مشرف الأمن">Security Supervisor</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
         <button class="demo-btn" onclick="login('it_staff')"><span>💻</span><span data-en="IT Staff" data-ar="موظف تقنية المعلومات">IT Staff</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
+        <button class="demo-btn" onclick="login('acc_mgr')"><span>🧾</span><span data-en="Accounting Manager" data-ar="مدير المحاسبة">Accounting Manager</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
       </div>
       <!-- Admin button spans full width -->
       <button class="demo-btn" onclick="login('admin')" style="grid-column:1/-1;margin-top:6px;background:rgba(255,193,40,.06);border-color:rgba(255,193,40,.3);flex-direction:row;justify-content:center;gap:10px;padding:12px">
@@ -3067,7 +3068,8 @@ const ROLES = {
   supervision: { id:'OFF-005', name:'Fahad Al-Rashidi', nameAr:'فهد الراشدي', role:'Head of Supervision', roleAr:'رئيس الإشراف', dept:'Top Level Supervision', deptAr:'الإشراف العام', init:'FR', type:'dept_officer', deptKey:'supervision', area:'office' },
   security:    { id:'SEC-001', name:'Walid Nasser', nameAr:'وليد ناصر', role:'Security Guard', roleAr:'حارس الأمن', dept:'Security', deptAr:'الأمن', init:'WN', type:'security', area:'security' },
   security_sup:{ id:'SEC-SUP', name:'Mahmoud Al-Qahtan', nameAr:'محمود القحطان', role:'Security Supervisor', roleAr:'مشرف الأمن', dept:'Security', deptAr:'الأمن', init:'MQ', type:'security_sup', area:'security', manages:['security'] },
-  it_staff:    { id:'OFF-004', name:'Ayman Al-Zubairi', nameAr:'أيمن الزبيري', role:'IT Technician', roleAr:'فني تقنية المعلومات', dept:'IT Department', deptAr:'قسم تقنية المعلومات', init:'AZ', type:'dept_officer', deptKey:'it', area:'office' }
+  it_staff:    { id:'OFF-004', name:'Ayman Al-Zubairi', nameAr:'أيمن الزبيري', role:'IT Technician', roleAr:'فني تقنية المعلومات', dept:'IT Department', deptAr:'قسم تقنية المعلومات', init:'AZ', type:'dept_officer', deptKey:'it', area:'office' },
+  acc_mgr:     { id:'OFF-006', name:'Tariq Al-Balushi', nameAr:'طارق البلوشي', role:'Accounting Manager', roleAr:'مدير المحاسبة', dept:'Accounting', deptAr:'المحاسبة', init:'TB', type:'manager', deptKey:'accounting', area:'office' }
 };
 
 // Request types per role
@@ -3103,6 +3105,13 @@ const REQ_TYPES = {
     { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'supervision_then_hr', toLabel:'Supervision → HR',  toNote:'Goes to Supervision Team then HR.' },
     { key:'it',          icon:'💻', label:'IT Support',       labelAr:'دعم تقني',        to:'it',               toLabel:'IT Department',         toNote:'Goes to IT Department.' },
     { key:'general',     icon:'📝', label:'General Memo',     labelAr:'مذكرة عامة',      to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
+  ],
+  acc_mgr: [
+    { key:'leave',    icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',          toLabel:'General Manager',  toNote:'Goes directly to the General Manager for approval.' },
+    { key:'budget',   icon:'💵', label:'Budget Request',   labelAr:'طلب ميزانية',     to:'gm',          toLabel:'General Manager',  toNote:'Request budget approval from the General Manager.' },
+    { key:'escalate', icon:'🚨', label:'Escalate to GM',   labelAr:'تصعيد للمدير العام', to:'gm',       toLabel:'General Manager',  toNote:'Escalate an urgent issue directly to the General Manager.' },
+    { key:'it',       icon:'💻', label:'IT Support',       labelAr:'دعم تقني',        to:'it',          toLabel:'IT Department',    toNote:'Goes directly to IT Department.' },
+    { key:'general',  icon:'📝', label:'General Memo',     labelAr:'مذكرة عامة',      to:'gm',          toLabel:'General Manager',  toNote:'Send a memo directly to the General Manager.' },
   ],
   security: [],
   security_sup: [
