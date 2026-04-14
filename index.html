@@ -6822,10 +6822,13 @@ async function enableNotifs() {
   if (banner) banner.remove();
   await initFCMToken();
   updateNotifToggleUI();
-  if (Notification.permission === 'granted') {
+  // Native APK: success = FCM token was saved. Browser: check Notification.permission
+  const isNative = window.Android && window.Android.isNativeApp && window.Android.isNativeApp();
+  const success = isNative ? !!user?.fcmToken : (typeof Notification !== 'undefined' && Notification.permission === 'granted');
+  if (success) {
     toast('🔔 ' + t('Notifications enabled!','تم تفعيل الإشعارات!'));
   } else {
-    toast('⚠️ ' + t('Notifications blocked. Please allow in browser settings.','الإشعارات محظورة. يرجى السماح في إعدادات المتصفح.'));
+    toast('⚠️ ' + t('Notifications blocked. Please allow in app settings.','الإشعارات محظورة. يرجى السماح في إعدادات التطبيق.'));
   }
 }
 
