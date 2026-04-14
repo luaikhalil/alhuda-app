@@ -4535,7 +4535,8 @@ let polls = [];
 
 function canCreatePoll() {
   if (!user) return false;
-  return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type);
+  const t = user.emp_type || user.type || '';
+  return ['admin','manager','supervisor','dept_officer'].includes(t);
 }
 
 function openPollModal() {
@@ -4608,7 +4609,7 @@ function renderPolls() {
   const visible = polls.filter(p => {
     if (!p.target_role) return true;
     if (!user) return false;
-    if (p.target_role === 'admin') return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type);
+    if (p.target_role === 'admin') return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type || user.type || '');
     return true;
   });
 
