@@ -2983,10 +2983,12 @@ async function doLogin() {
       deptAr: data.dept_label || data.dept,
       init: data.init || (data.first_name[0] + data.last_name[0]).toUpperCase(),
       type: data.emp_type || 'employee',
+      emp_type: data.emp_type || 'employee',
       reportTo: data.report_to,
       area: data.area,
       deptKey: data.dept_key,
-      canIncident: !!(data.emp_type === 'supervisor')
+      canIncident: !!(data.emp_type === 'supervisor'),
+      salary: data.salary || null
     };
 
     // Load live data from Supabase
@@ -3032,8 +3034,10 @@ async function tryAutoLogin() {
       dept: data.dept_label || data.dept, deptAr: data.dept_label || data.dept,
       init: data.init || (data.first_name[0] + data.last_name[0]).toUpperCase(),
       type: data.emp_type || 'employee',
+      emp_type: data.emp_type || 'employee',
       reportTo: data.report_to, area: data.area, deptKey: data.dept_key,
-      canIncident: !!(data.emp_type === 'supervisor')
+      canIncident: !!(data.emp_type === 'supervisor'),
+      salary: data.salary || null
     };
     await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
     document.getElementById('autoLoginSplash').style.display = 'none';
@@ -5089,8 +5093,8 @@ function calcAdvanceLimit(empId) {
   const today     = now.getDate();          // day of month (1-31)
   const month     = now.getMonth() + 1;
   const year      = now.getFullYear();
-  const emp       = employees.find(e => e.id === empId);
-  const salary    = Number(emp?.salary || 0);
+  // Salary comes from user object (set at login from Supabase) — reliable regardless of array state
+  const salary    = Number(user?.salary || employees.find(e => e.id === empId)?.salary || 0);
   if (!salary) return null;                 // no salary on record → no limit calculable
   const dailyRate   = salary / 30;
   const daysWorked  = today;
