@@ -10,6 +10,22 @@
 <title>Alhuda Staff App</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Native WebView: override Notification before any other JS runs ──────────
+// WebView injects window.Android before JS executes, so this runs immediately.
+// Without this, WebView's built-in Notification reports permission='denied'
+// which blocks initFCMToken() from ever being called.
+(function() {
+  try {
+    if (window.Android && typeof window.Android.isNativeApp === 'function' && window.Android.isNativeApp()) {
+      function NativeNotification(title, opts) {}
+      NativeNotification.permission = 'granted';
+      NativeNotification.requestPermission = function() { return Promise.resolve('granted'); };
+      window.Notification = NativeNotification;
+    }
+  } catch(e) {}
+})();
+</script>
 <style>
 :root {
   --bg: #1b1b1b; --bg2: #212121; --bgc: rgba(255,255,255,0.04); --bgch: rgba(255,193,40,0.08);
@@ -168,6 +184,21 @@ body.light .login-card{background:#fff;border:1px solid rgba(0,0,0,.1);box-shado
 body.light .ni.active{background:rgba(180,100,0,.1);border:1px solid rgba(180,100,0,.3);box-shadow:none;}
 body.light .ni.active .nlbl{color:#92400e;text-shadow:none;}
 body.light .ni.active .ico{filter:none;}
+
+/* ── Office Pass (light mode) ── */
+body.light .pass-overlay{background:rgba(0,0,0,.5);}
+body.light .pass-card{background:linear-gradient(135deg,#fffbf0,#fff8e8);border:2px solid rgba(180,83,9,.35);box-shadow:0 0 40px rgba(180,83,9,.15);}
+body.light .pass-header{border-bottom:1px solid rgba(180,83,9,.15);}
+body.light .pass-logo{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid rgba(180,83,9,.3);}
+body.light .pass-company{color:#92400e;}
+body.light .pass-subtitle{color:#b45309;}
+body.light .pass-serial{background:rgba(180,83,9,.07);border:1px solid rgba(180,83,9,.2);color:#92400e;}
+body.light .pass-row{border-bottom:1px solid #e3e0da;}
+body.light .pass-key{color:#8a8a8a;}
+body.light .pass-val{color:#1c1c1c;}
+body.light .pass-validity{color:#6a6a6a;}
+body.light .pass-close{background:#fff;border:1px solid #e3e0da;color:#444;}
+body.light .pass-close:hover{border-color:#b45309;color:#92400e;}
 
 /* ── Activity icons ── */
 body.light .aico.b{background:#fffbeb;border:1px solid rgba(202,138,4,.25);box-shadow:none;}
@@ -3385,10 +3416,15 @@ function login(roleKey) {
   setTimeout(() => _postLoginAdmin(roleKey), 50);
   // Show notification enable banner if permission not yet granted
   setTimeout(() => {
+    // Native APK: always init FCM — Android bridge provides the token directly
+    if (window.Android && typeof window.Android.isNativeApp === 'function' && window.Android.isNativeApp()) {
+      initFCMToken();
+      return;
+    }
+    // Browser / PWA path
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted') { initFCMToken(); return; }
     if (Notification.permission === 'denied') return;
-    // Show friendly banner to request permission
     showNotifBanner();
   }, 2000);
 }
