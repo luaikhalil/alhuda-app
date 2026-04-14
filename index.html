@@ -4381,9 +4381,7 @@ function submitRequest() {
 
 // ─── OFFICE PASS ──────────────────────────────────────────────────────────────
 function generateSerial() {
-  const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  const num = String(Math.floor(100000 + Math.random() * 900000));
-  return date + num;
+  return String(Math.floor(1000000000 + Math.random() * 9000000000));
 }
 
 function showPass(serial, empName, empDept, purpose, issuedBy) {
