@@ -1651,7 +1651,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
       <!-- Manager: Assigned Tasks -->
       <div id="mgrTasksSection" style="display:none">
-        <div class="stitle" data-en="ASSIGNED BY ME" data-ar="المهام التي عيّنتها">ASSIGNED BY ME</div>
+        <div class="stitle" id="mgrTasksSectionTitle" data-en="ASSIGNED BY ME" data-ar="المهام التي عيّنتها">ASSIGNED BY ME</div>
         <div id="mgrTasksList"></div>
 
         <div class="stitle" style="margin-top:20px" data-en="TEAM LEADERBOARD" data-ar="لوحة المتصدرين">TEAM LEADERBOARD</div>
@@ -2300,20 +2300,26 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <select class="inp" id="tAssignTo" style="margin-bottom:0"></select>
       </div>
       <div class="mg">
+        <label class="lbl" data-en="Priority" data-ar="الأولوية">Priority</label>
+        <select class="inp" id="tPriority" style="margin-bottom:0">
+          <option value="normal" data-en="Normal" data-ar="عادي">Normal</option>
+          <option value="high" data-en="High Priority" data-ar="أولوية عالية">High Priority</option>
+          <option value="urgent" data-en="Urgent" data-ar="عاجل">Urgent</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="mg">
         <label class="lbl" data-en="Due Date" data-ar="تاريخ الاستحقاق">Due Date</label>
         <input class="inp" type="date" id="tDueDate" style="margin-bottom:0">
+      </div>
+      <div class="mg">
+        <label class="lbl" data-en="Due Time" data-ar="وقت الاستحقاق">Due Time</label>
+        <input class="inp" type="time" id="tDueTime" style="margin-bottom:0">
       </div>
     </div>
     <div style="margin-top:10px;padding:10px 13px;background:rgba(255,193,40,.07);border:1px solid rgba(255,193,40,.18);border-radius:9px;font-size:11px;color:var(--t2);line-height:1.5">
       🪙 <strong style="color:var(--gold)">Coins are awarded by the manager</strong> upon reviewing the completed work — rated <strong>1 to 10 coins</strong>. Coins appear on the employee's profile.
-    </div>
-    <div class="mg" style="margin-top:8px">
-      <label class="lbl" data-en="Priority" data-ar="الأولوية">Priority</label>
-      <select class="inp" id="tPriority" style="margin-bottom:0">
-        <option value="normal">Normal</option>
-        <option value="high">High Priority</option>
-        <option value="urgent">Urgent</option>
-      </select>
     </div>
     <button class="btn-pri" onclick="saveTask()" data-en="✅ Assign Task" data-ar="✅ تعيين المهمة">✅ Assign Task</button>
     <button class="btn-sec" onclick="closeModal('taskModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
@@ -3183,6 +3189,16 @@ const REQ_TYPES = {
     { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',               toLabel:'General Manager',       toNote:'Goes directly to the General Manager.' },
     { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',      toNote:'Goes directly to Maintenance Department.' },
     { key:'general',     icon:'📝', label:'General Report',   labelAr:'تقرير عام',       to:'supervision',      toLabel:'Supervision Team',      toNote:'Goes to Top Level Supervision.' },
+  ],
+  // General Manager — no leave/IT requests from staff; GM-level actions only
+  admin: [
+    { key:'alert',       icon:'📣', label:'Broadcast Alert',      labelAr:'إشعار عام',          to:'all_managers',  toLabel:'All Managers',         toNote:'Send an urgent notice to all managers and supervisors.' },
+    { key:'budget_auth', icon:'💵', label:'Budget Authorization',  labelAr:'اعتماد ميزانية',     to:'accounting',    toLabel:'Accounting Dept',      toNote:'Authorize a budget request or approve spending.' },
+    { key:'vendor',      icon:'🤝', label:'Vendor Meeting',        labelAr:'اجتماع مورد',         to:'accounting',    toLabel:'Accounting Dept',      toNote:'Log a vendor or supplier engagement for the record.' },
+    { key:'decision',    icon:'📊', label:'Operational Decision',  labelAr:'قرار تشغيلي',        to:'all_managers',  toLabel:'All Managers',         toNote:'Document and distribute an operational or strategic decision.' },
+    { key:'policy',      icon:'📜', label:'Policy Update',         labelAr:'تحديث سياسة',         to:'hr',            toLabel:'HR Department',        toNote:'Issue a new or updated company policy for HR to circulate.' },
+    { key:'pass',        icon:'🎫', label:'Issue Office Pass',     labelAr:'إصدار تصريح',         to:'employee',      toLabel:'Employee',             toNote:'Issue an office access pass for an employee.' },
+    { key:'general',     icon:'📝', label:'General Memo',          labelAr:'مذكرة عامة',          to:'all_managers',  toLabel:'All Managers',         toNote:'Send a general memo or note to all managers.' },
   ],
 };
 
@@ -4313,8 +4329,18 @@ function openReqDetail(id) {
 }
 
 // ─── NEW REQUEST ──────────────────────────────────────────────────────────────
+// Resolve which REQ_TYPES list to use for the current user.
+// Admin (General Manager) always gets the 'admin' list — never the employee list.
+function getMyReqTypes() {
+  if (!user) return [];
+  // dept is 'admin' for ADM-001; emp_type is 'admin' for real DB users
+  if (user.type === 'admin' || user.dept === 'admin' || role === 'admin') return REQ_TYPES.admin || [];
+  return REQ_TYPES[user.type] || REQ_TYPES.employee;
+}
+
 function openNewReqModal(preselect) {
-  const typeList = REQ_TYPES[user.type] || REQ_TYPES.employee;
+  const typeList = getMyReqTypes();
+  if (!typeList.length) { toast(t('No request types available for your role.', 'لا توجد أنواع طلبات لدورك.')); return; }
   const grid = document.getElementById('reqTypeGrid');
   grid.innerHTML = typeList.map(rt => `
     <div class="rtype-btn ${preselect === rt.key ? 'sel' : ''}" id="rtype-${rt.key}" onclick="selectReqType('${rt.key}')">
@@ -4328,7 +4354,7 @@ function openNewReqModal(preselect) {
 
 function selectReqType(key) {
   selectedReqType = key;
-  const typeList = REQ_TYPES[user.type] || REQ_TYPES.employee;
+  const typeList = getMyReqTypes();
   const rt = typeList.find(r => r.key === key);
   if (!rt) return;
 
@@ -6232,6 +6258,30 @@ function getOverdueRequests() {
   return requests.filter(r => isReqOverdue(r));
 }
 
+// Convert 24-h "HH:MM" → "H:MM AM/PM"
+function fmtTime12(t24) {
+  if (!t24) return '';
+  const [h, m] = t24.split(':').map(Number);
+  const ampm = h >= 12 ? (lang === 'ar' ? 'م' : 'PM') : (lang === 'ar' ? 'ص' : 'AM');
+  const h12 = h % 12 || 12;
+  return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+}
+
+// Format a task's due date+time into a readable string
+function fmtDue(tk) {
+  if (!tk.due_date) return t('No deadline', 'بدون موعد');
+  return tk.due_date + (tk.due_time ? ' · ' + fmtTime12(tk.due_time) : '');
+}
+
+// Is a task overdue? Respects time if set, otherwise treats end-of-day as deadline
+function isTaskOverdue(tk) {
+  if (!tk.due_date) return false;
+  const ms = tk.due_time
+    ? new Date(tk.due_date + 'T' + tk.due_time).getTime()
+    : new Date(tk.due_date).getTime() + 86399999; // end of day
+  return ms < Date.now();
+}
+
 function formatAge(req) {
   const hrs = getReqAgeHours(req);
   if (!req.createdAt || hrs === 0) return req.date || '';
@@ -7608,8 +7658,13 @@ function updateBellBadge() {
     const myPending = tasks.filter(tk => tk.assigned_to === (user.id || role) && (tk.status === 'pending' || tk.status === 'in_progress') && !notifRead.includes(tk.id));
     count += myPending.length;
   } else {
-    // For managers: count tasks submitted for review
-    const pendingReview = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifRead.includes(tk.id));
+    const isGMUser = user.type === 'admin' || user.dept === 'admin' || role === 'admin';
+    // GM sees all pending reviews company-wide; regular managers see only their own
+    const pendingReview = tasks.filter(tk =>
+      (isGMUser || tk.assigned_by === (user.id || role)) &&
+      tk.status === 'pending_review' &&
+      !notifRead.includes(tk.id)
+    );
     count += pendingReview.length;
   }
   const badge = document.getElementById('bellBadge');
@@ -7723,14 +7778,25 @@ async function loadTasks() {
 
 function renderTasks() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin';
+  const isAdmin   = user.type === 'admin' || user.dept === 'admin' || role === 'admin';
+  const isManager = user.type === 'manager' || isAdmin;
   document.getElementById('createTaskBtn').style.display = isManager ? 'block' : 'none';
   document.getElementById('myTasksSection').style.display = isManager ? 'none' : 'block';
   document.getElementById('mgrTasksSection').style.display = isManager ? 'block' : 'none';
+
+  // Update section title to reflect GM's company-wide view
+  const titleEl = document.getElementById('mgrTasksSectionTitle');
+  if (titleEl) {
+    if (isAdmin) {
+      titleEl.textContent = lang === 'ar' ? 'جميع مهام الشركة' : 'ALL COMPANY TASKS';
+    } else {
+      titleEl.textContent = lang === 'ar' ? 'المهام التي عيّنتها' : 'ASSIGNED BY ME';
+    }
+  }
   updateBellBadge();
 
   if (isManager) {
-    renderMgrTasks();
+    renderMgrTasks(isAdmin);
     renderLeaderboard();
   } else {
     renderMyTasks();
@@ -7777,14 +7843,14 @@ function renderMyTasks() {
   };
 
   list.innerHTML = myTasks.map(tk => {
-    const overdue = (tk.status === 'in_progress' || tk.status === 'pending') && tk.due_date && new Date(tk.due_date) < new Date();
+    const overdue = (tk.status === 'in_progress' || tk.status === 'pending') && isTaskOverdue(tk);
     const effectiveStatus = overdue ? 'overdue' : tk.status;
     const coins_earned = tk.coins_awarded || 0;
     return `<div class="task-card ${tk.priority === 'urgent' ? 'urgent' : tk.priority === 'high' ? 'high' : ''} ${tk.status === 'pending_review' ? 'review-needed' : ''}">
       <div class="task-top">
         <div style="flex:1">
           <div class="task-title">${tk.priority === 'urgent' ? '🔴 ' : tk.priority === 'high' ? '🟡 ' : ''}${tk.title}</div>
-          <div class="task-meta">📅 ${t('Due','الاستحقاق')}: ${tk.due_date || t('No deadline','بدون موعد')} · ${t('From','من')}: ${tk.assigned_by_name || t('Manager','المدير')}</div>
+          <div class="task-meta">📅 ${t('Due','الاستحقاق')}: ${fmtDue(tk)} · ${t('From','من')}: ${tk.assigned_by_name || t('Manager','المدير')}</div>
           ${tk.description ? `<div style="font-size:11px;color:var(--t2);margin-top:4px">${tk.description}</div>` : ''}
         </div>
         <span class="bdg ${statusStyle[effectiveStatus] || 'o'}">${statusLabel[effectiveStatus] || effectiveStatus}</span>
@@ -7813,31 +7879,52 @@ function selectCoin(taskId, n) {
   }
 }
 
-function renderMgrTasks() {
+// Helper so call sites don't need to pass the flag explicitly
+function _isGMUser() {
+  return !!(user && (user.type === 'admin' || user.dept === 'admin' || role === 'admin'));
+}
+
+function renderMgrTasks(isGM) {
+  if (isGM === undefined) isGM = _isGMUser();
   const list = document.getElementById('mgrTasksList');
   if (!list) return;
-  const myTasks = tasks.filter(tk => tk.assigned_by === (user.id || role));
+
+  // GM sees ALL tasks company-wide; regular managers see only their own
+  const myTasks = isGM
+    ? [...tasks]
+    : tasks.filter(tk => tk.assigned_by === (user.id || role));
+
   if (!myTasks.length) {
     list.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">${t('No tasks assigned yet. Use + Assign Task to create one.','لم تُعيّن أي مهام بعد.')}</div>`;
     return;
   }
   const statusStyle = { pending:'o', in_progress:'b', pending_review:'p', confirmed:'g', overdue:'r' };
   const statusLabel = {
-    pending:'Pending', in_progress:'In Progress',
-    pending_review:'Needs Review', confirmed:'Confirmed'
+    pending: t('Pending','معلقة'),
+    in_progress: t('In Progress','قيد التنفيذ'),
+    pending_review: t('Needs Review','بانتظار المراجعة'),
+    confirmed: t('Confirmed','مؤكدة')
   };
 
-  // Sort: pending_review first
-  const sorted = [...myTasks].sort((a,b) => (b.status === 'pending_review') - (a.status === 'pending_review'));
+  // Sort: pending_review first, then by due date
+  const sorted = [...myTasks].sort((a, b) => {
+    if (b.status === 'pending_review' && a.status !== 'pending_review') return 1;
+    if (a.status === 'pending_review' && b.status !== 'pending_review') return -1;
+    return 0;
+  });
 
   list.innerHTML = sorted.map(tk => {
     const isPendingReview = tk.status === 'pending_review';
     const coins_awarded = tk.coins_awarded || 0;
+    // For GM view, show who assigned the task (useful for company-wide oversight)
+    const metaLine = isGM
+      ? `👤 ${tk.assigned_to_name} · 📋 ${t('by','من')} ${tk.assigned_by_name || t('Manager','مدير')} · 📅 ${fmtDue(tk)}`
+      : `👤 ${tk.assigned_to_name} · 📅 ${fmtDue(tk)}`;
     return `<div class="task-card ${isPendingReview ? 'review-needed' : ''}">
       <div class="task-top">
         <div style="flex:1">
           <div class="task-title">${isPendingReview ? '🔔 ' : ''}${tk.title}</div>
-          <div class="task-meta">👤 ${tk.assigned_to_name} · 📅 ${tk.due_date || '—'}</div>
+          <div class="task-meta">${metaLine}</div>
         </div>
         <span class="bdg ${statusStyle[tk.status] || 'o'}">${statusLabel[tk.status] || tk.status}</span>
       </div>
@@ -7909,13 +7996,16 @@ function updateProfileCoins() {
   }
 }
 
-function openTaskModal() {
-  document.getElementById('taskModalTitle').textContent = t('Assign New Task','تعيين مهمة جديدة');
-  document.getElementById('taskEditId').value = '';
-  document.getElementById('tTitle').value = '';
-  document.getElementById('tDetails').value = '';
-  document.getElementById('tDueDate').value = '';
-  document.getElementById('tPriority').value = 'normal';
+function openTaskModal(editId) {
+  const isEdit = !!editId;
+  const tk = isEdit ? tasks.find(t => t.id === editId) : null;
+  document.getElementById('taskModalTitle').textContent = isEdit ? t('Edit Task','تعديل المهمة') : t('Assign New Task','تعيين مهمة جديدة');
+  document.getElementById('taskEditId').value = editId || '';
+  document.getElementById('tTitle').value    = tk?.title       || '';
+  document.getElementById('tDetails').value  = tk?.description || '';
+  document.getElementById('tDueDate').value  = tk?.due_date    || '';
+  document.getElementById('tDueTime').value  = tk?.due_time    || '';
+  document.getElementById('tPriority').value = tk?.priority    || 'normal';
   // Populate assign-to select
   const sel = document.getElementById('tAssignTo');
   sel.innerHTML = employees.filter(e => e.dept !== 'admin' && e.active).map(e => `<option value="${e.id}">${e.firstName} ${e.lastName} · ${e.deptLabel}</option>`).join('');
@@ -7941,6 +8031,7 @@ async function saveTask() {
     assigned_by: user.id || role,
     assigned_by_name: user.name,
     due_date: document.getElementById('tDueDate').value || null,
+    due_time: document.getElementById('tDueTime').value || null,
     coins_awarded: 0,
     priority: document.getElementById('tPriority').value,
     status: 'pending'
