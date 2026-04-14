@@ -1389,7 +1389,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <label class="lbl" data-en="Confirm Password" data-ar="تأكيد كلمة المرور">Confirm Password</label>
       <input class="inp" type="password" id="fpwConfirm" placeholder="Re-enter password" data-ph-en="Re-enter password" data-ph-ar="أعد إدخال كلمة المرور" style="margin-bottom:4px">
       <div id="fpwErr" style="font-size:11px;color:#f87171;min-height:16px;margin-bottom:12px"></div>
-      <button class="btn-pri" onclick="submitForcedPwChange()" data-en="Set Password &amp; Continue" data-ar="تعيين كلمة المرور والمتابعة">Set Password &amp; Continue</button>
+      <button class="btn-pri ni" onclick="submitForcedPwChange()" data-en="Set Password &amp; Continue" data-ar="تعيين كلمة المرور والمتابعة">Set Password &amp; Continue</button>
     </div>
   </div>
 </div>
@@ -3019,7 +3019,8 @@ async function doLogin() {
     login(roleKey);
 
     // Force password change on first login
-    if (data.must_change_pw) showForcedPwChange();
+    // Delay slightly so applyPostLoginLang() (100ms timeout inside login()) runs first and sets the correct lang
+    if (data.must_change_pw) setTimeout(() => showForcedPwChange(), 150);
   } catch(err) {
     console.error('Login error:', err);
     showLoginErr(t('Connection error. Please try again.','خطأ في الاتصال. حاول مرة أخرى.'));
@@ -3064,7 +3065,7 @@ async function tryAutoLogin() {
     await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
     document.getElementById('autoLoginSplash').style.display = 'none';
     login(roleKey);
-    if (data.must_change_pw) showForcedPwChange();
+    if (data.must_change_pw) setTimeout(() => showForcedPwChange(), 150);
   } catch(e) {
     console.warn('Auto-login failed:', e);
     localStorage.removeItem('alhuda_session');
@@ -3562,16 +3563,23 @@ function logout() {
 // ─── Forced password change on first login ────────────────────────────────
 function showForcedPwChange() {
   const scr = document.getElementById('forcedPwScreen');
-  if (scr) { scr.style.display = 'flex'; scr.style.pointerEvents = 'auto'; }
-  // Apply current language to placeholders
-  const newInp     = document.getElementById('fpwNew');
-  const confirmInp = document.getElementById('fpwConfirm');
-  if (newInp)     newInp.placeholder     = lang === 'ar' ? '6 أحرف على الأقل' : 'Min. 6 characters';
-  if (confirmInp) confirmInp.placeholder = lang === 'ar' ? 'أعد إدخال كلمة المرور' : 'Re-enter password';
-  // Translate static labels
+  if (!scr) return;
+  scr.style.display = 'flex';
+  scr.style.pointerEvents = 'auto';
+  // Use the most up-to-date language: current lang var or localStorage fallback
+  const l = lang || localStorage.getItem('alhuda_lang') || 'en';
+  // Translate all text elements in the screen
   scr.querySelectorAll('[data-en]').forEach(el => {
-    el.textContent = lang === 'ar' ? (el.dataset.ar || el.dataset.en) : el.dataset.en;
+    el.textContent = el.getAttribute('data-' + l) || el.getAttribute('data-en');
   });
+  // Translate placeholders
+  scr.querySelectorAll('[data-ph-en]').forEach(el => {
+    el.placeholder = el.getAttribute('data-ph-' + l) || el.getAttribute('data-ph-en');
+  });
+  // Apply RTL on the screen itself if Arabic
+  scr.style.direction = l === 'ar' ? 'rtl' : 'ltr';
+  // Ensure overlay's button gets the touch fix on Android WebView
+  if (window._applyTouchFix) _applyTouchFix();
 }
 
 async function submitForcedPwChange() {
@@ -3604,8 +3612,13 @@ async function submitForcedPwChange() {
   }
 
   const fpScr = document.getElementById('forcedPwScreen');
-  if (fpScr) { fpScr.style.display = 'none'; fpScr.style.pointerEvents = 'none'; }
+  if (fpScr) { fpScr.style.display = 'none'; fpScr.style.pointerEvents = 'none'; fpScr.style.visibility = 'hidden'; }
   toast(t('✅ Password updated! Welcome.','✅ تم تحديث كلمة المرور! أهلاً بك.'));
+  // Android WebView: full-screen overlay dismissal can break touch hit-testing.
+  // Force a layout reflow then re-register touch listeners so tabs work immediately.
+  void document.body.getBoundingClientRect();
+  setTimeout(function() { if (window._applyTouchFix) _applyTouchFix(); }, 50);
+  setTimeout(function() { if (window._applyTouchFix) _applyTouchFix(); }, 300);
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
@@ -9714,8 +9727,9 @@ _dRenderManageMembersList = debounce(renderManageMembersList, 220);
 (function() {
   function addTouchFix(selector) {
     document.querySelectorAll(selector).forEach(function(el) {
+      if (el._tfx) return; // already patched — don't stack duplicate listeners
+      el._tfx = true;
       el.addEventListener('touchend', function(e) {
-        // Only fire if the finger didn't move (not a scroll)
         if (e.cancelable) e.preventDefault();
         el.click();
       }, { passive: false });
