@@ -411,6 +411,20 @@ select.inp{appearance:none;}
 .bubble.rx{background:rgba(255,255,255,.06);border:1px solid var(--border);border-bottom-left-radius:3px;align-self:flex-start;}
 .bubble.tx{background:linear-gradient(135deg,rgba(255,193,40,.18),rgba(255,171,0,.18));border:1px solid rgba(255,193,40,.2);border-bottom-right-radius:3px;align-self:flex-end;}
 .bubble .bt{font-size:9px;color:var(--t3);margin-top:3px;display:block;}
+/* Role-based message highlights */
+.bubble.mgr-msg{border-left:3px solid rgba(255,193,40,.75)!important;background:rgba(255,193,40,.10)!important;}
+.bubble.sup-msg{border-left:3px solid rgba(99,102,241,.65)!important;background:rgba(99,102,241,.08)!important;}
+.bubble.tx.mgr-msg{border-right:3px solid rgba(255,193,40,.75)!important;border-left:none!important;}
+.bubble.tx.sup-msg{border-right:3px solid rgba(99,102,241,.65)!important;border-left:none!important;}
+.msg-sender-row{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+.msg-sender-name{font-size:10px;font-weight:600;color:var(--t2);}
+.role-badge-mgr{font-size:9px;background:rgba(255,193,40,.2);color:#ffc128;border:1px solid rgba(255,193,40,.4);border-radius:4px;padding:1px 5px;font-weight:700;}
+.role-badge-sup{font-size:9px;background:rgba(99,102,241,.18);color:#818cf8;border:1px solid rgba(99,102,241,.35);border-radius:4px;padding:1px 5px;font-weight:700;}
+body.light .bubble.mgr-msg{background:rgba(255,193,40,.12)!important;}
+body.light .bubble.sup-msg{background:rgba(99,102,241,.09)!important;}
+body.light .msg-sender-name{color:#555;}
+body.light .role-badge-mgr{background:rgba(255,193,40,.2);color:#b45309;}
+body.light .role-badge-sup{background:rgba(99,102,241,.15);color:#4338ca;}
 .chat-input-row{padding:10px 14px;background:rgba(27,27,27,.96);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;align-items:stretch;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
 .chat-input-inner{display:flex;gap:8px;align-items:center;}
 .chat-inp{flex:1;padding:10px 14px;background:var(--bgc);border:1px solid var(--border);border-radius:22px;color:var(--t1);font-family:inherit;font-size:14px;outline:none;}
@@ -4709,9 +4723,25 @@ async function sendMsg() {
   // Plain text
   const msgs = document.getElementById('chatMsgsEl');
   const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  msgs.innerHTML += `<div class="bubble tx">${txt}<span class="bt">${now}</span></div>`;
-  msgs.scrollTop = msgs.scrollHeight;
   inp.value = '';
+
+  // For group chats: push into CHATS with sender metadata so role highlight is applied
+  if (activeGroupId && CHATS['grp-' + activeGroupId]) {
+    const senderType = user?.emp_type || user?.type || 'employee';
+    CHATS['grp-' + activeGroupId].msgs.push({
+      rx: false, text: txt, t: now,
+      senderId: user?.id || role,
+      senderName: user?.name || '',
+      senderType
+    });
+    renderGroupMessages(activeGroupId);
+    msgs.scrollTop = msgs.scrollHeight;
+  } else {
+    // Regular 1-to-1 chat: direct DOM append
+    msgs.innerHTML += `<div class="bubble tx">${txt}<span class="bt">${now}</span></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
   if (activeChat && user) {
     sb.from('messages').insert({
       chat_id: activeChat,
@@ -4736,8 +4766,23 @@ async function _sendFileMsg(file, caption) {
     const { data: urlData } = sb.storage.from('chat-files').getPublicUrl(path);
     const url = urlData.publicUrl;
     const body = JSON.stringify({ _file:true, url, name:file.name, size:file.size, mime:file.type, caption:caption||'' });
-    const tmpEl = document.getElementById(tmpId);
-    if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
+    // For group chats: push into CHATS with sender metadata and re-render
+    if (activeGroupId && CHATS['grp-' + activeGroupId]) {
+      const senderType = user?.emp_type || user?.type || 'employee';
+      CHATS['grp-' + activeGroupId].msgs.push({
+        rx: false, text: body, t: now,
+        senderId: user?.id || role,
+        senderName: user?.name || '',
+        senderType
+      });
+      // Remove the tmp placeholder and re-render
+      const tmpEl = document.getElementById(tmpId);
+      if (tmpEl) tmpEl.remove();
+      renderGroupMessages(activeGroupId);
+    } else {
+      const tmpEl = document.getElementById(tmpId);
+      if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
+    }
     msgs.scrollTop = msgs.scrollHeight;
     if (activeChat && user) {
       sb.from('messages').insert({
@@ -9040,7 +9085,7 @@ function openGroupChat(groupId) {
       av: g.icon,
       avc: 'b',
       msgs: [
-        { rx:true, text:`Welcome to ${g.name}! This group has ${members.length} member${members.length!==1?'s':''}.`, textAr:`مرحباً في ${g.name}! تضم هذه المجموعة ${members.length} عضو.`, t:'Today' }
+        { rx:true, text:`Welcome to ${g.name}! This group has ${members.length} member${members.length!==1?'s':''}.`, textAr:`مرحباً في ${g.name}! تضم هذه المجموعة ${members.length} عضو.`, t:'Today', senderType:'system' }
       ]
     };
   }
@@ -9074,6 +9119,14 @@ function openGroupChat(groupId) {
   }, 50);
 }
 
+// Returns 'manager' | 'supervisor' | 'employee' from any emp_type value
+function _msgRoleLevel(senderType) {
+  if (!senderType) return 'employee';
+  if (['admin','manager'].includes(senderType)) return 'manager';
+  if (['supervisor','dept_officer','acc_mgr','security_sup'].includes(senderType)) return 'supervisor';
+  return 'employee';
+}
+
 function renderGroupMessages(groupId) {
   const g = groups.find(gr => gr.id === groupId);
   const convo = CHATS['grp-' + groupId];
@@ -9087,8 +9140,24 @@ function renderGroupMessages(groupId) {
       : '';
     const isPinned = g.pinnedMsg && g.pinnedMsg.msgIdx === idx;
     const body = lang === 'ar' ? (m.textAr || m.text) : m.text;
-    return `<div class="bubble ${m.rx ? 'rx' : 'tx'}" id="groupmsg-${idx}" style="${isPinned ? 'outline:1px solid rgba(255,193,40,.4);' : ''}">
-      ${parseMsgBody(body)}
+
+    const lvl = _msgRoleLevel(m.senderType);
+    const hlClass = lvl === 'manager' ? 'mgr-msg' : lvl === 'supervisor' ? 'sup-msg' : '';
+    const side = m.rx ? 'rx' : 'tx';
+
+    // Sender name + role badge (only on received messages that have a name)
+    let senderRow = '';
+    if (m.rx && m.senderName) {
+      const badge = lvl === 'manager'
+        ? `<span class="role-badge-mgr">${lang === 'ar' ? 'مدير' : 'Manager'}</span>`
+        : lvl === 'supervisor'
+          ? `<span class="role-badge-sup">${lang === 'ar' ? 'مشرف' : 'Supervisor'}</span>`
+          : '';
+      senderRow = `<div class="msg-sender-row"><span class="msg-sender-name">${m.senderName}</span>${badge}</div>`;
+    }
+
+    return `<div class="bubble ${side} ${hlClass}" id="groupmsg-${idx}" style="${isPinned ? 'outline:1px solid rgba(255,193,40,.4);' : ''}">
+      ${senderRow}${parseMsgBody(body)}
       <span class="bt">${m.t}</span>
       ${pinBtn}
     </div>`;
