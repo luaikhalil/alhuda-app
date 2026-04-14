@@ -1906,7 +1906,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="mhandle"></div>
     <div class="mtitle">👥 Manage Members</div>
     <div style="font-size:12px;color:var(--t3);margin-bottom:12px" id="manageMembersSubtitle"></div>
-    <input class="member-search" type="text" data-ph-en="Search employees to add..." data-ph-ar="بحث عن موظف للإضافة..." placeholder="Search employees to add..." id="manageMembersSearch" oninput="renderManageMembersList()" style="margin-bottom:10px">
+    <input class="member-search" type="text" data-ph-en="Search employees to add..." data-ph-ar="بحث عن موظف للإضافة..." placeholder="Search employees to add..." id="manageMembersSearch" oninput="_dRenderManageMembersList()" style="margin-bottom:10px">
     <div id="manageMembersList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
     <button class="btn-sec" onclick="closeModal('manageMembersModal')" style="margin-top:12px">Close</button>
   </div>
@@ -2263,7 +2263,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div id="memberPickerSection" style="margin-top:10px">
       <label class="lbl">Members <span id="memberCount" style="color:var(--blue)">0 selected</span></label>
       <div class="selected-chips" id="selectedChips"></div>
-      <input class="member-search" type="text" data-ph-en="Search employees..." data-ph-ar="بحث عن موظف..." placeholder="Search employees..." id="memberSearchInp" oninput="filterMemberPicker()">
+      <input class="member-search" type="text" data-ph-en="Search employees..." data-ph-ar="بحث عن موظف..." placeholder="Search employees..." id="memberSearchInp" oninput="_dFilterMemberPicker()">
       <div class="member-list" id="memberPickerList"></div>
     </div>
 
@@ -2349,7 +2349,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── EMPLOYEES TAB ─── -->
     <div id="apane-employees" class="apane">
       <div class="search-row">
-        <input class="search-inp" type="text" id="empSearch" data-ph-en="Search by name, ID or department..." data-ph-ar="بحث بالاسم أو الرقم أو القسم..." placeholder="Search by name, ID or department..." oninput="renderEmployees()">
+        <input class="search-inp" type="text" id="empSearch" data-ph-en="Search by name, ID or department..." data-ph-ar="بحث بالاسم أو الرقم أو القسم..." placeholder="Search by name, ID or department..." oninput="_dRenderEmployees()">
         <button class="add-btn" onclick="openEmpModal()">＋ Add</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -2372,7 +2372,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── REQUESTS TAB ─── -->
     <div id="apane-requests" class="apane" style="display:none">
       <div class="search-row">
-        <input class="search-inp" type="text" id="reqSearch" data-ph-en="Search requests..." data-ph-ar="بحث في الطلبات..." placeholder="Search requests..." oninput="renderAdminRequests()">
+        <input class="search-inp" type="text" id="reqSearch" data-ph-en="Search requests..." data-ph-ar="بحث في الطلبات..." placeholder="Search requests..." oninput="_dRenderAdminRequests()">
       </div>
       <!-- Overdue summary bar (hidden when no overdue) -->
       <div id="overdueBar" class="overdue-bar" style="display:none;border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="filterAdminReqs('overdue',document.querySelector('.afc[data-f=overdue]'))">
@@ -2416,7 +2416,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── COINS TAB ─── -->
     <div id="apane-coins" class="apane" style="display:none">
       <div style="margin-bottom:12px">
-        <input class="search-inp" type="text" id="coinsSearch" data-ph-en="Search employee..." data-ph-ar="بحث عن موظف..." placeholder="Search employee..." oninput="renderAdminCoins()" style="width:100%">
+        <input class="search-inp" type="text" id="coinsSearch" data-ph-en="Search employee..." data-ph-ar="بحث عن موظف..." placeholder="Search employee..." oninput="_dRenderAdminCoins()" style="width:100%">
       </div>
       <div id="adminCoinsList"></div>
       <!-- Manage Coins Modal -->
@@ -2874,6 +2874,19 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 ══════════════════════════════════════════════════ -->
 <script>
 'use strict';
+
+// ─── PERFORMANCE UTILITIES ────────────────────────────────────────────────────
+function debounce(fn, ms) {
+  let _t;
+  return function(...args) { clearTimeout(_t); _t = setTimeout(() => fn(...args), ms); };
+}
+// Debounced wrappers for search inputs (assigned once all fns are defined at bottom)
+let _dRenderEmployees, _dRenderAdminRequests, _dRenderAdminCoins,
+    _dFilterMemberPicker, _dRenderManageMembersList;
+
+// Pagination state for large lists
+let _empPage = 1;   // how many 30-item pages are visible in employee list
+let _reqPage = 1;   // same for admin requests
 
 // ─── SUPABASE ─────────────────────────────────────────────────────────────────
 const SUPA_URL = 'https://vecqselsvubtqxzllonk.supabase.co';
@@ -5632,13 +5645,16 @@ function renderEmployees() {
   const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
   const list = document.getElementById('empList');
   if (!list) return;
+
+  // Reset pagination whenever a search/filter is active
+  if (q) _empPage = 1;
+
   let emps = employees.filter(e => {
     if (e.dept === 'admin') return false; // don't show admin in list
     if (empFilter !== 'all') {
       if (empFilter === 'active' && !e.active) return false;
       if (empFilter === 'inactive' && e.active) return false;
       if (empFilter !== 'active' && empFilter !== 'inactive' && e.dept !== empFilter && !e.dept.startsWith('office_' + empFilter.replace('office','').trim())) {
-        // check if dept starts with filter
         if (!e.dept.includes(empFilter)) return false;
       }
     }
@@ -5654,7 +5670,19 @@ function renderEmployees() {
     return;
   }
 
-  list.innerHTML = emps.map(e => `
+  // Paginate only when not searching (search results are already small)
+  const EMP_PAGE_SIZE = 30;
+  const visible = q ? emps : emps.slice(0, _empPage * EMP_PAGE_SIZE);
+  const remaining = q ? 0 : emps.length - visible.length;
+  const moreBtn = remaining > 0
+    ? `<div style="text-align:center;padding:14px 0 6px">
+         <button onclick="_empPage++;renderEmployees()" style="padding:8px 22px;border-radius:var(--r1);background:var(--bgc);border:1px solid var(--border);color:var(--t2);font-size:12px;cursor:pointer;font-family:inherit">
+           ${t('Show','عرض')} ${Math.min(EMP_PAGE_SIZE, remaining)} ${t('more','إضافي')} · ${remaining} ${t('remaining','متبقٍ')}
+         </button>
+       </div>`
+    : '';
+
+  list.innerHTML = visible.map(e => `
     <div class="emp-card" id="emp-card-${e.id}">
       <div class="emp-av">${e.init}</div>
       <div class="emp-info">
@@ -5668,7 +5696,7 @@ function renderEmployees() {
         <div class="ea-btn" title="${e.active ? t('Deactivate','تعطيل') : t('Activate','تفعيل')}" onclick="toggleEmpActive('${e.id}')" style="color:${e.active ? '#fbbf24' : '#34d399'}">${e.active ? '🚫' : '✅'}</div>
         <div class="ea-btn del" title="${t('Delete permanently','حذف نهائي')}" onclick="deleteEmployee('${e.id}')">🗑</div>
       </div>
-    </div>`).join('');
+    </div>`).join('') + moreBtn;
 }
 
 function switchReportTab(tab) {
@@ -6286,6 +6314,7 @@ function renderAdminRequests() {
   const q = (document.getElementById('reqSearch')?.value||'').toLowerCase();
   const list = document.getElementById('adminReqList');
   if (!list) return;
+  if (q) _reqPage = 1; // reset pagination on search
   const statusC = { pending_manager:'o', pending_hr:'o', pending:'o', in_progress:'b', resolved:'g', approved:'g', rejected:'r' };
   const statusL = { pending_manager:'Pending Mgr', pending_hr:'Pending HR', pending:'Pending', in_progress:'In Progress', resolved:'Resolved', approved:'Approved', rejected:'Rejected' };
 
@@ -6318,7 +6347,19 @@ function renderAdminRequests() {
     return;
   }
 
-  list.innerHTML = reqs.map(r => {
+  // Paginate only when not searching
+  const REQ_PAGE_SIZE = 30;
+  const visibleReqs = q ? reqs : reqs.slice(0, _reqPage * REQ_PAGE_SIZE);
+  const remainingReqs = q ? 0 : reqs.length - visibleReqs.length;
+  const reqMoreBtn = remainingReqs > 0
+    ? `<div style="text-align:center;padding:14px 0 6px">
+         <button onclick="_reqPage++;renderAdminRequests()" style="padding:8px 22px;border-radius:var(--r1);background:var(--bgc);border:1px solid var(--border);color:var(--t2);font-size:12px;cursor:pointer;font-family:inherit">
+           ${t('Show','عرض')} ${Math.min(REQ_PAGE_SIZE, remainingReqs)} ${t('more','إضافي')} · ${remainingReqs} ${t('remaining','متبقٍ')}
+         </button>
+       </div>`
+    : '';
+
+  list.innerHTML = visibleReqs.map(r => {
     const overdue = isReqOverdue(r);
     const age = formatAge(r);
     const overdueTag = overdue
@@ -6340,7 +6381,7 @@ function renderAdminRequests() {
         <button style="padding:8px 12px;border-radius:var(--r1);background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.15);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit" onclick="deleteReq('${r.id}')">🗑</button>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + reqMoreBtn;
 }
 
 function openReqEdit(id) {
@@ -9271,6 +9312,15 @@ function renderWeekChart(attendance) {
     </div>`;
   }).join('');
 }
+
+// ─── DEBOUNCED SEARCH WRAPPERS ────────────────────────────────────────────────
+// Assigned here so all function definitions above are already in scope.
+// HTML oninput attributes call these instead of the raw functions.
+_dRenderEmployees         = debounce(renderEmployees,         280);
+_dRenderAdminRequests     = debounce(renderAdminRequests,     280);
+_dRenderAdminCoins        = debounce(renderAdminCoins,        280);
+_dFilterMemberPicker      = debounce(filterMemberPicker,      220);
+_dRenderManageMembersList = debounce(renderManageMembersList, 220);
 </script>
 
 <!-- ✦ LIVE PARTICLE NETWORK BACKGROUND ─────────────────────────────────── -->
@@ -9341,10 +9391,15 @@ function renderWeekChart(attendance) {
     }
   }
 
+  let _rafId = null;
+  let _paused = false;
+
   function tick() {
+    // Stop immediately if paused (tab hidden) or light mode
+    if (_paused) { _rafId = null; return; }
     if (document.body.classList.contains('light')) {
       ctx.clearRect(0, 0, W, H);
-      requestAnimationFrame(tick);
+      _rafId = requestAnimationFrame(tick);
       return;
     }
     for (const p of pts) {
@@ -9352,13 +9407,23 @@ function renderWeekChart(attendance) {
       p.y += p.vy;
       if (p.x < 0 || p.x > W) p.vx *= -1;
       if (p.y < 0 || p.y > H) p.vy *= -1;
-      // slow drift in alpha
       p.a += (Math.random() - .5) * .005;
       p.a = Math.max(.12, Math.min(.65, p.a));
     }
     draw();
-    requestAnimationFrame(tick);
+    _rafId = requestAnimationFrame(tick);
   }
+
+  // Pause animation when tab/app goes to background; resume when visible again
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      _paused = true;
+      if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+    } else {
+      _paused = false;
+      if (!_rafId) tick(); // restart loop
+    }
+  });
 
   window.addEventListener('resize', () => { resize(); });
   init();
