@@ -2795,11 +2795,18 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </select>
       </div>
     </div>
-    <div class="mg" style="margin-top:8px">
-      <label class="lbl">Start Date</label>
-      <input class="inp" type="date" id="eStartDate" style="margin-bottom:0">
-      <input type="hidden" id="eSalary" value="0">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="mg">
+        <label class="lbl" data-en="Start Date" data-ar="تاريخ التعيين">Start Date</label>
+        <input class="inp" type="date" id="eStartDate" style="margin-bottom:0">
+      </div>
+      <div class="mg" id="eSalaryField" style="display:none">
+        <label class="lbl" data-en="Salary (YER)" data-ar="الراتب (ريال)">Salary (YER)</label>
+        <input class="inp" type="number" id="eSalary" min="0" step="1000" placeholder="0" style="margin-bottom:0">
+      </div>
     </div>
+    <!-- hidden fallback so saveEmployee() never errors if field is hidden -->
+    <input type="hidden" id="eSalaryHidden" value="0">
     <div class="mg" style="margin-top:8px">
       <label class="lbl">Default Shift</label>
       <select class="inp" id="eDefaultShift" style="margin-bottom:0">
@@ -3120,7 +3127,7 @@ async function loadSupabaseData(isAdmin) {
           role: e.role, emp_type: e.emp_type,
           supervisor_id: e.supervisor_id || null, report_to: e.report_to || null,
           location: e.location, locationLabel: e.location_label,
-          phone: e.phone || null, salary: isAdmin ? e.salary : null,
+          phone: e.phone || null, salary: (isAdmin || user?.emp_type === 'manager') ? e.salary : null,
           password: isAdmin ? e.password : null,
           startDate: e.start_date || null, active: e.active, init: e.init,
           fcm_token: e.fcm_token || null,
@@ -4998,7 +5005,17 @@ function renderAccountingList(list) {
     el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0">${t('No submissions from departments yet','لا توجد طلبات مُرسلة من الأقسام بعد')}</div>`;
     return;
   }
-  el.innerHTML = list.map(a => `
+  el.innerHTML = list.map(a => {
+    const limitSnap = (a.days_worked && a.daily_rate)
+      ? `<div style="background:var(--bgc);border-radius:8px;padding:7px 10px;margin:6px 0;font-size:11px">
+           <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">📅 ${t('Days worked','أيام العمل')}</span><span style="color:var(--t2);font-weight:600">${a.days_worked} ${t('days','يوم')}</span></div>
+           <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">💵 ${t('Daily rate','المعدل اليومي')}</span><span style="color:var(--t2);font-weight:600">${fmtAmt(a.daily_rate)}</span></div>
+           <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">💰 ${t('Earned so far','المستحق')}</span><span style="color:var(--t2);font-weight:600">${fmtAmt(a.earned_at_request)}</span></div>
+           ${a.prev_advances > 0 ? `<div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">📤 ${t('Prior advances','سلف سابقة')}</span><span style="color:#f87171;font-weight:600">− ${fmtAmt(a.prev_advances)}</span></div>` : ''}
+           <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span style="color:var(--t1);font-weight:700">✅ ${t('Limit','الحد')}</span><span style="color:#4ade80;font-weight:800">${fmtAmt(a.max_allowed)}</span></div>
+         </div>` : '';
+    const withinLimit = !a.max_allowed || a.amount_requested <= a.max_allowed;
+    return `
     <div class="adv-card">
       <div class="adv-card-hdr">
         <div>
@@ -5007,17 +5024,23 @@ function renderAccountingList(list) {
         </div>
         <span class="adv-status ${a.status}">${statusLabel(a.status)}</span>
       </div>
+      ${limitSnap}
       <div class="adv-amounts">
-        <div class="adv-amt-box"><div class="adv-amt-label">${t('Requested','المطلوب')}</div><div class="adv-amt-val">${fmtAmt(a.amount_requested)}</div></div>
+        <div class="adv-amt-box">
+          <div class="adv-amt-label">${t('Requested','المطلوب')}</div>
+          <div class="adv-amt-val" style="color:${withinLimit ? '' : '#f87171'}">${fmtAmt(a.amount_requested)} ${withinLimit ? '' : '⚠️'}</div>
+        </div>
         <div class="adv-amt-box" style="flex:1.2">
           <div class="adv-amt-label">${t('Approved Amount','المبلغ المعتمد')}</div>
           <input class="adv-edit-inp" type="number" min="0" step="50"
+            max="${a.max_allowed || ''}"
             id="accAmt_${a.id}" value="${a.amount_approved ?? a.amount_requested}"
             placeholder="${a.amount_requested}">
         </div>
       </div>
       ${a.note ? `<div style="font-size:11px;color:var(--t3);margin-top:4px">📝 ${a.note}</div>` : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderGMList(list) {
@@ -5039,15 +5062,46 @@ function renderGMList(list) {
         <span style="font-size:15px;font-weight:700;color:#4ade80">${fmtAmt(total)}</span>
       </div>
     </div>
-    ${list.map(a => `
-      <div class="adv-summary-row">
-        <div class="adv-summary-name">${a.emp_name||a.emp_id}</div>
-        <div class="adv-summary-dept">${a.dept_label||a.dept||''}</div>
-        <div class="adv-summary-amt">${fmtAmt(a.amount_approved ?? a.amount_requested)}</div>
-      </div>`).join('')}`;
+    ${list.map(a => {
+      const withinLimit = !a.max_allowed || (a.amount_approved ?? a.amount_requested) <= a.max_allowed;
+      const limitNote = a.days_worked
+        ? `<div style="font-size:10px;color:var(--t3);margin-top:2px">${a.days_worked}${t(' days × ','يوم × ')}${fmtAmt(a.daily_rate)}${t(' = ','=')}${fmtAmt(a.earned_at_request)}${a.prev_advances > 0 ? ` − ${fmtAmt(a.prev_advances)}` : ''} → ${t('limit','حد')} ${fmtAmt(a.max_allowed)}</div>`
+        : '';
+      return `
+      <div class="adv-summary-row" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+          <div>
+            <div class="adv-summary-name">${a.emp_name||a.emp_id}</div>
+            <div class="adv-summary-dept">${a.dept_label||a.dept||''}</div>
+          </div>
+          <div class="adv-summary-amt" style="color:${withinLimit ? '#4ade80' : '#f87171'}">${fmtAmt(a.amount_approved ?? a.amount_requested)} ${withinLimit ? '' : '⚠️'}</div>
+        </div>
+        ${limitNote}
+      </div>`;
+    }).join('')}`;
 }
 
-function fmtAmt(v) { return v != null ? 'AED ' + Number(v).toLocaleString() : '—'; }
+function fmtAmt(v) { return v != null ? Number(v).toLocaleString() + ' ' + t('YER','ريال') : '—'; }
+
+// ─── Days-worked advance limit calculator ─────────────────────────────────
+function calcAdvanceLimit(empId) {
+  const now       = new Date();
+  const today     = now.getDate();          // day of month (1-31)
+  const month     = now.getMonth() + 1;
+  const year      = now.getFullYear();
+  const emp       = employees.find(e => e.id === empId);
+  const salary    = Number(emp?.salary || 0);
+  if (!salary) return null;                 // no salary on record → no limit calculable
+  const dailyRate   = salary / 30;
+  const daysWorked  = today;
+  const earnedSoFar = dailyRate * daysWorked;
+  // Sum all non-rejected advances this employee already received/requested this month
+  const prevTotal = salaryAdvances
+    .filter(a => a.emp_id === empId && a.cycle_month === month && a.cycle_year === year && a.status !== 'rejected')
+    .reduce((sum, a) => sum + Number(a.amount_approved ?? a.amount_requested ?? 0), 0);
+  const maxAllowed = Math.max(0, earnedSoFar - prevTotal);
+  return { salary, dailyRate, daysWorked, earnedSoFar, prevTotal, maxAllowed };
+}
 function monthName(m) {
   return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] || m;
 }
@@ -5060,11 +5114,44 @@ function openAdvanceModal() {
   document.getElementById('advModalCycle').textContent =
     t(`This request is for the ${cycle}th-cycle advance — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`,
       `هذا الطلب لسلفة يوم ${cycle} — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`);
-  // Show salary hint
-  const mySalary = (employees.find(e => e.id === (user.id || role)) || {}).salary;
-  const hint = document.getElementById('advSalaryHint');
-  if (hint) hint.textContent = mySalary ? t(`Your salary: AED ${Number(mySalary).toLocaleString()}`, `راتبك: ${Number(mySalary).toLocaleString()} درهم`) : '';
-  document.getElementById('advAmountInp').value = '';
+  // Show days-worked limit breakdown
+  const myId  = user.id || role;
+  const limit = calcAdvanceLimit(myId);
+  const hint  = document.getElementById('advSalaryHint');
+  const amtInp = document.getElementById('advAmountInp');
+  if (hint) {
+    if (!limit) {
+      hint.innerHTML = `<span style="color:var(--t3)">${t('No salary on record — contact HR','لا يوجد راتب مسجل — تواصل مع الموارد البشرية')}</span>`;
+      if (amtInp) { amtInp.removeAttribute('max'); amtInp.disabled = false; }
+    } else {
+      const rows = [
+        { icon:'📅', label: t('Days worked this month','أيام العمل هذا الشهر'), val: `${limit.daysWorked} ${t('days','يوم')}` },
+        { icon:'💵', label: t('Daily rate (salary ÷ 30)','المعدل اليومي (الراتب ÷ 30)'), val: fmtAmt(Math.round(limit.dailyRate)) },
+        { icon:'💰', label: t('Earned so far','المستحق حتى الآن'), val: fmtAmt(Math.round(limit.earnedSoFar)) },
+      ];
+      if (limit.prevTotal > 0) {
+        rows.push({ icon:'📤', label: t('Previous advances this month','السلف السابقة هذا الشهر'), val: '− ' + fmtAmt(limit.prevTotal) });
+      }
+      hint.innerHTML = `
+        <div style="background:var(--bgc);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:4px">
+          ${rows.map(r => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px">
+              <span style="color:var(--t3)">${r.icon} ${r.label}</span>
+              <span style="color:var(--t2);font-weight:600">${r.val}</span>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:5px">
+            <span style="font-size:12px;font-weight:700;color:var(--t1)">✅ ${t('Your maximum limit','الحد الأقصى المسموح')}</span>
+            <span style="font-size:14px;font-weight:800;color:#4ade80">${fmtAmt(Math.floor(limit.maxAllowed))}</span>
+          </div>
+        </div>`;
+      if (amtInp) {
+        amtInp.max = Math.floor(limit.maxAllowed);
+        amtInp.disabled = limit.maxAllowed <= 0;
+        if (limit.maxAllowed <= 0) amtInp.placeholder = t('No remaining limit','لا يوجد رصيد متبقٍّ');
+      }
+    }
+  }
+  if (amtInp) amtInp.value = '';
   document.getElementById('advNoteInp').value = '';
   openModal('advRequestModal');
 }
@@ -5078,6 +5165,23 @@ async function submitAdvanceRequest() {
   const month  = now.getMonth() + 1;
   const year   = now.getFullYear();
   const myId   = user.id || role;
+
+  // ── Days-worked limit check ────────────────────────────────────────────────
+  const limit = calcAdvanceLimit(myId);
+  if (limit) {
+    const maxAllowed = Math.floor(limit.maxAllowed);
+    if (amount > maxAllowed) {
+      const msg = lang === 'ar'
+        ? `⚠️ المبلغ يتجاوز حدك المسموح.\nالمستحق حتى اليوم ${limit.daysWorked}: ${fmtAmt(Math.round(limit.earnedSoFar))}\nالسلف السابقة: ${fmtAmt(limit.prevTotal)}\nالحد الأقصى: ${fmtAmt(maxAllowed)}`
+        : `⚠️ Amount exceeds your limit.\nEarned to day ${limit.daysWorked}: ${fmtAmt(Math.round(limit.earnedSoFar))}\nPrevious advances: ${fmtAmt(limit.prevTotal)}\nYour limit: ${fmtAmt(maxAllowed)}`;
+      toast(msg);
+      return;
+    }
+    if (limit.maxAllowed <= 0) {
+      toast(t('⚠️ You have no remaining advance limit for this month','⚠️ لا يوجد رصيد سلفة متبقٍّ هذا الشهر'));
+      return;
+    }
+  }
 
   // Hard duplicate check — one request per cycle per employee
   const already = salaryAdvances.find(a =>
@@ -5125,7 +5229,14 @@ async function submitAdvanceRequest() {
     amount_requested: amount,
     note,
     cycle, cycle_month: month, cycle_year: year,
-    status: 'pending'
+    status: 'pending',
+    // Snapshot of limit calculation at submission time
+    salary_at_request: limit?.salary || null,
+    days_worked: limit?.daysWorked || null,
+    daily_rate: limit ? Math.round(limit.dailyRate) : null,
+    earned_at_request: limit ? Math.round(limit.earnedSoFar) : null,
+    prev_advances: limit?.prevTotal || 0,
+    max_allowed: limit ? Math.floor(limit.maxAllowed) : null
   };
   const { error } = await sb.from('salary_advances').insert(payload);
   if (error) { toast('❌ ' + error.message); return; }
@@ -5977,6 +6088,11 @@ function openEmpModal(empId) {
   document.getElementById('empModalTitle').textContent = t(isNew ? 'Add New Employee' : 'Edit Employee', isNew ? 'إضافة موظف جديد' : 'تعديل بيانات موظف');
   document.getElementById('empEditId').value = empId || '';
 
+  // Show salary field only for admin or manager
+  const canSeeSalary = _isGMUser() || user?.emp_type === 'manager';
+  const salField = document.getElementById('eSalaryField');
+  if (salField) salField.style.display = canSeeSalary ? 'block' : 'none';
+
   // Populate job title suggestions datalist from allJobTitles
   const dl = document.getElementById('jobTitleSuggestions');
   if (dl) {
@@ -6006,7 +6122,7 @@ function openEmpModal(empId) {
     buildReportingDropdowns(e.supervisor_id || '', e.report_to || '', e.emp_type || '');
     populateDefaultShiftDropdown(e.defaultShift || '');
   } else {
-    ['eFirstName','eLastName','eId','ePhone','eSalary','ePw'].forEach(id => document.getElementById(id).value = '');
+    ['eFirstName','eLastName','eId','ePhone','eSalary','eSalaryHidden','ePw'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('eRole').value = '';
     document.getElementById('eEmpType').value = 'employee';
     document.getElementById('eStartDate').value = new Date().toISOString().split('T')[0];
@@ -6049,7 +6165,7 @@ async function saveEmployee() {
     report_to: managerVal,
     phone: document.getElementById('ePhone').value,
     startDate: document.getElementById('eStartDate').value,
-    salary: parseInt(document.getElementById('eSalary').value) || 0,
+    salary: parseInt(document.getElementById('eSalary')?.value) || parseInt(document.getElementById('eSalaryHidden')?.value) || 0,
     password: document.getElementById('ePw').value || '1234',
     active: document.getElementById('empActiveToggle').classList.contains('on'),
     defaultShift: document.getElementById('eDefaultShift')?.value || null,
@@ -6289,7 +6405,7 @@ function exportEmployees() {
     q(e.locationLabel || ''),
     q(e.phone || ''),
     q(e.startDate || ''),
-    q(e.salary || ''),
+    q((_isGMUser() || user?.emp_type === 'manager') ? (e.salary || '') : ''),
     q(e.password || ''),
     q(e.report_to || ''),
     q(e.supervisor_id || ''),
