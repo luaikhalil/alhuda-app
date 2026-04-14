@@ -1375,6 +1375,25 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
   </div>
 </div>
 
+<!-- ══════════════════════════ FORCED PASSWORD CHANGE ══════════════════════════ -->
+<div id="forcedPwScreen" style="display:none;position:fixed;inset:0;z-index:2000;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;">
+  <div style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:40px;margin-bottom:10px">🔐</div>
+      <div style="font-size:18px;font-weight:700;color:var(--t1)" data-en="Set Your Password" data-ar="تعيين كلمة المرور">Set Your Password</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:6px;line-height:1.5" data-en="For security, you must change your password before continuing." data-ar="لأسباب أمنية، يجب تغيير كلمة المرور قبل المتابعة.">For security, you must change your password before continuing.</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px">
+      <label class="lbl" data-en="New Password" data-ar="كلمة المرور الجديدة">New Password</label>
+      <input class="inp" type="password" id="fpwNew" placeholder="Min. 6 characters" data-ph-en="Min. 6 characters" data-ph-ar="6 أحرف على الأقل" style="margin-bottom:12px">
+      <label class="lbl" data-en="Confirm Password" data-ar="تأكيد كلمة المرور">Confirm Password</label>
+      <input class="inp" type="password" id="fpwConfirm" placeholder="Re-enter password" data-ph-en="Re-enter password" data-ph-ar="أعد إدخال كلمة المرور" style="margin-bottom:4px">
+      <div id="fpwErr" style="font-size:11px;color:#f87171;min-height:16px;margin-bottom:12px"></div>
+      <button class="btn-pri" onclick="submitForcedPwChange()" data-en="Set Password &amp; Continue" data-ar="تعيين كلمة المرور والمتابعة">Set Password &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════ MAIN APP ══════════════════════════ -->
 <div id="mainApp">
 
@@ -2998,6 +3017,9 @@ async function doLogin() {
     localStorage.setItem('alhuda_session', JSON.stringify({ empId, pw }));
 
     login(roleKey);
+
+    // Force password change on first login
+    if (data.must_change_pw) showForcedPwChange();
   } catch(err) {
     console.error('Login error:', err);
     showLoginErr(t('Connection error. Please try again.','خطأ في الاتصال. حاول مرة أخرى.'));
@@ -3042,6 +3064,7 @@ async function tryAutoLogin() {
     await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
     document.getElementById('autoLoginSplash').style.display = 'none';
     login(roleKey);
+    if (data.must_change_pw) showForcedPwChange();
   } catch(e) {
     console.warn('Auto-login failed:', e);
     localStorage.removeItem('alhuda_session');
@@ -3529,7 +3552,56 @@ function logout() {
   if (clockTimer) clearInterval(clockTimer);
   localStorage.removeItem('alhuda_session');
   document.getElementById('mainApp').classList.remove('on');
+  document.getElementById('forcedPwScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ─── Forced password change on first login ────────────────────────────────
+function showForcedPwChange() {
+  const scr = document.getElementById('forcedPwScreen');
+  if (scr) scr.style.display = 'flex';
+  // Apply current language to placeholders
+  const newInp     = document.getElementById('fpwNew');
+  const confirmInp = document.getElementById('fpwConfirm');
+  if (newInp)     newInp.placeholder     = lang === 'ar' ? '6 أحرف على الأقل' : 'Min. 6 characters';
+  if (confirmInp) confirmInp.placeholder = lang === 'ar' ? 'أعد إدخال كلمة المرور' : 'Re-enter password';
+  // Translate static labels
+  scr.querySelectorAll('[data-en]').forEach(el => {
+    el.textContent = lang === 'ar' ? (el.dataset.ar || el.dataset.en) : el.dataset.en;
+  });
+}
+
+async function submitForcedPwChange() {
+  const newPw  = document.getElementById('fpwNew')?.value || '';
+  const conf   = document.getElementById('fpwConfirm')?.value || '';
+  const errEl  = document.getElementById('fpwErr');
+  const setErr = msg => { if (errEl) errEl.textContent = msg; };
+
+  setErr('');
+  if (newPw.length < 6) { setErr(t('Password must be at least 6 characters','يجب أن تكون كلمة المرور 6 أحرف على الأقل')); return; }
+  if (newPw !== conf)   { setErr(t('Passwords do not match','كلمتا المرور غير متطابقتين')); return; }
+
+  const empId = user?.id;
+  if (!empId) { setErr('Session error — please log in again'); logout(); return; }
+
+  const { error } = await sb.from('employees')
+    .update({ password: newPw, must_change_pw: false })
+    .eq('id', empId);
+
+  if (error) { setErr('❌ ' + error.message); return; }
+
+  // Update saved session with new password so auto-login still works
+  const saved = localStorage.getItem('alhuda_session');
+  if (saved) {
+    try {
+      const sess = JSON.parse(saved);
+      sess.pw = newPw;
+      localStorage.setItem('alhuda_session', JSON.stringify(sess));
+    } catch(e) {}
+  }
+
+  document.getElementById('forcedPwScreen').style.display = 'none';
+  toast(t('✅ Password updated! Welcome.','✅ تم تحديث كلمة المرور! أهلاً بك.'));
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
@@ -6199,7 +6271,7 @@ async function saveEmployee() {
     phone: data.phone, salary: data.salary, start_date: data.startDate,
     active: data.active, init: data.init,
     default_shift: data.defaultShift || null,
-    ...(document.getElementById('ePw').value ? { password: document.getElementById('ePw').value } : {})
+    ...(document.getElementById('ePw').value ? { password: document.getElementById('ePw').value, must_change_pw: true } : {})
   };
 
   if (editId) {
