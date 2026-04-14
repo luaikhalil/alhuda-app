@@ -2831,28 +2831,31 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 <div class="modal-bg" id="adminPassModal">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Issue Office Access Pass</div>
+    <div class="mtitle" data-en="Issue Office Access Pass" data-ar="إصدار تصريح دخول مكتب">Issue Office Access Pass</div>
     <div class="mg">
-      <label class="lbl">Employee</label>
+      <label class="lbl" data-en="Employee" data-ar="الموظف">Employee</label>
       <select class="inp" id="passEmpSelect" style="margin-bottom:0"></select>
     </div>
     <div class="mg" style="margin-top:8px">
-      <label class="lbl">Purpose / Reason</label>
-      <input class="inp" type="text" id="passPurposeInput" placeholder="e.g. HR Meeting, IT Visit..." style="margin-bottom:0">
+      <label class="lbl" data-en="Purpose / Reason" data-ar="الغرض / السبب">Purpose / Reason</label>
+      <input class="inp" type="text" id="passPurposeInput"
+        data-ph-en="e.g. HR Meeting, IT Visit..."
+        data-ph-ar="مثال: اجتماع الموارد البشرية، زيارة تقنية..."
+        placeholder="e.g. HR Meeting, IT Visit..." style="margin-bottom:0">
     </div>
     <div class="mg" style="margin-top:8px">
-      <label class="lbl">Issuing Department</label>
+      <label class="lbl" data-en="Issuing Department" data-ar="القسم المُصدِر">Issuing Department</label>
       <select class="inp" id="passIssuingDept" style="margin-bottom:0">
-        <option>HR Department</option>
-        <option>Accounting Department</option>
-        <option>IT Department</option>
-        <option>Maintenance Department</option>
-        <option>Top Level Supervision</option>
-        <option>General Manager</option>
+        <option data-en="HR Department"           data-ar="قسم الموارد البشرية">HR Department</option>
+        <option data-en="Accounting Department"   data-ar="قسم المحاسبة">Accounting Department</option>
+        <option data-en="IT Department"           data-ar="قسم تقنية المعلومات">IT Department</option>
+        <option data-en="Maintenance Department"  data-ar="قسم الصيانة">Maintenance Department</option>
+        <option data-en="Top Level Supervision"   data-ar="الإشراف العليا">Top Level Supervision</option>
+        <option data-en="General Manager"         data-ar="المدير العام">General Manager</option>
       </select>
     </div>
-    <button class="btn-pri" onclick="adminIssuePass()">🎫 Generate Pass</button>
-    <button class="btn-sec" onclick="closeModal('adminPassModal')">Cancel</button>
+    <button class="btn-pri" onclick="adminIssuePass()" data-en="🎫 Generate Pass" data-ar="🎫 إصدار التصريح">🎫 Generate Pass</button>
+    <button class="btn-sec" onclick="closeModal('adminPassModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -3214,6 +3217,10 @@ function setLang(l, container) {
   // Also translate <option> elements that have data-en/data-ar
   document.querySelectorAll('option[data-en]').forEach(opt => {
     opt.textContent = opt.getAttribute('data-' + l) || opt.getAttribute('data-en');
+  });
+  // Translate placeholders for inputs/textareas with data-ph-en / data-ph-ar
+  document.querySelectorAll('[data-ph-en]').forEach(el => {
+    el.placeholder = el.getAttribute('data-ph-' + l) || el.getAttribute('data-ph-en');
   });
   // Re-populate dynamic dropdowns in employee modal (if open)
   const deptSelLang = document.getElementById('eDept');
@@ -6337,14 +6344,18 @@ function openIssuePassModal() { populatePassEmpSelect(); openModal('adminPassMod
 function populatePassEmpSelect() {
   const sel = document.getElementById('passEmpSelect');
   if (!sel) return;
-  sel.innerHTML = employees.filter(e => e.dept !== 'admin' && e.active).map(e => `<option value="${e.id}">${e.firstName} ${e.lastName} (${e.id}) · ${e.deptLabel}</option>`).join('');
+  sel.innerHTML = employees.filter(e => e.dept !== 'admin' && e.active).map(e => {
+    const name = lang === 'ar' && e.nameAr ? e.nameAr : `${e.firstName} ${e.lastName}`;
+    const dept = e.deptLabel || e.dept || '';
+    return `<option value="${e.id}">${name} (${e.id}) · ${dept}</option>`;
+  }).join('');
 }
 
 function adminIssuePass() {
   const empId = document.getElementById('passEmpSelect').value;
   const purpose = document.getElementById('passPurposeInput').value.trim();
   const issuedBy = document.getElementById('passIssuingDept').value;
-  if (!purpose) { toast('⚠️ Please enter a purpose'); return; }
+  if (!purpose) { toast('⚠️ ' + t('Please enter a purpose','يرجى إدخال الغرض من التصريح')); return; }
   const emp = employees.find(e => e.id === empId);
   if (!emp) return;
   const serial = generateSerial();
@@ -6354,7 +6365,7 @@ function adminIssuePass() {
   closeModal('adminPassModal');
   renderAdminPasses();
   document.getElementById('passBadge').style.display = 'flex';
-  toast('🎫 Pass issued: ' + serial);
+  toast('🎫 ' + t('Pass issued: ','صدر التصريح: ') + serial);
   // Save to Supabase
   sb.from('passes').insert({ serial, emp_name: newPass.empName, emp_id: emp.id, emp_dept: emp.deptLabel, purpose, issued_by: issuedBy, issued_date: passDate, valid: true, role_key: emp.id })
     .then(({ error }) => { if (error) console.warn('Supabase adminIssuePass failed:', error); });
