@@ -4971,6 +4971,15 @@ async function submitAdvanceRequest() {
   await loadSalaryAdvances();
   renderAdvances();
   toast(t('✅ Advance request submitted!','✅ تم إرسال طلب السلفة!'));
+  // Notify accounting manager(s)
+  const accMgrs = employees.filter(e => e.emp_type === 'manager' &&
+    ((e.dept_key||'').toLowerCase().includes('account') || (e.dept_key||'').toLowerCase().includes('financ')));
+  accMgrs.forEach(e => {
+    if (e.fcm_token) sendPush([e.fcm_token],
+      '💰 ' + t('New Advance Request','طلب سلفة جديد'),
+      `${user.name} — AED ${Number(amount).toLocaleString()}`
+    );
+  });
 }
 
 // ─── Manager: submit dept batch to Accounting ─────────────────────────────
@@ -5071,6 +5080,13 @@ async function submitAccSignAndSend() {
   await loadSalaryAdvances();
   renderAdvances();
   toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
+  // Notify GM
+  const total = list.reduce((s,a) => s + Number(a.amount_approved||a.amount_requested||0), 0);
+  sendPush(getAdminFCMTokens(),
+    '💰 ' + t('Advances Ready for Approval','السلف جاهزة للاعتماد'),
+    t(`${list.length} advances totalling AED ${total.toLocaleString()} — awaiting your signature`,
+      `${list.length} سلفة بإجمالي ${total.toLocaleString()} درهم — بانتظار توقيعك`)
+  );
 }
 
 // ─── GM: signature pad + approval ─────────────────────────────────────────
@@ -7658,6 +7674,11 @@ async function saveTask() {
   toast('✅ ' + t('Task assigned to ','مهمة أُسندت إلى ') + (emp ? emp.firstName : assignTo));
   const { error: taskErr } = await sb.from('tasks').insert(task);
   if (taskErr) { toast('⚠️ Save failed: ' + taskErr.message); console.error('Task insert failed:', taskErr); }
+  // Notify assigned employee
+  sendPush(getEmpFCMToken(assignTo),
+    '📋 ' + t('New Task Assigned','مهمة جديدة'),
+    `${user.name}: ${title}${task.due_date ? ' — Due ' + task.due_date : ''}`
+  );
 }
 
 async function updateTaskStatus(taskId, newStatus) {
@@ -7671,7 +7692,14 @@ async function updateTaskStatus(taskId, newStatus) {
   renderMyTasks();
   updateBellBadge();
   await sb.from('tasks').update({ status: newStatus, submitted_at: tk.submitted_at || null }).eq('id', taskId);
-  if (newStatus === 'pending_review') toast('📤 ' + t('Work submitted for review! Your manager will rate it.','تم إرسال العمل للمراجعة! سيقيّمه مديرك.'));
+  if (newStatus === 'pending_review') {
+    toast('📤 ' + t('Work submitted for review! Your manager will rate it.','تم إرسال العمل للمراجعة! سيقيّمه مديرك.'));
+    // Notify the manager who assigned this task
+    sendPush(getEmpFCMToken(tk.assigned_by),
+      '📤 ' + t('Task Submitted for Review','مهمة جاهزة للمراجعة'),
+      `${user.name} ${t('completed:','أنهى:')} ${tk.title}`
+    );
+  }
   if (newStatus === 'in_progress') toast('▶ ' + t('Task started!','بدأت المهمة!'));
 }
 
@@ -7692,6 +7720,11 @@ async function confirmTask(taskId) {
   toast('🪙 ' + t('Work approved! Awarded ','تم القبول! منحت ') + coins + t(' coins to ','🪙 لـ ') + tk.assigned_to_name);
   await sb.from('tasks').update({ status:'confirmed', confirmed_at: tk.confirmed_at, coins_awarded: coins }).eq('id', taskId);
   await sb.from('employee_points').upsert({ emp_id: empId, total_points: employeePoints[empId] }, { onConflict:'emp_id' });
+  // Notify employee their task was approved + coins awarded
+  sendPush(getEmpFCMToken(empId),
+    '🪙 ' + t('Task Approved!','تم قبول مهمتك!'),
+    `${tk.title} — ${t('You earned','حصلت على')} ${coins} 🪙 ${t('coins!','عملات!')}`
+  );
 }
 
 async function rejectTaskCompletion(taskId) {
@@ -7702,6 +7735,11 @@ async function rejectTaskCompletion(taskId) {
   renderMgrTasks();
   toast('↩ ' + t('Work sent back — employee needs to redo it','أُعيد العمل — يحتاج الموظف لإعادته'));
   await sb.from('tasks').update({ status:'in_progress', submitted_at: null }).eq('id', taskId);
+  // Notify employee their submission was sent back
+  sendPush(getEmpFCMToken(tk.assigned_to),
+    '↩ ' + t('Task Sent Back','المهمة أُعيدت إليك'),
+    `${t('Please redo:','يرجى إعادة:')} ${tk.title}`
+  );
 }
 
 // ── Patch showTab to render tasks + schedule when switching tabs ───────────────
