@@ -264,7 +264,7 @@ select.inp{appearance:none;}
 .hdr-name{font-size:13px;font-weight:700;}
 .hdr-role{font-size:10px;color:var(--blue);}
 .hdr-right{display:flex;align-items:center;gap:8px;}
-.icon-btn{width:34px;height:34px;border-radius:10px;background:var(--bgc);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;position:relative;transition:all .2s;}
+.icon-btn{width:34px;height:34px;border-radius:10px;background:var(--bgc);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;position:relative;transition:all .2s;touch-action:manipulation;-webkit-user-select:none;user-select:none;}
 .icon-btn:active{background:var(--bgch);}
 .nbadge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:var(--red);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg);}
 .lang-pill{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bgc);color:var(--t2);cursor:pointer;font-size:11px;font-weight:600;transition:all .2s;}
@@ -272,7 +272,7 @@ select.inp{appearance:none;}
 .content{padding-top:calc(var(--hdr) + env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(var(--nav) + 16px);padding-left:14px;padding-right:14px;min-height:100vh;}
 
 .bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--nav);background:rgba(27,27,27,.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 4px 8px;}
-.ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:var(--r1);cursor:pointer;transition:all .2s;flex:1;position:relative;}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:var(--r1);cursor:pointer;transition:all .2s;flex:1;position:relative;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 .ni .ico{font-size:20px;}
 .ni .nlbl{font-size:10px;color:var(--t3);font-weight:500;}
 .ni.active .nlbl{color:var(--blue);}
@@ -1376,7 +1376,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 </div>
 
 <!-- ══════════════════════════ FORCED PASSWORD CHANGE ══════════════════════════ -->
-<div id="forcedPwScreen" style="display:none;position:fixed;inset:0;z-index:2000;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;">
+<div id="forcedPwScreen" style="display:none;pointer-events:none;position:fixed;inset:0;z-index:2000;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;">
   <div style="width:100%;max-width:380px">
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:40px;margin-bottom:10px">🔐</div>
@@ -3529,6 +3529,8 @@ function login(roleKey) {
   startClock();
   refreshDynamic();
   showTab('home');
+  // Re-apply Android WebView touch fix after login renders the app
+  setTimeout(function() { if (window._applyTouchFix) _applyTouchFix(); }, 300);
   // Apply saved language preference AFTER the app is rendered (avoids login-screen freeze)
   setTimeout(() => applyPostLoginLang(), 100);
   // Admin-specific post-login
@@ -3552,14 +3554,15 @@ function logout() {
   if (clockTimer) clearInterval(clockTimer);
   localStorage.removeItem('alhuda_session');
   document.getElementById('mainApp').classList.remove('on');
-  document.getElementById('forcedPwScreen').style.display = 'none';
+  const _fps = document.getElementById('forcedPwScreen');
+  if (_fps) { _fps.style.display = 'none'; _fps.style.pointerEvents = 'none'; }
   document.getElementById('loginScreen').style.display = 'flex';
 }
 
 // ─── Forced password change on first login ────────────────────────────────
 function showForcedPwChange() {
   const scr = document.getElementById('forcedPwScreen');
-  if (scr) scr.style.display = 'flex';
+  if (scr) { scr.style.display = 'flex'; scr.style.pointerEvents = 'auto'; }
   // Apply current language to placeholders
   const newInp     = document.getElementById('fpwNew');
   const confirmInp = document.getElementById('fpwConfirm');
@@ -3600,7 +3603,8 @@ async function submitForcedPwChange() {
     } catch(e) {}
   }
 
-  document.getElementById('forcedPwScreen').style.display = 'none';
+  const fpScr = document.getElementById('forcedPwScreen');
+  if (fpScr) { fpScr.style.display = 'none'; fpScr.style.pointerEvents = 'none'; }
   toast(t('✅ Password updated! Welcome.','✅ تم تحديث كلمة المرور! أهلاً بك.'));
 }
 
@@ -9703,6 +9707,33 @@ _dRenderAdminRequests     = debounce(renderAdminRequests,     280);
 _dRenderAdminCoins        = debounce(renderAdminCoins,        280);
 _dFilterMemberPicker      = debounce(filterMemberPicker,      220);
 _dRenderManageMembersList = debounce(renderManageMembersList, 220);
+
+// ─── Android WebView touch fix ────────────────────────────────────────────
+// Converts touchend → click for all tappable divs so Android WebView
+// doesn't silently drop the tap or wait 300ms for onclick to fire.
+(function() {
+  function addTouchFix(selector) {
+    document.querySelectorAll(selector).forEach(function(el) {
+      el.addEventListener('touchend', function(e) {
+        // Only fire if the finger didn't move (not a scroll)
+        if (e.cancelable) e.preventDefault();
+        el.click();
+      }, { passive: false });
+    });
+  }
+  // Run once DOM is settled; re-run after login so dynamic elements are covered
+  function applyTouchFix() {
+    addTouchFix('.ni');
+    addTouchFix('.icon-btn');
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyTouchFix);
+  } else {
+    applyTouchFix();
+  }
+  // Also re-apply after login (the mainApp becomes visible)
+  window._applyTouchFix = applyTouchFix;
+})();
 </script>
 
 <!-- ✦ LIVE PARTICLE NETWORK BACKGROUND ─────────────────────────────────── -->
