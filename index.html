@@ -4925,6 +4925,34 @@ async function submitAdvanceRequest() {
   const now    = new Date();
   const month  = now.getMonth() + 1;
   const year   = now.getFullYear();
+  const myId   = user.id || role;
+
+  // Hard duplicate check — one request per cycle per employee
+  const already = salaryAdvances.find(a =>
+    a.emp_id === myId && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
+  );
+  if (already) {
+    closeModal('advRequestModal');
+    toast(t('⚠️ You already have a request for this cycle','⚠️ لديك طلب بالفعل لهذه الدورة'));
+    renderAdvances();
+    return;
+  }
+
+  // Also check Supabase directly to be safe
+  const { data: existing } = await sb.from('salary_advances')
+    .select('id')
+    .eq('emp_id', myId)
+    .eq('cycle', cycle)
+    .eq('cycle_month', month)
+    .eq('cycle_year', year)
+    .maybeSingle();
+  if (existing) {
+    closeModal('advRequestModal');
+    await loadSalaryAdvances();
+    renderAdvances();
+    toast(t('⚠️ You already submitted a request for this cycle','⚠️ لقد أرسلت طلباً لهذه الدورة بالفعل'));
+    return;
+  }
   const emp    = employees.find(e => e.id === (user.id || role));
   const payload = {
     emp_id: user.id || role,
