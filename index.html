@@ -2732,9 +2732,22 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <input class="inp" type="tel" id="ePhone" placeholder="+967-777-..." style="margin-bottom:0">
       </div>
     </div>
-    <div class="mg" style="margin-top:8px">
-      <label class="lbl" data-en="Job Title" data-ar="المسمى الوظيفي">Job Title</label>
-      <select class="inp" id="eRole" style="margin-bottom:0"></select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="mg">
+        <label class="lbl" data-en="Job Title" data-ar="المسمى الوظيفي">Job Title</label>
+        <input class="inp" type="text" id="eRole" list="jobTitleSuggestions"
+          data-ph-en="e.g. Cashier, Store Lead..." data-ph-ar="مثال: كاشير، قائد متجر..."
+          placeholder="e.g. Cashier, Store Lead..." style="margin-bottom:0" autocomplete="off">
+        <datalist id="jobTitleSuggestions"></datalist>
+      </div>
+      <div class="mg">
+        <label class="lbl" data-en="Role (Power Level)" data-ar="الصلاحية">Role (Power Level)</label>
+        <select class="inp" id="eEmpType" style="margin-bottom:0">
+          <option value="employee" data-en="Employee" data-ar="موظف">Employee</option>
+          <option value="supervisor" data-en="Supervisor" data-ar="مشرف">Supervisor</option>
+          <option value="manager" data-en="Manager" data-ar="مدير / مشرف">Manager</option>
+        </select>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <div class="mg">
@@ -3272,9 +3285,19 @@ function setLang(l, container) {
     const curLoc  = locSelLang ? locSelLang.value : '';
     populateEmpFormDropdowns(curDept, curLoc);
   }
-  if (roleSelLang && roleSelLang.options.length > 0) {
-    const curRole = roleSelLang.value;
-    populateJobTitleDropdown(curRole);
+  // eRole is now a free-text input — refresh the datalist suggestions on language change
+  const dl2 = document.getElementById('jobTitleSuggestions');
+  if (dl2) {
+    dl2.innerHTML = allJobTitles.map(j => {
+      const lbl = (l === 'ar' && j.nameAr) ? j.nameAr : j.name;
+      return `<option value="${lbl}">`;
+    }).join('');
+  }
+  // Translate the eEmpType options
+  const empTypeSel = document.getElementById('eEmpType');
+  if (empTypeSel) {
+    const map = { employee: l==='ar'?'موظف':'Employee', supervisor: l==='ar'?'مشرف':'Supervisor', manager: l==='ar'?'مدير / مشرف':'Manager' };
+    Array.from(empTypeSel.options).forEach(o => { if (map[o.value]) o.textContent = map[o.value]; });
   }
   document.querySelectorAll('.lang-pill').forEach(p => p.textContent = l === 'ar' ? 'عر' : 'EN');
   if (container) {
@@ -5713,8 +5736,11 @@ function renderEmployees() {
       <div class="emp-av">${e.init}</div>
       <div class="emp-info">
         <div class="emp-name">${e.firstName} ${e.lastName}</div>
-        <div class="emp-meta">${e.id.replace(/^[A-Z]+-/,'')} · ${tr(e.role)} · ${tr(e.deptLabel)}${e.locationLabel ? ' · 📍 ' + tr(e.locationLabel) : ''}</div>
-        <div style="margin-top:4px"><span class="bdg ${e.active ? 'g' : 'r'}" style="font-size:10px">${e.active ? t('● Active','● نشط') : t('○ Inactive','○ غير نشط')}</span></div>
+        <div class="emp-meta">${e.id.replace(/^[A-Z]+-/,'')} · ${e.role || '—'} · ${tr(e.deptLabel)}${e.locationLabel ? ' · 📍 ' + tr(e.locationLabel) : ''}</div>
+        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          <span class="bdg ${e.active ? 'g' : 'r'}" style="font-size:10px">${e.active ? t('● Active','● نشط') : t('○ Inactive','○ غير نشط')}</span>
+          ${e.emp_type === 'manager' ? `<span class="bdg b" style="font-size:10px">${lang==='ar'?'مدير':'Manager'}</span>` : e.emp_type === 'supervisor' ? `<span class="bdg p" style="font-size:10px">${lang==='ar'?'مشرف':'Supervisor'}</span>` : ''}
+        </div>
       </div>
       <div class="emp-actions">
         <div class="ea-btn pass" title="${t('Change Password','تغيير كلمة المرور')}" onclick="quickPwChange('${e.id}')">🔑</div>
@@ -5751,15 +5777,8 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
   }
   if (section) section.style.display = 'block';
 
-  // Determine this employee's level from job title first, then emp_type
-  const currentRoleVal = document.getElementById('eRole')?.value || '';
-  const titleInfo = allJobTitles.find(j => j.name === currentRoleVal || j.key === currentRoleVal);
-  let level = titleInfo?.type; // 'employee' | 'supervisor' | 'manager'
-  if (!level) {
-    if (empType === 'manager')    level = 'manager';
-    else if (empType === 'supervisor') level = 'supervisor';
-    else level = 'employee';
-  }
+  // Determine this employee's level directly from emp_type (role = job title now, not power level)
+  let level = empType === 'manager' ? 'manager' : empType === 'supervisor' ? 'supervisor' : 'employee';
 
   // Only regular employees see the Supervisor tab
   const showSupervisorTab = (level === 'employee');
@@ -5767,18 +5786,11 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
 
   const selfId = document.getElementById('empEditId')?.value;
 
-  // Helper — determine if a given employee is a supervisor or manager
+  // Helper — determine level directly from emp_type (job title is now free text, not used for power)
   const getLevel = e => {
-    // Admin account = General Manager, always appears in manager dropdown
     if (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '1') return 'manager';
-    const jt = allJobTitles.find(j => j.name === e.role || j.nameAr === e.role || j.key === e.role);
-    if (jt) return jt.type;
-    if (e.emp_type === 'manager') return 'manager';
-    if (e.emp_type === 'supervisor') return 'supervisor';
-    // exact-word text fallback only
-    const words = (e.role || '').toLowerCase().split(/[\s\-\/]+/);
-    if (words.includes('manager') || (e.role||'').includes('مدير')) return 'manager';
-    if (words.includes('supervisor') || (e.role||'').includes('مشرف')) return 'supervisor';
+    if (e.emp_type === 'manager' || e.emp_type === 'dept_officer' || e.emp_type === 'acc_mgr') return 'manager';
+    if (e.emp_type === 'supervisor' || e.emp_type === 'security_sup') return 'supervisor';
     return 'employee';
   };
 
@@ -5920,6 +5932,15 @@ function openEmpModal(empId) {
   document.getElementById('empModalTitle').textContent = t(isNew ? 'Add New Employee' : 'Edit Employee', isNew ? 'إضافة موظف جديد' : 'تعديل بيانات موظف');
   document.getElementById('empEditId').value = empId || '';
 
+  // Populate job title suggestions datalist from allJobTitles
+  const dl = document.getElementById('jobTitleSuggestions');
+  if (dl) {
+    dl.innerHTML = allJobTitles.map(j => {
+      const lbl = (lang === 'ar' && j.nameAr) ? j.nameAr : j.name;
+      return `<option value="${lbl}">`;
+    }).join('');
+  }
+
   if (!isNew) {
     const e = employees.find(emp => emp.id === empId);
     if (!e) return;
@@ -5928,7 +5949,10 @@ function openEmpModal(empId) {
     document.getElementById('eId').value = e.id;
     document.getElementById('ePhone').value = e.phone;
     populateEmpFormDropdowns(e.dept_key || e.dept || '', e.location || '', e.deptLabel || '');
-    populateJobTitleDropdown(e.role || '');
+    document.getElementById('eRole').value = e.role || '';
+    // Map any legacy emp_type values to the 3 clean levels
+    const lvl = ({'manager':'manager','supervisor':'supervisor','dept_officer':'manager','acc_mgr':'manager','security_sup':'supervisor','security':'employee','employee':'employee'})[e.emp_type] || 'employee';
+    document.getElementById('eEmpType').value = lvl;
     document.getElementById('eStartDate').value = e.startDate;
     document.getElementById('eSalary').value = e.salary;
     document.getElementById('ePw').value = '';
@@ -5938,10 +5962,11 @@ function openEmpModal(empId) {
     populateDefaultShiftDropdown(e.defaultShift || '');
   } else {
     ['eFirstName','eLastName','eId','ePhone','eSalary','ePw'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eRole').value = '';
+    document.getElementById('eEmpType').value = 'employee';
     document.getElementById('eStartDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('empActiveToggle').classList.add('on');
     populateEmpFormDropdowns('', '');
-    populateJobTitleDropdown('');
     buildReportingDropdowns('', '', 'employee');
     populateDefaultShiftDropdown('');
   }
@@ -5965,6 +5990,7 @@ async function saveEmployee() {
   const deptObj = getDeptByKey(deptVal);
   const locObj  = allLocations.find(l => l.key === locationVal);
 
+  const empTypeVal = document.getElementById('eEmpType').value || 'employee';
   const data = {
     id: empId, firstName, lastName,
     dept: deptVal,
@@ -5972,7 +5998,8 @@ async function saveEmployee() {
     deptLabel: deptObj ? deptObj.name : deptVal,
     location: locationVal,
     locationLabel: locObj ? locObj.name : locationVal,
-    role: document.getElementById('eRole').value,
+    role: document.getElementById('eRole').value.trim(),
+    emp_type: empTypeVal,
     supervisor_id: supervisorVal,
     report_to: managerVal,
     phone: document.getElementById('ePhone').value,
@@ -6000,7 +6027,8 @@ async function saveEmployee() {
     id: data.id, first_name: data.firstName, last_name: data.lastName,
     dept: data.dept, dept_key: data.dept_key, dept_label: data.deptLabel,
     location: data.location, location_label: data.locationLabel,
-    role: data.role, supervisor_id: data.supervisor_id, report_to: data.report_to,
+    role: data.role, emp_type: data.emp_type,
+    supervisor_id: data.supervisor_id, report_to: data.report_to,
     phone: data.phone, salary: data.salary, start_date: data.startDate,
     active: data.active, init: data.init,
     default_shift: data.defaultShift || null,
