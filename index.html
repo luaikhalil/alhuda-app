@@ -4668,7 +4668,7 @@ function isAccountingMgr() {
 function getAdvanceCycle() {
   const d = new Date().getDate();
   if (d >= 7 && d <= 10)  return 10;
-  if (d >= 17 && d <= 20) return 20;
+  if (d >= 14 && d <= 20) return 20;  // TODO: change 14 back to 17
   return null;
 }
 function isAdvanceWindowOpen() { return getAdvanceCycle() !== null; }
