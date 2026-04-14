@@ -5097,7 +5097,9 @@ function calcAdvanceLimit(empId) {
   const salary    = Number(user?.salary || employees.find(e => e.id === empId)?.salary || 0);
   if (!salary) return null;                 // no salary on record → no limit calculable
   const dailyRate   = salary / 30;
-  const daysWorked  = today;
+  // Days worked = the cycle date (10 or 20), not today's date.
+  // The window exists so employees can request on any day 17–20 and still get credit for 20 days.
+  const daysWorked  = getAdvanceCycle() || today;
   const earnedSoFar = dailyRate * daysWorked;
   // Sum all non-rejected advances this employee already received/requested this month
   const prevTotal = salaryAdvances
