@@ -1495,7 +1495,9 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
               <div class="stitle" style="margin:0" data-en="TEAM ADVANCE REQUESTS" data-ar="طلبات سلف الفريق">TEAM ADVANCE REQUESTS</div>
               <button id="advSubmitAccBtn" onclick="submitDeptToAccounting()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="Submit to Accounting ›" data-ar="أرسل للمحاسبة ›">Submit to Accounting ›</button>
             </div>
-            <div id="advTeamList"></div>
+            <div id="advTeamList">
+              <div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0" data-en="No pending team requests yet" data-ar="لا توجد طلبات فريق معلقة بعد">No pending team requests yet</div>
+            </div>
           </div>
         </div>
 
@@ -4772,8 +4774,8 @@ function renderAdvances() {
     const teamAdv = salaryAdvances.filter(a => {
       if (a.emp_id === myId) return false;
       if (!['pending','dept_submitted'].includes(a.status)) return false;
-      // Primary: advance has the manager's ID stored directly
-      if (a.report_to_id && a.report_to_id === myId) return true;
+      // Primary: advance has the manager's ID stored directly (or role key)
+      if (a.report_to_id && (a.report_to_id === myId || a.report_to_id === role)) return true;
       // Fallback: dept key match
       if (myDept && a.dept && a.dept === myDept) return true;
       // Fallback: check employees array
@@ -4978,7 +4980,12 @@ async function submitAdvanceRequest() {
     return;
   }
   const emp    = employees.find(e => e.id === myId);
-  const reportToId   = emp?.report_to || emp?.supervisor_id || user.reportTo || null;
+  // Resolve report_to: prefer Supabase field, fall back to role key → resolve to actual ID
+  let reportToId = emp?.report_to || emp?.supervisor_id || null;
+  if (!reportToId && user.reportTo) {
+    const mgr = ROLES[user.reportTo];
+    reportToId = mgr?.id || user.reportTo;
+  }
   const reportToName = employees.find(e => e.id === reportToId)?.first_name
     ? employees.find(e => e.id === reportToId).first_name + ' ' + employees.find(e => e.id === reportToId).last_name
     : null;
