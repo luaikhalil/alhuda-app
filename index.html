@@ -1488,18 +1488,6 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
           <div id="advMyList"></div>
         </div>
 
-        <!-- Manager: team advances + submit to accounting -->
-        <div id="advMgrView" style="display:none">
-          <div id="advTeamSection">
-            <div class="adv-section-hdr">
-              <div class="stitle" style="margin:0" data-en="TEAM ADVANCE REQUESTS" data-ar="طلبات سلف الفريق">TEAM ADVANCE REQUESTS</div>
-              <button id="advSubmitAccBtn" onclick="submitDeptToAccounting()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="Submit to Accounting ›" data-ar="أرسل للمحاسبة ›">Submit to Accounting ›</button>
-            </div>
-            <div id="advTeamList">
-              <div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0" data-en="No pending team requests yet" data-ar="لا توجد طلبات فريق معلقة بعد">No pending team requests yet</div>
-            </div>
-          </div>
-        </div>
 
         <!-- Accounting Manager view -->
         <div id="advAccView" style="display:none">
@@ -1507,7 +1495,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
             <div class="stitle" style="margin:0" data-en="DEPARTMENT SUBMISSIONS" data-ar="طلبات الأقسام">DEPARTMENT SUBMISSIONS</div>
             <button id="advSendGMBtn" onclick="openAccSignModal()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="✍️ Sign & Send to GM ›" data-ar="✍️ وقّع وأرسل للمدير العام ›">✍️ Sign & Send to GM ›</button>
           </div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:10px" data-en="Edit the approved amount for each employee before sending to GM." data-ar="عدّل المبلغ المسموح لكل موظف قبل الإرسال للمدير العام.">Edit the approved amount for each employee before sending to GM.</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:10px" data-en="Review and edit the approved amount for each employee, then sign and send to GM." data-ar="راجع وعدّل المبلغ المسموح لكل موظف، ثم وقّع وأرسل للمدير العام.">Review and edit the approved amount for each employee, then sign and send to GM.</div>
           <div id="advAccList"></div>
         </div>
 
@@ -4734,11 +4722,10 @@ async function loadSalaryAdvances() {
 // ─── Render (role-based) ───────────────────────────────────────────────────
 function renderAdvances() {
   if (!user) return;
-  const utype = user.emp_type || user.type || '';
-  const isAdmin  = utype === 'admin';
-  const isMgr    = ['manager','supervisor','dept_officer'].includes(utype);
-  const isAcc    = isAccountingMgr();
-  const myId     = user.id || role;
+  const utype  = user.emp_type || user.type || '';
+  const isAdmin = utype === 'admin';
+  const isAcc   = isAccountingMgr();
+  const myId    = user.id || role;
 
   // Banner
   const banner = document.getElementById('advWindowBanner');
@@ -4747,57 +4734,34 @@ function renderAdvances() {
     banner.innerHTML = `<div class="${open ? 'adv-window-open' : 'adv-window-closed'}">${advWindowMsg()}</div>`;
   }
 
-  // Show/hide role-specific panels
-  document.getElementById('advEmpView').style.display    = (!isAcc && !isAdmin) || isMgr ? '' : 'none';
-  document.getElementById('advMgrView').style.display    = (isMgr && !isAcc) ? '' : 'none';
-  document.getElementById('advAccView').style.display    = isAcc ? '' : 'none';
-  document.getElementById('advGMView').style.display     = isAdmin ? '' : 'none';
+  // Everyone except accounting manager and GM can submit their own request
+  document.getElementById('advEmpView').style.display = (!isAcc && !isAdmin) ? '' : 'none';
+  document.getElementById('advAccView').style.display = isAcc ? '' : 'none';
+  document.getElementById('advGMView').style.display  = isAdmin ? '' : 'none';
 
-  // Request button: show if window open and no pending/submitted request this cycle
+  // Request button: visible if window open and no request yet this cycle
   const cycle = getAdvanceCycle();
-  const now = new Date();
+  const now   = new Date();
   const month = now.getMonth() + 1;
   const year  = now.getFullYear();
   const myCurrentReq = salaryAdvances.find(a =>
     a.emp_id === myId && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
   );
   const reqBtn = document.getElementById('advRequestBtnRow');
-  if (reqBtn) reqBtn.style.display = (isAdvanceWindowOpen() && !myCurrentReq && !isAdmin) ? 'block' : 'none';
+  if (reqBtn) reqBtn.style.display = (isAdvanceWindowOpen() && !myCurrentReq) ? 'block' : 'none';
 
-  // My advances
-  const myAdv = salaryAdvances.filter(a => a.emp_id === myId);
-  renderMyAdvancesList(myAdv);
+  // My advances list
+  renderMyAdvancesList(salaryAdvances.filter(a => a.emp_id === myId));
 
-  // Manager: team advances — match by report_to_id, or dept, or employees array
-  if (isMgr && !isAcc) {
-    const myDept = user.deptKey || user.dept_key || user.dept || '';
-    const teamAdv = salaryAdvances.filter(a => {
-      if (a.emp_id === myId) return false;
-      if (!['pending','dept_submitted'].includes(a.status)) return false;
-      // Primary: advance has the manager's ID stored directly (or role key)
-      if (a.report_to_id && (a.report_to_id === myId || a.report_to_id === role)) return true;
-      // Fallback: dept key match
-      if (myDept && a.dept && a.dept === myDept) return true;
-      // Fallback: check employees array
-      const emp = employees.find(e => e.id === a.emp_id);
-      if (emp && (emp.report_to === myId || emp.supervisor_id === myId)) return true;
-      return false;
-    });
-    renderTeamAdvancesList(teamAdv);
-    const hasSubmittable = teamAdv.some(a => a.status === 'pending');
-    const btn = document.getElementById('advSubmitAccBtn');
-    if (btn) btn.style.display = hasSubmittable ? 'inline-block' : 'none';
-  }
-
-  // Accounting manager view
+  // Accounting manager: see ALL pending requests from all staff
   if (isAcc) {
-    const accAdv = salaryAdvances.filter(a => a.status === 'dept_submitted');
+    const accAdv = salaryAdvances.filter(a => a.status === 'pending');
     renderAccountingList(accAdv);
     const btn = document.getElementById('advSendGMBtn');
     if (btn) btn.style.display = accAdv.length > 0 ? 'inline-block' : 'none';
   }
 
-  // GM view
+  // GM: see all gm_pending
   if (isAdmin) {
     const gmAdv = salaryAdvances.filter(a => a.status === 'gm_pending');
     renderGMList(gmAdv);
@@ -4808,7 +4772,7 @@ function renderAdvances() {
 
 function statusLabel(s) {
   const map = {
-    pending: t('Pending','قيد الانتظار'),
+    pending: t('Sent to Accounting','أُرسل للمحاسبة'),
     dept_submitted: t('Sent to Accounting','أُرسل للمحاسبة'),
     gm_pending: t('Awaiting GM','بانتظار المدير العام'),
     approved: t('Approved','معتمد'),
@@ -5034,8 +4998,8 @@ async function submitDeptToAccounting() {
 let _accSigCanvas, _accSigCtx, _accSigDrawing = false;
 
 function openAccSignModal() {
-  const list = salaryAdvances.filter(a => a.status === 'dept_submitted');
-  if (list.length === 0) { toast(t('No submissions to send','لا توجد طلبات للإرسال')); return; }
+  const list = salaryAdvances.filter(a => a.status === 'pending');
+  if (list.length === 0) { toast(t('No pending requests to review','لا توجد طلبات معلقة للمراجعة')); return; }
   const total = list.reduce((s, a) => {
     const inp = document.getElementById(`accAmt_${a.id}`);
     return s + (inp ? parseFloat(inp.value) || 0 : a.amount_requested || 0);
@@ -5088,7 +5052,7 @@ async function submitAccSignAndSend() {
   if (isAccSignatureEmpty()) { toast(t('⚠️ Please sign before sending','⚠️ الرجاء التوقيع قبل الإرسال')); return; }
   const sigData = _accSigCanvas.toDataURL('image/png');
   const note    = document.getElementById('advAccNote')?.value || '';
-  const list    = salaryAdvances.filter(a => a.status === 'dept_submitted');
+  const list    = salaryAdvances.filter(a => a.status === 'pending');
   const myId    = user.id || role;
   for (const a of list) {
     const inp = document.getElementById(`accAmt_${a.id}`);
