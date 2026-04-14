@@ -5132,20 +5132,175 @@ async function submitGMApproval() {
   const note    = document.getElementById('advGMNote')?.value || '';
   const list    = salaryAdvances.filter(a => a.status === 'gm_pending');
   const myId    = user.id || role;
+  const now     = new Date().toISOString();
+
   for (const a of list) {
     await sb.from('salary_advances').update({
       status: 'approved',
       gm_signature: sigData,
       gm_note: note,
-      gm_approved_at: new Date().toISOString(),
+      gm_approved_at: now,
       approved_by_id: myId,
       approved_by_name: user.name
     }).eq('id', a.id);
   }
+
+  // Push notify each employee whose advance was approved
+  for (const a of list) {
+    const emp = employees.find(e => e.id === a.emp_id);
+    if (emp?.fcm_token) {
+      sendPush(
+        [emp.fcm_token],
+        t('✅ Salary Advance Approved','✅ تمت الموافقة على سلفة الراتب'),
+        t(`Your advance of AED ${Number(a.amount_approved||a.amount_requested).toLocaleString()} has been approved by GM.`,
+          `تمت الموافقة على سلفتك بمبلغ ${Number(a.amount_approved||a.amount_requested).toLocaleString()} درهم من قبل المدير العام.`)
+      );
+    }
+  }
+
   closeModal('advSignModal');
   await loadSalaryAdvances();
   renderAdvances();
   toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
+
+  // Generate and open approval PDF
+  const accSig  = list[0]?.acc_signature || null;
+  const accName = list[0]?.accounting_by_name || t('Accounting Manager','مدير المحاسبة');
+  setTimeout(() => generateAdvancePDF(list, sigData, accSig, user.name, accName), 400);
+}
+
+// ─── Advance Approval PDF ─────────────────────────────────────────────────
+function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
+  if (!list || list.length === 0) return;
+  const cycle  = list[0].cycle;
+  const mon    = monthName(list[0].cycle_month);
+  const yr     = list[0].cycle_year;
+  const total  = list.reduce((s, a) => s + Number(a.amount_approved || a.amount_requested || 0), 0);
+  const today  = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+
+  const rows = list.map((a, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td class="name-cell">${a.emp_name || a.emp_id}</td>
+      <td>${a.emp_id}</td>
+      <td class="name-cell">${a.dept_label || a.dept || '—'}</td>
+      <td class="amt">AED ${Number(a.amount_requested).toLocaleString()}</td>
+      <td class="amt approved-amt">AED ${Number(a.amount_approved || a.amount_requested).toLocaleString()}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Salary Advances — ${cycle}th Cycle ${mon} ${yr}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#111;background:#fff;padding:36px 44px;font-size:13px;}
+    .letterhead{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #b8860b;margin-bottom:20px;}
+    .company-name{font-size:22px;font-weight:800;color:#b8860b;letter-spacing:.5px;}
+    .company-sub{font-size:11px;color:#666;margin-top:3px;}
+    .doc-info{text-align:right;font-size:11px;color:#555;line-height:1.7;}
+    .doc-title{text-align:center;font-size:17px;font-weight:700;color:#222;margin-bottom:6px;}
+    .doc-sub{text-align:center;font-size:12px;color:#666;margin-bottom:20px;}
+    .table-wrap{position:relative;}
+    table{width:100%;border-collapse:collapse;margin-bottom:0;}
+    thead tr{background:#b8860b;color:#fff;}
+    thead th{padding:9px 10px;text-align:left;font-size:12px;font-weight:600;}
+    tbody tr:nth-child(even){background:#fdf8ee;}
+    tbody tr:nth-child(odd){background:#fff;}
+    tbody td{padding:8px 10px;border-bottom:1px solid #e8dfc0;font-size:12px;vertical-align:middle;}
+    tfoot tr{background:#f5efe0;}
+    tfoot td{padding:9px 10px;font-weight:700;font-size:13px;border-top:2px solid #b8860b;}
+    .name-cell{font-weight:500;}
+    .amt{text-align:right;font-family:monospace;}
+    .approved-amt{color:#15803d;font-weight:700;}
+    .gm-stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);opacity:0.18;text-align:center;pointer-events:none;}
+    .gm-stamp img{width:280px;max-height:140px;object-fit:contain;}
+    .gm-stamp .stamp-label{font-size:11px;font-weight:700;color:#b8860b;letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+    .footer-sigs{display:flex;justify-content:space-between;align-items:flex-end;margin-top:36px;padding-top:20px;border-top:1px solid #ddd;}
+    .sig-block{width:44%;text-align:center;}
+    .sig-block img{max-width:100%;height:90px;object-fit:contain;display:block;margin:0 auto 6px;}
+    .sig-block .sig-line{border-top:1.5px solid #333;padding-top:6px;font-size:12px;font-weight:600;color:#333;}
+    .sig-block .sig-role{font-size:11px;color:#666;margin-top:2px;}
+    .gm-sig-block img{height:120px;}
+    .total-summary{display:flex;justify-content:flex-end;gap:32px;margin-top:10px;padding:10px 14px;background:#fdf8ee;border:1px solid #e8dfc0;border-radius:6px;}
+    .total-item{text-align:right;}
+    .total-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;}
+    .total-val{font-size:16px;font-weight:800;color:#15803d;}
+    @media print{body{padding:20px 28px;} @page{size:A4;margin:15mm 12mm;}}
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <div>
+      <div class="company-name">🏪 Alhuda Advance Hypermarket</div>
+      <div class="company-sub">Salary Advance Authorization Document</div>
+    </div>
+    <div class="doc-info">
+      <div><strong>Cycle:</strong> ${cycle}th — ${mon} ${yr}</div>
+      <div><strong>Date:</strong> ${today}</div>
+      <div><strong>Total Employees:</strong> ${list.length}</div>
+    </div>
+  </div>
+
+  <div class="doc-title">Salary Advance Approval Sheet</div>
+  <div class="doc-sub">${cycle === 10 ? 'Mid-Month' : 'End-of-Month'} Advance · ${mon} ${yr}</div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Employee Name</th>
+          <th>Employee ID</th>
+          <th>Department</th>
+          <th style="text-align:right">Requested</th>
+          <th style="text-align:right">Approved</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4">Total Approved</td>
+          <td></td>
+          <td class="amt" style="color:#15803d">AED ${total.toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>
+    ${gmSig ? `
+    <div class="gm-stamp">
+      <img src="${gmSig}" alt="GM Signature">
+      <div class="stamp-label">GM Approved</div>
+    </div>` : ''}
+  </div>
+
+  <div class="total-summary">
+    <div class="total-item">
+      <div class="total-label">Total Disbursement</div>
+      <div class="total-val">AED ${total.toLocaleString()}</div>
+    </div>
+  </div>
+
+  <div class="footer-sigs">
+    <div class="sig-block">
+      ${accSig ? `<img src="${accSig}" alt="Accounting Manager Signature">` : '<div style="height:90px"></div>'}
+      <div class="sig-line">${accName}</div>
+      <div class="sig-role">Accounting Manager</div>
+    </div>
+    <div class="sig-block gm-sig-block">
+      ${gmSig ? `<img src="${gmSig}" alt="GM Signature">` : '<div style="height:120px"></div>'}
+      <div class="sig-line">${gmName}</div>
+      <div class="sig-role">General Manager</div>
+    </div>
+  </div>
+
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if (w) { w.document.write(html); w.document.close(); }
+  else toast(t('⚠️ Allow pop-ups to view the PDF','⚠️ اسمح بالنوافذ المنبثقة لعرض ملف PDF'));
 }
 
 // ─── Hook loadPolls ────────────────────────────────────────────────────────
