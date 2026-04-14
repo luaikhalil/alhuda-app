@@ -1503,7 +1503,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <div id="advAccView" style="display:none">
           <div class="adv-section-hdr">
             <div class="stitle" style="margin:0" data-en="DEPARTMENT SUBMISSIONS" data-ar="طلبات الأقسام">DEPARTMENT SUBMISSIONS</div>
-            <button id="advSendGMBtn" onclick="sendAdvancesToGM()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="Send to GM ›" data-ar="أرسل للمدير العام ›">Send to GM ›</button>
+            <button id="advSendGMBtn" onclick="openAccSignModal()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="✍️ Sign & Send to GM ›" data-ar="✍️ وقّع وأرسل للمدير العام ›">✍️ Sign & Send to GM ›</button>
           </div>
           <div style="font-size:11px;color:var(--t3);margin-bottom:10px" data-en="Edit the approved amount for each employee before sending to GM." data-ar="عدّل المبلغ المسموح لكل موظف قبل الإرسال للمدير العام.">Edit the approved amount for each employee before sending to GM.</div>
           <div id="advAccList"></div>
@@ -2093,6 +2093,23 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <input class="inp" id="advGMNote" type="text" placeholder="Optional note..." style="margin-top:10px">
     <button class="btn-pri" onclick="submitGMApproval()" data-en="✅ Approve & Sign" data-ar="✅ اعتمد ووقّع">✅ Approve & Sign</button>
     <button class="btn-sec" onclick="closeModal('advSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── ACCOUNTING MANAGER SIGNATURE MODAL ── -->
+<div class="modal-bg" id="advAccSignModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="✍️ Accounting Manager Signature" data-ar="✍️ توقيع مدير المحاسبة">✍️ Accounting Manager Signature</div>
+    <div id="advAccSignSummary" style="font-size:12px;color:var(--t2);margin-bottom:12px;background:var(--bg2);border-radius:9px;padding:10px 13px;"></div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:6px" data-en="Sign to confirm reviewed amounts before sending to GM:" data-ar="وقّع لتأكيد المبالغ قبل إرسالها للمدير العام:">Sign to confirm reviewed amounts before sending to GM:</div>
+    <canvas id="advAccSigCanvas" class="sig-canvas"></canvas>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="sig-clear-btn" onclick="clearAccSignature()" data-en="Clear" data-ar="مسح">Clear</button>
+    </div>
+    <input class="inp" id="advAccNote" type="text" placeholder="Optional note..." style="margin-top:10px">
+    <button class="btn-pri" onclick="submitAccSignAndSend()" data-en="✅ Sign & Send to GM" data-ar="✅ وقّع وأرسل للمدير العام">✅ Sign & Send to GM</button>
+    <button class="btn-sec" onclick="closeModal('advAccSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -4749,14 +4766,21 @@ function renderAdvances() {
   const myAdv = salaryAdvances.filter(a => a.emp_id === myId);
   renderMyAdvancesList(myAdv);
 
-  // Manager: team advances (employees whose report_to or dept matches)
+  // Manager: team advances — match by report_to_id, or dept, or employees array
   if (isMgr && !isAcc) {
-    const teamAdv = salaryAdvances.filter(a =>
-      a.emp_id !== myId && (
-        (a.dept === (user.deptKey || user.dept_key)) ||
-        employees.some(e => (e.id === a.emp_id) && (e.report_to === myId || e.supervisor_id === myId || e.dept_key === (user.deptKey || user.dept_key)))
-      )
-    ).filter(a => ['pending','dept_submitted'].includes(a.status));
+    const myDept = user.deptKey || user.dept_key || user.dept || '';
+    const teamAdv = salaryAdvances.filter(a => {
+      if (a.emp_id === myId) return false;
+      if (!['pending','dept_submitted'].includes(a.status)) return false;
+      // Primary: advance has the manager's ID stored directly
+      if (a.report_to_id && a.report_to_id === myId) return true;
+      // Fallback: dept key match
+      if (myDept && a.dept && a.dept === myDept) return true;
+      // Fallback: check employees array
+      const emp = employees.find(e => e.id === a.emp_id);
+      if (emp && (emp.report_to === myId || emp.supervisor_id === myId)) return true;
+      return false;
+    });
     renderTeamAdvancesList(teamAdv);
     const hasSubmittable = teamAdv.some(a => a.status === 'pending');
     const btn = document.getElementById('advSubmitAccBtn');
@@ -4953,12 +4977,18 @@ async function submitAdvanceRequest() {
     toast(t('⚠️ You already submitted a request for this cycle','⚠️ لقد أرسلت طلباً لهذه الدورة بالفعل'));
     return;
   }
-  const emp    = employees.find(e => e.id === (user.id || role));
+  const emp    = employees.find(e => e.id === myId);
+  const reportToId   = emp?.report_to || emp?.supervisor_id || user.reportTo || null;
+  const reportToName = employees.find(e => e.id === reportToId)?.first_name
+    ? employees.find(e => e.id === reportToId).first_name + ' ' + employees.find(e => e.id === reportToId).last_name
+    : null;
   const payload = {
-    emp_id: user.id || role,
+    emp_id: myId,
     emp_name: user.name,
     dept: emp?.dept_key || emp?.dept || user.deptKey || '',
     dept_label: emp?.dept_label || emp?.deptLabel || user.dept || '',
+    report_to_id: reportToId,
+    report_to_name: reportToName,
     amount_requested: amount,
     note,
     cycle, cycle_month: month, cycle_year: year,
@@ -4993,29 +5023,83 @@ async function submitDeptToAccounting() {
   toast(t(`✅ ${ids.length} request(s) sent to Accounting`,`✅ تم إرسال ${ids.length} طلب للمحاسبة`));
 }
 
-// ─── Accounting Manager: edit amounts and send to GM ─────────────────────
-async function sendAdvancesToGM() {
+// ─── Accounting Manager: signature + send to GM ───────────────────────────
+let _accSigCanvas, _accSigCtx, _accSigDrawing = false;
+
+function openAccSignModal() {
   const list = salaryAdvances.filter(a => a.status === 'dept_submitted');
   if (list.length === 0) { toast(t('No submissions to send','لا توجد طلبات للإرسال')); return; }
-  const myId = user.id || role;
-  const updates = list.map(a => {
+  const total = list.reduce((s, a) => {
     const inp = document.getElementById(`accAmt_${a.id}`);
-    const approved = inp ? parseFloat(inp.value) : a.amount_requested;
-    return { id: a.id, approved };
-  });
-  // Update each one
-  for (const u of updates) {
+    return s + (inp ? parseFloat(inp.value) || 0 : a.amount_requested || 0);
+  }, 0);
+  const sumEl = document.getElementById('advAccSignSummary');
+  if (sumEl) sumEl.textContent = t(`${list.length} employees · Total approved: AED ${Number(total).toLocaleString()}`,`${list.length} موظفين · الإجمالي المعتمد: ${Number(total).toLocaleString()} درهم`);
+  document.getElementById('advAccNote').value = '';
+  openModal('advAccSignModal');
+  setTimeout(initAccSignaturePad, 100);
+}
+
+function initAccSignaturePad() {
+  _accSigCanvas = document.getElementById('advAccSigCanvas');
+  if (!_accSigCanvas) return;
+  _accSigCtx = _accSigCanvas.getContext('2d');
+  const rect = _accSigCanvas.getBoundingClientRect();
+  _accSigCanvas.width  = rect.width;
+  _accSigCanvas.height = rect.height;
+  _accSigCtx.lineWidth   = 2.5;
+  _accSigCtx.lineCap     = 'round';
+  _accSigCtx.lineJoin    = 'round';
+  _accSigCtx.strokeStyle = '#111';
+  const getPos = (e) => {
+    const r = _accSigCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  };
+  _accSigCanvas.onmousedown = _accSigCanvas.ontouchstart = (e) => {
+    e.preventDefault(); _accSigDrawing = true;
+    const p = getPos(e); _accSigCtx.beginPath(); _accSigCtx.moveTo(p.x, p.y);
+  };
+  _accSigCanvas.onmousemove = _accSigCanvas.ontouchmove = (e) => {
+    e.preventDefault(); if (!_accSigDrawing) return;
+    const p = getPos(e); _accSigCtx.lineTo(p.x, p.y); _accSigCtx.stroke();
+  };
+  _accSigCanvas.onmouseup = _accSigCanvas.ontouchend = () => { _accSigDrawing = false; };
+}
+
+function clearAccSignature() {
+  if (_accSigCanvas && _accSigCtx) _accSigCtx.clearRect(0, 0, _accSigCanvas.width, _accSigCanvas.height);
+}
+
+function isAccSignatureEmpty() {
+  if (!_accSigCanvas) return true;
+  const d = _accSigCtx.getImageData(0, 0, _accSigCanvas.width, _accSigCanvas.height).data;
+  return !d.some(v => v !== 0);
+}
+
+async function submitAccSignAndSend() {
+  if (isAccSignatureEmpty()) { toast(t('⚠️ Please sign before sending','⚠️ الرجاء التوقيع قبل الإرسال')); return; }
+  const sigData = _accSigCanvas.toDataURL('image/png');
+  const note    = document.getElementById('advAccNote')?.value || '';
+  const list    = salaryAdvances.filter(a => a.status === 'dept_submitted');
+  const myId    = user.id || role;
+  for (const a of list) {
+    const inp = document.getElementById(`accAmt_${a.id}`);
+    const approved = inp ? parseFloat(inp.value) || a.amount_requested : a.amount_requested;
     await sb.from('salary_advances').update({
       status: 'gm_pending',
-      amount_approved: u.approved,
+      amount_approved: approved,
       accounting_by_id: myId,
       accounting_by_name: user.name,
-      accounting_at: new Date().toISOString()
-    }).eq('id', u.id);
+      accounting_at: new Date().toISOString(),
+      accounting_note: note,
+      acc_signature: sigData
+    }).eq('id', a.id);
   }
+  closeModal('advAccSignModal');
   await loadSalaryAdvances();
   renderAdvances();
-  toast(t(`✅ ${updates.length} advance(s) sent to GM for approval`,`✅ تم إرسال ${updates.length} سلفة للمدير العام`));
+  toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
 }
 
 // ─── GM: signature pad + approval ─────────────────────────────────────────
