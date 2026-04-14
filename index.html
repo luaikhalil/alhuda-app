@@ -1894,7 +1894,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="chat-input-inner">
       <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" onchange="attachFile(this)">
       <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
-      <input class="chat-inp" type="text" id="chatInpEl" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <input class="chat-inp" type="text" id="chatInpEl" data-ph-en="Type a message..." data-ph-ar="اكتب رسالة..." placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
       <button class="send-btn" onclick="sendMsg()">➤</button>
     </div>
   </div>
@@ -1906,7 +1906,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="mhandle"></div>
     <div class="mtitle">👥 Manage Members</div>
     <div style="font-size:12px;color:var(--t3);margin-bottom:12px" id="manageMembersSubtitle"></div>
-    <input class="member-search" type="text" placeholder="Search employees to add..." id="manageMembersSearch" oninput="renderManageMembersList()" style="margin-bottom:10px">
+    <input class="member-search" type="text" data-ph-en="Search employees to add..." data-ph-ar="بحث عن موظف للإضافة..." placeholder="Search employees to add..." id="manageMembersSearch" oninput="renderManageMembersList()" style="margin-bottom:10px">
     <div id="manageMembersList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
     <button class="btn-sec" onclick="closeModal('manageMembersModal')" style="margin-top:12px">Close</button>
   </div>
@@ -1995,18 +1995,18 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </div>
         <div class="mg">
           <label class="lbl" data-en="Location / Register No." data-ar="الموقع / رقم الصندوق">Location / Register No.</label>
-          <input class="inp" type="text" id="fIncidentLoc" placeholder="e.g. Register #3, Cashier Area" style="margin-bottom:0">
+          <input class="inp" type="text" id="fIncidentLoc" data-ph-en="e.g. Register #3, Cashier Area" data-ph-ar="مثال: كاشير #3، منطقة الكاشير" placeholder="e.g. Register #3, Cashier Area" style="margin-bottom:0">
         </div>
       </div>
 
       <!-- Common fields -->
       <div class="mg">
         <label class="lbl" data-en="Subject / Title" data-ar="الموضوع">Subject / Title</label>
-        <input class="inp" type="text" id="fTitle" placeholder="Brief subject..." style="margin-bottom:0">
+        <input class="inp" type="text" id="fTitle" data-ph-en="Brief subject..." data-ph-ar="موضوع مختصر..." placeholder="Brief subject..." style="margin-bottom:0">
       </div>
       <div class="mg">
         <label class="lbl" data-en="Details" data-ar="التفاصيل">Details</label>
-        <textarea class="inp" id="fDetails" rows="3" placeholder="Provide details..." style="resize:none;height:80px;margin-bottom:0"></textarea>
+        <textarea class="inp" id="fDetails" rows="3" data-ph-en="Provide details..." data-ph-ar="أدخل التفاصيل..." placeholder="Provide details..." style="resize:none;height:80px;margin-bottom:0"></textarea>
       </div>
 
       <!-- Call to office option (for dept officers) -->
@@ -2043,11 +2043,11 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     </div>
     <div class="mg">
       <label class="lbl" data-en="Subject" data-ar="الموضوع">Subject</label>
-      <input id="broadSubject" class="inp" type="text" placeholder="Announcement subject..." style="margin-bottom:0">
+      <input id="broadSubject" class="inp" type="text" data-ph-en="Announcement subject..." data-ph-ar="موضوع الإعلان..." placeholder="Announcement subject..." style="margin-bottom:0">
     </div>
     <div class="mg">
       <label class="lbl" data-en="Message" data-ar="الرسالة">Message</label>
-      <textarea id="broadBody" class="inp" rows="3" style="resize:none;height:80px;margin-bottom:0" placeholder="Type announcement..."></textarea>
+      <textarea id="broadBody" class="inp" rows="3" style="resize:none;height:80px;margin-bottom:0" data-ph-en="Type announcement..." data-ph-ar="اكتب الإعلان..." placeholder="Type announcement..."></textarea>
     </div>
     <button class="btn-pri" onclick="submitBroadcast()" data-en="📢 Send to All" data-ar="📢 إرسال للجميع">📢 Send to All</button>
     <button class="btn-sec" onclick="closeModal('broadcastModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
@@ -2061,13 +2061,13 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="mtitle" data-en="📊 Create Poll" data-ar="📊 إنشاء تصويت">📊 Create Poll</div>
     <div class="mg">
       <label class="lbl" data-en="Question" data-ar="السؤال">Question</label>
-      <input id="pollQuestion" class="inp" type="text" placeholder="What do you want to ask?" style="margin-bottom:0">
+      <input id="pollQuestion" class="inp" type="text" data-ph-en="What do you want to ask?" data-ph-ar="ما السؤال الذي تريد طرحه؟" placeholder="What do you want to ask?" style="margin-bottom:0">
     </div>
     <div class="mg">
       <label class="lbl" data-en="Options" data-ar="الخيارات">Options</label>
       <div id="pollOptionsContainer" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-        <input class="inp poll-opt-inp" type="text" placeholder="Option 1" style="margin-bottom:0">
-        <input class="inp poll-opt-inp" type="text" placeholder="Option 2" style="margin-bottom:0">
+        <input class="inp poll-opt-inp" type="text" data-ph-en="Option 1" data-ph-ar="الخيار 1" placeholder="Option 1" style="margin-bottom:0">
+        <input class="inp poll-opt-inp" type="text" data-ph-en="Option 2" data-ph-ar="الخيار 2" placeholder="Option 2" style="margin-bottom:0">
       </div>
       <button class="poll-add-opt" onclick="addPollOption()" data-en="+ Add option" data-ar="+ إضافة خيار">+ Add option</button>
     </div>
@@ -2090,10 +2090,10 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="mtitle" data-en="💰 Request Salary Advance" data-ar="💰 طلب سلفة راتب">💰 Request Salary Advance</div>
     <div id="advModalCycle" style="background:rgba(255,193,40,.08);border:1px solid rgba(255,193,40,.2);border-radius:9px;padding:9px 13px;font-size:12px;color:var(--gold);margin-bottom:14px;"></div>
     <label class="lbl" data-en="Amount Requested (AED)" data-ar="المبلغ المطلوب (درهم)">Amount Requested (AED)</label>
-    <input class="inp" id="advAmountInp" type="number" min="100" step="50" placeholder="e.g. 500" style="margin-bottom:4px">
+    <input class="inp" id="advAmountInp" type="number" min="100" step="50" data-ph-en="e.g. 500" data-ph-ar="مثال: 500" placeholder="e.g. 500" style="margin-bottom:4px">
     <div style="font-size:11px;color:var(--t3);margin-bottom:14px" id="advSalaryHint"></div>
     <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
-    <input class="inp" id="advNoteInp" type="text" placeholder="Any note for your manager..." style="margin-bottom:0">
+    <input class="inp" id="advNoteInp" type="text" data-ph-en="Any note for your manager..." data-ph-ar="ملاحظة لمديرك..." placeholder="Any note for your manager..." style="margin-bottom:0">
     <button class="btn-pri" onclick="submitAdvanceRequest()" data-en="Submit Request" data-ar="إرسال الطلب">Submit Request</button>
     <button class="btn-sec" onclick="closeModal('advRequestModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
@@ -2111,7 +2111,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <button class="sig-clear-btn" onclick="clearAdvSignature()" data-en="Clear" data-ar="مسح">Clear</button>
       <div style="flex:1"></div>
     </div>
-    <input class="inp" id="advGMNote" type="text" placeholder="Optional note..." style="margin-top:10px">
+    <input class="inp" id="advGMNote" type="text" data-ph-en="Optional note..." data-ph-ar="ملاحظة اختيارية..." placeholder="Optional note..." style="margin-top:10px">
     <button class="btn-pri" onclick="submitGMApproval()" data-en="✅ Approve & Sign" data-ar="✅ اعتمد ووقّع">✅ Approve & Sign</button>
     <button class="btn-sec" onclick="closeModal('advSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
@@ -2128,7 +2128,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div style="display:flex;gap:8px;margin-top:6px">
       <button class="sig-clear-btn" onclick="clearAccSignature()" data-en="Clear" data-ar="مسح">Clear</button>
     </div>
-    <input class="inp" id="advAccNote" type="text" placeholder="Optional note..." style="margin-top:10px">
+    <input class="inp" id="advAccNote" type="text" data-ph-en="Optional note..." data-ph-ar="ملاحظة اختيارية..." placeholder="Optional note..." style="margin-top:10px">
     <button class="btn-pri" onclick="submitAccSignAndSend()" data-en="✅ Sign & Send to GM" data-ar="✅ وقّع وأرسل للمدير العام">✅ Sign & Send to GM</button>
     <button class="btn-sec" onclick="closeModal('advAccSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
@@ -2198,11 +2198,11 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <button class="donate-amt-btn" onclick="setDonateAmt(25)">25</button>
         <button class="donate-amt-btn" onclick="setDonateAmt(50)">50</button>
       </div>
-      <input class="inp" type="number" id="donateAmt" placeholder="Or enter custom amount..." min="1" style="margin-bottom:0">
+      <input class="inp" type="number" id="donateAmt" data-ph-en="Or enter custom amount..." data-ph-ar="أو أدخل مبلغاً مخصصاً..." placeholder="Or enter custom amount..." min="1" style="margin-bottom:0">
     </div>
     <div class="mg">
       <label class="lbl" data-en="Message (optional)" data-ar="رسالة (اختياري)">Message (optional)</label>
-      <input class="inp" type="text" id="donateMsg" placeholder="Great work! 🎉" style="margin-bottom:0">
+      <input class="inp" type="text" id="donateMsg" data-ph-en="Great work! 🎉" data-ph-ar="عمل رائع! 🎉" placeholder="Great work! 🎉" style="margin-bottom:0">
     </div>
     <button class="btn-pri" onclick="submitDonateCoins()" data-en="🎁 Send Coins" data-ar="🎁 إرسال العملات">🎁 Send Coins</button>
     <button class="btn-sec" onclick="closeModal('donateCoinsModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
@@ -2263,7 +2263,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div id="memberPickerSection" style="margin-top:10px">
       <label class="lbl">Members <span id="memberCount" style="color:var(--blue)">0 selected</span></label>
       <div class="selected-chips" id="selectedChips"></div>
-      <input class="member-search" type="text" placeholder="Search employees..." id="memberSearchInp" oninput="filterMemberPicker()">
+      <input class="member-search" type="text" data-ph-en="Search employees..." data-ph-ar="بحث عن موظف..." placeholder="Search employees..." id="memberSearchInp" oninput="filterMemberPicker()">
       <div class="member-list" id="memberPickerList"></div>
     </div>
 
@@ -2288,11 +2288,11 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <input type="hidden" id="taskEditId">
     <div class="mg">
       <label class="lbl" data-en="Task Title" data-ar="عنوان المهمة">Task Title</label>
-      <input class="inp" type="text" id="tTitle" placeholder="e.g. Restock Aisle 3 shelves" style="margin-bottom:0">
+      <input class="inp" type="text" id="tTitle" data-ph-en="e.g. Restock Aisle 3 shelves" data-ph-ar="مثال: إعادة تعبئة رف الممر 3" placeholder="e.g. Restock Aisle 3 shelves" style="margin-bottom:0">
     </div>
     <div class="mg" style="margin-top:8px">
       <label class="lbl" data-en="Details / Instructions" data-ar="التفاصيل">Details / Instructions</label>
-      <textarea class="inp" id="tDetails" rows="2" style="resize:none;height:64px;margin-bottom:0" placeholder="What exactly needs to be done..."></textarea>
+      <textarea class="inp" id="tDetails" rows="2" style="resize:none;height:64px;margin-bottom:0" data-ph-en="What exactly needs to be done..." data-ph-ar="ما الذي يجب القيام به بالتحديد..."></textarea>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <div class="mg">
@@ -2349,7 +2349,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── EMPLOYEES TAB ─── -->
     <div id="apane-employees" class="apane">
       <div class="search-row">
-        <input class="search-inp" type="text" id="empSearch" placeholder="Search by name, ID or department..." oninput="renderEmployees()">
+        <input class="search-inp" type="text" id="empSearch" data-ph-en="Search by name, ID or department..." data-ph-ar="بحث بالاسم أو الرقم أو القسم..." placeholder="Search by name, ID or department..." oninput="renderEmployees()">
         <button class="add-btn" onclick="openEmpModal()">＋ Add</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -2372,7 +2372,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── REQUESTS TAB ─── -->
     <div id="apane-requests" class="apane" style="display:none">
       <div class="search-row">
-        <input class="search-inp" type="text" id="reqSearch" placeholder="Search requests..." oninput="renderAdminRequests()">
+        <input class="search-inp" type="text" id="reqSearch" data-ph-en="Search requests..." data-ph-ar="بحث في الطلبات..." placeholder="Search requests..." oninput="renderAdminRequests()">
       </div>
       <!-- Overdue summary bar (hidden when no overdue) -->
       <div id="overdueBar" class="overdue-bar" style="display:none;border-radius:8px;margin-bottom:8px;cursor:pointer" onclick="filterAdminReqs('overdue',document.querySelector('.afc[data-f=overdue]'))">
@@ -2396,10 +2396,19 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── PASSES TAB ─── -->
     <div id="apane-passes" class="apane" style="display:none">
       <div id="issuePassBtnWrapper" style="margin-bottom:12px">
-        <button class="add-btn" onclick="openIssuePassModal()" style="width:100%">🎫 Issue New Pass</button>
+        <button class="add-btn" onclick="openIssuePassModal()" style="width:100%" data-en="🎫 Issue New Pass" data-ar="🎫 إصدار تصريح جديد">🎫 Issue New Pass</button>
       </div>
       <div id="passNoPermMsg" style="display:none;padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px;font-size:12px;color:var(--red);margin-bottom:12px">
-        🔒 Only the General Manager, Account Manager, or Secretary can issue passes.
+        <span data-en="🔒 You are not authorized to issue passes." data-ar="🔒 ليس لديك صلاحية إصدار التصاريح.">🔒 You are not authorized to issue passes.</span>
+      </div>
+      <!-- Pass Issuers Manager — admin only -->
+      <div id="passIssuersSection" style="display:none;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase" data-en="Authorized Pass Issuers" data-ar="موظفون مخوّلون بإصدار التصاريح">Authorized Pass Issuers</div>
+        <div id="passIssuersList" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <select class="inp" id="passIssuerSelect" style="flex:1;margin-bottom:0;font-size:12px"></select>
+          <button class="btn-pri" onclick="addPassIssuer()" style="padding:8px 14px;font-size:12px;white-space:nowrap" data-en="+ Add" data-ar="+ إضافة">+ Add</button>
+        </div>
       </div>
       <div id="adminPassList"></div>
     </div>
@@ -2407,7 +2416,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- ─── COINS TAB ─── -->
     <div id="apane-coins" class="apane" style="display:none">
       <div style="margin-bottom:12px">
-        <input class="search-inp" type="text" id="coinsSearch" placeholder="Search employee..." oninput="renderAdminCoins()" style="width:100%">
+        <input class="search-inp" type="text" id="coinsSearch" data-ph-en="Search employee..." data-ph-ar="بحث عن موظف..." placeholder="Search employee..." oninput="renderAdminCoins()" style="width:100%">
       </div>
       <div id="adminCoinsList"></div>
       <!-- Manage Coins Modal -->
@@ -3178,6 +3187,8 @@ let requests = [
 let passes = [
   { serial:'20260407583721', empName:'Ahmad Hassan', empDept:'Ground Floor', purpose:'Maintenance Meeting Follow-up', issuedBy:'Maintenance Dept', date:'Apr 7, 2026', valid:true, roleKey:'sales_staff' }
 ];
+// Employee IDs allowed to issue passes (loaded from Supabase settings)
+let passIssuers = [];
 
 // Conversations
 const CHATS = {
@@ -5570,12 +5581,16 @@ function switchAdminTab(tab) {
   if (tab === 'coins') { renderAdminCoins(); }
   if (tab === 'passes') {
     renderAdminPasses();
-    // Check pass-issuing permission: only GM (admin), Account Manager, Secretary
-    const canIssuePass = role === 'admin' || (user && (user.role === 'Account Manager' || user.role === 'Secretary' || user.role === 'General Manager'));
+    // Can issue if: admin/GM, OR employee ID is in the passIssuers list
+    const canIssuePass = role === 'admin' || passIssuers.includes(user?.id);
     const btnW = document.getElementById('issuePassBtnWrapper');
     const noPermMsg = document.getElementById('passNoPermMsg');
     if (btnW) btnW.style.display = canIssuePass ? 'block' : 'none';
     if (noPermMsg) noPermMsg.style.display = canIssuePass ? 'none' : 'block';
+    // Show the issuers manager only to the main admin
+    const issuersSection = document.getElementById('passIssuersSection');
+    if (issuersSection) issuersSection.style.display = role === 'admin' ? 'block' : 'none';
+    if (role === 'admin') renderPassIssuersList();
   }
   if (tab === 'changes') {
     try { renderPendingChanges(); } catch(e) { console.warn('renderPendingChanges err', e); }
@@ -6337,6 +6352,59 @@ function revokePass(idx) {
   toast('🚫 Pass revoked');
   sb.from('passes').update({ valid: false }).eq('serial', serial)
     .then(({ error }) => { if (error) console.warn('Supabase revokePass failed:', error); });
+}
+
+// ─── PASS ISSUERS MANAGEMENT ─────────────────────────────────────────────────
+function renderPassIssuersList() {
+  const list = document.getElementById('passIssuersList');
+  const sel  = document.getElementById('passIssuerSelect');
+  if (!list || !sel) return;
+
+  // Render current issuers as removable chips
+  if (passIssuers.length === 0) {
+    list.innerHTML = `<div style="font-size:11px;color:var(--t3);padding:6px 0">${t('No authorized issuers yet — admin can always issue passes.','لا يوجد موظفون مخوّلون بعد — المدير العام يستطيع دائماً الإصدار.')}</div>`;
+  } else {
+    list.innerHTML = passIssuers.map(id => {
+      const emp = employees.find(e => e.id === id);
+      if (!emp) return '';
+      const name = lang === 'ar' && emp.nameAr ? emp.nameAr : `${emp.firstName} ${emp.lastName}`;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:8px;margin-bottom:5px">
+        <span style="font-size:12px;color:var(--t1)">${name} <span style="color:var(--t3)">(${id})</span></span>
+        <button onclick="removePassIssuer('${id}')" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);border-radius:6px;color:var(--red);font-size:11px;padding:2px 8px;cursor:pointer">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  // Populate selector with employees not already in the list
+  const eligible = employees.filter(e => e.dept !== 'admin' && e.active && !passIssuers.includes(e.id));
+  sel.innerHTML = eligible.map(e => {
+    const name = lang === 'ar' && e.nameAr ? e.nameAr : `${e.firstName} ${e.lastName}`;
+    return `<option value="${e.id}">${name} (${e.id})</option>`;
+  }).join('');
+  if (eligible.length === 0) sel.innerHTML = `<option value="">${t('All employees authorized','جميع الموظفين مخوّلون')}</option>`;
+}
+
+function addPassIssuer() {
+  const sel = document.getElementById('passIssuerSelect');
+  if (!sel || !sel.value) return;
+  if (!passIssuers.includes(sel.value)) {
+    passIssuers.push(sel.value);
+    savePassIssuers();
+    renderPassIssuersList();
+    toast('🎫 ' + t('Pass issuer added','تمت إضافة مصدر تصريح'));
+  }
+}
+
+function removePassIssuer(id) {
+  passIssuers = passIssuers.filter(x => x !== id);
+  savePassIssuers();
+  renderPassIssuersList();
+  toast(t('Removed from pass issuers','تمت الإزالة من قائمة مصدري التصاريح'));
+}
+
+function savePassIssuers() {
+  sb.from('settings').upsert({ key: 'pass_issuers', value: JSON.stringify(passIssuers) }, { onConflict: 'key' })
+    .then(({ error }) => { if (error) console.warn('savePassIssuers failed:', error); });
 }
 
 function openIssuePassModal() { populatePassEmpSelect(); openModal('adminPassModal'); }
@@ -7930,6 +7998,15 @@ loadSupabaseData = async function(isAdmin) {
     try {
       const parsed = typeof gfData.value === 'string' ? JSON.parse(gfData.value) : gfData.value;
       storeLocation = { ...storeLocation, ...parsed };
+    } catch(e2) {}
+  }
+
+  // Load pass issuers
+  const { data: piData } = await sb.from('settings').select('value').eq('key','pass_issuers').maybeSingle();
+  if (piData?.value) {
+    try {
+      const parsed = typeof piData.value === 'string' ? JSON.parse(piData.value) : piData.value;
+      if (Array.isArray(parsed)) passIssuers = parsed;
     } catch(e2) {}
   }
 
