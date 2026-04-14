@@ -380,9 +380,22 @@ select.inp{appearance:none;}
 .bubble.rx{background:rgba(255,255,255,.06);border:1px solid var(--border);border-bottom-left-radius:3px;align-self:flex-start;}
 .bubble.tx{background:linear-gradient(135deg,rgba(255,193,40,.18),rgba(255,171,0,.18));border:1px solid rgba(255,193,40,.2);border-bottom-right-radius:3px;align-self:flex-end;}
 .bubble .bt{font-size:9px;color:var(--t3);margin-top:3px;display:block;}
-.chat-input-row{padding:10px 14px;background:rgba(27,27,27,.96);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+.chat-input-row{padding:10px 14px;background:rgba(27,27,27,.96);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;align-items:stretch;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));}
+.chat-input-inner{display:flex;gap:8px;align-items:center;}
 .chat-inp{flex:1;padding:10px 14px;background:var(--bgc);border:1px solid var(--border);border-radius:22px;color:var(--t1);font-family:inherit;font-size:14px;outline:none;}
 .send-btn{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--cyan));border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.attach-btn{width:38px;height:38px;border-radius:11px;background:var(--bgc);border:1px solid var(--border);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.attach-btn:active{opacity:0.7;}
+.file-pending{display:flex;align-items:center;gap:8px;background:rgba(255,193,40,.08);border:1px solid rgba(255,193,40,.2);border-radius:10px;padding:7px 10px;font-size:12px;}
+.file-pending .fp-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1);}
+.file-pending .fp-rm{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:0 2px;}
+.img-preview{max-width:200px;max-height:200px;border-radius:10px;cursor:pointer;display:block;margin-bottom:4px;object-fit:cover;}
+.file-card{display:flex;align-items:center;gap:10px;padding:4px 0;}
+.file-card .fc-icon{font-size:24px;flex-shrink:0;}
+.file-card .fc-info{flex:1;min-width:0;}
+.file-card .fc-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.file-card .fc-size{font-size:10px;color:var(--t3);margin-top:1px;}
+.file-card a{font-size:11px;color:var(--blue);text-decoration:none;display:inline-block;margin-top:3px;}
 
 /* ── MODALS ── */
 .modal-bg{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:none;align-items:flex-end;}
@@ -435,6 +448,25 @@ select.inp{appearance:none;}
 .chat-time{font-size:10px;color:var(--t3);}
 .chat-unread{width:17px;height:17px;border-radius:50%;background:var(--blue);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:3px;margin-left:auto;}
 .ann-card{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(255,193,40,.06));border:1px solid rgba(139,92,246,.22);border-radius:var(--r2);padding:13px;margin-bottom:8px;}
+/* ── POLLS ── */
+.poll-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:10px;}
+.poll-q{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:12px;line-height:1.4;}
+.poll-opt{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+.poll-opt-btn{position:relative;padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bgc);cursor:pointer;font-size:13px;font-family:inherit;color:var(--t1);text-align:right;overflow:hidden;transition:border-color .2s;}
+.poll-opt-btn:hover{border-color:var(--blue);}
+.poll-opt-btn.voted{border-color:var(--blue);color:var(--t1);}
+.poll-opt-btn.voted.winner{border-color:#4ade80;}
+.poll-bar{position:absolute;left:0;top:0;height:100%;background:rgba(255,193,40,.13);border-radius:9px;transition:width .4s;}
+.poll-opt-btn.voted .poll-bar{background:rgba(255,193,40,.18);}
+.poll-opt-btn.voted.winner .poll-bar{background:rgba(74,222,128,.15);}
+.poll-opt-label{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;}
+.poll-pct{font-size:11px;color:var(--t3);font-weight:600;}
+.poll-meta{font-size:11px;color:var(--t3);display:flex;gap:10px;}
+.poll-options{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+.poll-close-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:11px;color:var(--t3);cursor:pointer;font-family:inherit;margin-top:4px;}
+.poll-close-btn:hover{border-color:#f87171;color:#f87171;}
+.poll-add-opt{background:none;border:1px dashed var(--border);border-radius:8px;padding:8px;width:100%;color:var(--t3);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;}
+.poll-add-opt:hover{border-color:var(--blue);color:var(--t1);}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(20,30,50,.97);border:1px solid var(--border);border-radius:var(--r1);padding:9px 18px;font-size:12px;color:var(--t1);z-index:1100;opacity:0;transition:all .3s;white-space:nowrap;backdrop-filter:blur(10px);}
@@ -1422,13 +1454,25 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
       <div id="chatList"></div>
 
-      <!-- Manager: broadcast button -->
+      <!-- Polls section -->
+      <div id="pollsSection" style="margin-bottom:8px">
+        <div id="pollsList"></div>
+      </div>
+
+      <!-- Manager: broadcast + poll buttons -->
       <div id="broadcastBtn" style="display:none;margin-top:4px">
-        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="openBroadcastModal()">
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:8px" onclick="openBroadcastModal()">
           <span style="font-size:26px">📢</span>
           <div>
             <div style="font-size:13px;font-weight:600" data-en="Broadcast Announcement" data-ar="إرسال إعلان">Broadcast Announcement</div>
             <div style="font-size:11px;color:var(--t2)" data-en="Send to all staff or specific department" data-ar="إرسال لجميع الموظفين أو قسم محدد">Send to all staff or specific department</div>
+          </div>
+        </div>
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="openPollModal()">
+          <span style="font-size:26px">📊</span>
+          <div>
+            <div style="font-size:13px;font-weight:600" data-en="Create Poll" data-ar="إنشاء تصويت">Create Poll</div>
+            <div style="font-size:11px;color:var(--t2)" data-en="Ask staff a question and collect votes" data-ar="اسأل الموظفين وجمّع أصواتهم">Ask staff a question and collect votes</div>
           </div>
         </div>
       </div>
@@ -1733,8 +1777,17 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
   </div>
   <div class="chat-msgs" id="chatMsgsEl"></div>
   <div class="chat-input-row">
-    <input class="chat-inp" type="text" id="chatInpEl" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
-    <button class="send-btn" onclick="sendMsg()">➤</button>
+    <div id="filePendingBar" style="display:none" class="file-pending">
+      <span>📎</span>
+      <span class="fp-name" id="filePendingName"></span>
+      <button class="fp-rm" onclick="removePendingFile()">✕</button>
+    </div>
+    <div class="chat-input-inner">
+      <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" onchange="attachFile(this)">
+      <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
+      <input class="chat-inp" type="text" id="chatInpEl" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="send-btn" onclick="sendMsg()">➤</button>
+    </div>
   </div>
 </div>
 
@@ -1889,6 +1942,35 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     </div>
     <button class="btn-pri" onclick="submitBroadcast()" data-en="📢 Send to All" data-ar="📢 إرسال للجميع">📢 Send to All</button>
     <button class="btn-sec" onclick="closeModal('broadcastModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── POLL MODAL ── -->
+<div class="modal-bg" id="pollModal">
+  <div class="modal" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="📊 Create Poll" data-ar="📊 إنشاء تصويت">📊 Create Poll</div>
+    <div class="mg">
+      <label class="lbl" data-en="Question" data-ar="السؤال">Question</label>
+      <input id="pollQuestion" class="inp" type="text" placeholder="What do you want to ask?" style="margin-bottom:0">
+    </div>
+    <div class="mg">
+      <label class="lbl" data-en="Options" data-ar="الخيارات">Options</label>
+      <div id="pollOptionsContainer" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+        <input class="inp poll-opt-inp" type="text" placeholder="Option 1" style="margin-bottom:0">
+        <input class="inp poll-opt-inp" type="text" placeholder="Option 2" style="margin-bottom:0">
+      </div>
+      <button class="poll-add-opt" onclick="addPollOption()" data-en="+ Add option" data-ar="+ إضافة خيار">+ Add option</button>
+    </div>
+    <div class="mg">
+      <label class="lbl" data-en="Visible to" data-ar="مرئي لـ">Visible to</label>
+      <select id="pollTarget" class="inp" style="margin-bottom:0">
+        <option value="" data-en="All Staff" data-ar="جميع الموظفين">All Staff</option>
+        <option value="admin" data-en="Managers & Admins only" data-ar="المدراء والإدارة فقط">Managers & Admins only</option>
+      </select>
+    </div>
+    <button class="btn-pri" onclick="submitPoll()" data-en="📊 Launch Poll" data-ar="📊 إطلاق التصويت">📊 Launch Poll</button>
+    <button class="btn-sec" onclick="closeModal('pollModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -4292,8 +4374,10 @@ function openChat(id) {
   document.getElementById('chatSubEl').textContent = '● Online';
 
   const msgs = document.getElementById('chatMsgsEl');
-  msgs.innerHTML = convo.msgs.map(m => `
-    <div class="bubble ${m.rx ? 'rx' : 'tx'}">${lang === 'ar' ? (m.textAr || m.text) : m.text}<span class="bt">${m.t}</span></div>`).join('');
+  msgs.innerHTML = convo.msgs.map(m => {
+    const body = lang === 'ar' ? (m.textAr || m.text) : m.text;
+    return `<div class="bubble ${m.rx ? 'rx' : 'tx'}">${parseMsgBody(body)}<span class="bt">${m.t}</span></div>`;
+  }).join('');
   document.getElementById('chatPanel').classList.add('open');
   setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
 }
@@ -4303,15 +4387,79 @@ function closeChat() {
   closeGroupMenu();
 }
 
-function sendMsg() {
+// ── FILE ATTACHMENT STATE ─────────────────────────────────────────────────
+let _pendingFile = null;
+
+function attachFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast('⚠️ ' + t('File too large (max 20MB)','الملف كبير جداً (الحد 20MB)')); input.value=''; return; }
+  _pendingFile = file;
+  document.getElementById('filePendingName').textContent = file.name;
+  document.getElementById('filePendingBar').style.display = 'flex';
+  input.value = '';
+}
+
+function removePendingFile() {
+  _pendingFile = null;
+  document.getElementById('filePendingBar').style.display = 'none';
+  document.getElementById('filePendingName').textContent = '';
+}
+
+function _fileIcon(mime) {
+  if (!mime) return '📎';
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime.includes('pdf')) return '📄';
+  if (mime.includes('word') || mime.includes('doc')) return '📝';
+  if (mime.includes('sheet') || mime.includes('excel') || mime.includes('xls')) return '📊';
+  if (mime.includes('zip') || mime.includes('rar')) return '🗜️';
+  if (mime.startsWith('video/')) return '🎬';
+  return '📎';
+}
+
+function _fmtSize(bytes) {
+  return bytes > 1024*1024 ? (bytes/1024/1024).toFixed(1)+' MB' : Math.round(bytes/1024)+' KB';
+}
+
+function parseMsgBody(body) {
+  try {
+    const d = JSON.parse(body);
+    if (!d._file) return body;
+    const isImg = d.mime && d.mime.startsWith('image/');
+    const caption = d.caption ? `<div style="font-size:12px;margin-top:4px">${d.caption}</div>` : '';
+    if (isImg) {
+      return `<img src="${d.url}" class="img-preview" onclick="window.open('${d.url}','_blank')" onerror="this.style.display='none'">${caption}`;
+    }
+    return `<div class="file-card">
+      <span class="fc-icon">${_fileIcon(d.mime)}</span>
+      <div class="fc-info">
+        <div class="fc-name">${d.name}</div>
+        <div class="fc-size">${_fmtSize(d.size)}</div>
+        ${caption}
+        <a href="${d.url}" target="_blank">⬇️ ${t('Download','تحميل')}</a>
+      </div>
+    </div>`;
+  } catch(e) { return body; }
+}
+
+async function sendMsg() {
   const inp = document.getElementById('chatInpEl');
-  const txt = inp.value.trim(); if (!txt) return;
+  const txt = inp.value.trim();
+  if (!txt && !_pendingFile) return;
+
+  if (_pendingFile) {
+    await _sendFileMsg(_pendingFile, txt);
+    inp.value = '';
+    removePendingFile();
+    return;
+  }
+
+  // Plain text
   const msgs = document.getElementById('chatMsgsEl');
   const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   msgs.innerHTML += `<div class="bubble tx">${txt}<span class="bt">${now}</span></div>`;
   msgs.scrollTop = msgs.scrollHeight;
   inp.value = '';
-  // Save to Supabase
   if (activeChat && user) {
     sb.from('messages').insert({
       chat_id: activeChat,
@@ -4320,7 +4468,36 @@ function sendMsg() {
       body: txt
     }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
   }
-  // No auto-reply — messages are real conversations
+}
+
+async function _sendFileMsg(file, caption) {
+  const msgs = document.getElementById('chatMsgsEl');
+  const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const tmpId = 'fup-' + Date.now();
+  msgs.innerHTML += `<div class="bubble tx" id="${tmpId}">⏳ ${t('Uploading','جاري الرفع')} ${file.name}...<span class="bt">${now}</span></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  try {
+    const ext = file.name.includes('.') ? file.name.split('.').pop() : 'bin';
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('chat-files').upload(path, file, { cacheControl:'3600', upsert:false });
+    if (upErr) throw upErr;
+    const { data: urlData } = sb.storage.from('chat-files').getPublicUrl(path);
+    const url = urlData.publicUrl;
+    const body = JSON.stringify({ _file:true, url, name:file.name, size:file.size, mime:file.type, caption:caption||'' });
+    const tmpEl = document.getElementById(tmpId);
+    if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
+    msgs.scrollTop = msgs.scrollHeight;
+    if (activeChat && user) {
+      sb.from('messages').insert({
+        chat_id: activeChat, sender_id: user.id||role,
+        sender_name: user.name, body
+      }).then(({error}) => { if (error) console.warn('sendFileMsg failed:', error); });
+    }
+  } catch(e) {
+    const tmpEl = document.getElementById(tmpId);
+    if (tmpEl) tmpEl.innerHTML = `❌ ${t('Upload failed','فشل الرفع')}: ${e.message}<span class="bt">${now}</span>`;
+    toast('❌ ' + e.message);
+  }
 }
 
 // ─── MODALS ───────────────────────────────────────────────────────────────────
@@ -4351,6 +4528,154 @@ function submitBroadcast() {
   // Reset fields
   if (document.getElementById('broadSubject')) document.getElementById('broadSubject').value = '';
   if (document.getElementById('broadBody')) document.getElementById('broadBody').value = '';
+}
+
+// ─── POLLS ───────────────────────────────────────────────────────────────────
+let polls = [];
+
+function canCreatePoll() {
+  if (!user) return false;
+  return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type);
+}
+
+function openPollModal() {
+  if (!canCreatePoll()) { toast(t('⚠️ Only managers & supervisors can create polls','⚠️ فقط المدراء والمشرفون يمكنهم إنشاء تصويتات')); return; }
+  // Reset modal
+  document.getElementById('pollQuestion').value = '';
+  const cont = document.getElementById('pollOptionsContainer');
+  cont.innerHTML = `
+    <input class="inp poll-opt-inp" type="text" placeholder="${t('Option 1','الخيار 1')}">
+    <input class="inp poll-opt-inp" type="text" placeholder="${t('Option 2','الخيار 2')}">
+  `;
+  document.getElementById('pollTarget').value = '';
+  openModal('pollModal');
+}
+
+function addPollOption() {
+  const cont = document.getElementById('pollOptionsContainer');
+  const count = cont.querySelectorAll('.poll-opt-inp').length;
+  if (count >= 4) { toast(t('Max 4 options','الحد الأقصى 4 خيارات')); return; }
+  const inp = document.createElement('input');
+  inp.className = 'inp poll-opt-inp';
+  inp.type = 'text';
+  inp.placeholder = t(`Option ${count+1}`,`الخيار ${count+1}`);
+  cont.appendChild(inp);
+}
+
+async function submitPoll() {
+  const question = (document.getElementById('pollQuestion')?.value || '').trim();
+  if (!question) { toast(t('⚠️ Please enter a question','⚠️ الرجاء إدخال السؤال')); return; }
+  const optInputs = document.querySelectorAll('#pollOptionsContainer .poll-opt-inp');
+  const options = Array.from(optInputs).map(i => i.value.trim()).filter(Boolean);
+  if (options.length < 2) { toast(t('⚠️ At least 2 options needed','⚠️ مطلوب خيارين على الأقل')); return; }
+  const target = document.getElementById('pollTarget')?.value || '';
+
+  const pollData = {
+    question,
+    options: options.map(label => ({ label, votes: 0, voters: [] })),
+    created_by: user.id || role,
+    creator_name: user.name,
+    target_role: target || null,
+    active: true,
+    created_at: new Date().toISOString()
+  };
+
+  const { data, error } = await sb.from('polls').insert(pollData).select().single();
+  if (error) { toast('❌ ' + error.message); return; }
+
+  closeModal('pollModal');
+  polls.unshift({ ...pollData, id: data.id });
+  renderPolls();
+  toast(t('📊 Poll launched!','📊 تم إطلاق التصويت!'));
+}
+
+async function loadPolls() {
+  try {
+    const { data, error } = await sb.from('polls').select('*').eq('active', true).order('created_at', { ascending: false });
+    if (error || !data) return;
+    polls = data;
+    renderPolls();
+  } catch(e) { console.warn('loadPolls failed:', e); }
+}
+
+function renderPolls() {
+  const container = document.getElementById('pollsList');
+  if (!container) return;
+  if (!polls || polls.length === 0) { container.innerHTML = ''; return; }
+
+  const myId = user?.id || role;
+  // Filter polls by target role
+  const visible = polls.filter(p => {
+    if (!p.target_role) return true;
+    if (!user) return false;
+    if (p.target_role === 'admin') return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type);
+    return true;
+  });
+
+  if (visible.length === 0) { container.innerHTML = ''; return; }
+
+  container.innerHTML = visible.map(poll => {
+    const opts = Array.isArray(poll.options) ? poll.options : [];
+    const totalVotes = opts.reduce((s, o) => s + (o.votes || 0), 0);
+    const myVote = opts.findIndex(o => Array.isArray(o.voters) && o.voters.includes(myId));
+    const hasVoted = myVote >= 0;
+    const maxVotes = Math.max(...opts.map(o => o.votes || 0), 1);
+
+    const optionsHtml = opts.map((opt, idx) => {
+      const pct = totalVotes > 0 ? Math.round((opt.votes || 0) / totalVotes * 100) : 0;
+      const isWinner = (opt.votes || 0) === maxVotes && (opt.votes || 0) > 0;
+      const isMyVote = myVote === idx;
+      return `
+        <button class="poll-opt-btn${hasVoted ? (isMyVote ? ' voted' + (isWinner ? ' winner' : '') : (isWinner ? ' winner' : '')) : ''}"
+          onclick="${hasVoted ? '' : `votePoll('${poll.id}',${idx})`}"
+          style="${hasVoted ? 'cursor:default' : ''}">
+          <div class="poll-bar" style="width:${hasVoted ? pct : 0}%"></div>
+          <span class="poll-opt-label">${opt.label}${isMyVote ? ' ✓' : ''}</span>
+          ${hasVoted ? `<span class="poll-pct">${pct}%</span>` : ''}
+        </button>`;
+    }).join('');
+
+    const dateStr = poll.created_at ? new Date(poll.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const byLine = poll.creator_name ? `${t('by','بواسطة')} ${poll.creator_name}` : '';
+    return `
+      <div class="poll-card" data-poll-id="${poll.id}">
+        <div class="poll-q">${poll.question}</div>
+        <div class="poll-meta">${dateStr}${byLine ? ' · ' + byLine : ''} · ${totalVotes} ${t('votes','أصوات')}</div>
+        <div class="poll-options">${optionsHtml}</div>
+        ${canCreatePoll() && poll.created_by === myId ? `<button class="poll-close-btn" onclick="closePoll('${poll.id}')">${t('Close poll','إغلاق التصويت')}</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+async function votePoll(pollId, optionIdx) {
+  const myId = user?.id || role;
+  const pollIdx = polls.findIndex(p => p.id === pollId);
+  if (pollIdx < 0) return;
+  const poll = polls[pollIdx];
+  const opts = Array.isArray(poll.options) ? JSON.parse(JSON.stringify(poll.options)) : [];
+
+  // Check already voted
+  if (opts.some(o => Array.isArray(o.voters) && o.voters.includes(myId))) {
+    toast(t('You already voted','لقد صوتت بالفعل')); return;
+  }
+
+  opts[optionIdx].votes = (opts[optionIdx].votes || 0) + 1;
+  opts[optionIdx].voters = [...(opts[optionIdx].voters || []), myId];
+
+  const { error } = await sb.from('polls').update({ options: opts }).eq('id', pollId);
+  if (error) { toast('❌ ' + error.message); return; }
+
+  polls[pollIdx].options = opts;
+  renderPolls();
+  toast(t('✅ Vote recorded!','✅ تم تسجيل صوتك!'));
+}
+
+async function closePoll(pollId) {
+  const { error } = await sb.from('polls').update({ active: false }).eq('id', pollId);
+  if (error) { toast('❌ ' + error.message); return; }
+  polls = polls.filter(p => p.id !== pollId);
+  renderPolls();
+  toast(t('Poll closed','تم إغلاق التصويت'));
 }
 
 document.querySelectorAll('.modal-bg').forEach(bg => bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); }));
@@ -6771,6 +7096,9 @@ loadSupabaseData = async function(isAdmin) {
   // Show special schedule notice on schedule tab
   setTimeout(() => { try { renderSpecialScheduleNotice(); } catch(e2) {} }, 500);
 
+  // Load polls
+  try { await loadPolls(); } catch(e2) {}
+
   // Check overdue requests after data loads (admin only — non-silent so reminders fire)
   if (isAdmin) {
     setTimeout(() => { try { checkAndNotifyOverdue(false); } catch(e) {} }, 1500);
@@ -7536,8 +7864,9 @@ function renderGroupMessages(groupId) {
       ? `<button onclick="pinGroupMessage('${groupId}',${idx})" title="Pin this message" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:2px 4px;opacity:0.7" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">📌</button>`
       : '';
     const isPinned = g.pinnedMsg && g.pinnedMsg.msgIdx === idx;
+    const body = lang === 'ar' ? (m.textAr || m.text) : m.text;
     return `<div class="bubble ${m.rx ? 'rx' : 'tx'}" id="groupmsg-${idx}" style="${isPinned ? 'outline:1px solid rgba(255,193,40,.4);' : ''}">
-      ${lang === 'ar' ? (m.textAr || m.text) : m.text}
+      ${parseMsgBody(body)}
       <span class="bt">${m.t}</span>
       ${pinBtn}
     </div>`;
