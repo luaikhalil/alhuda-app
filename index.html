@@ -468,6 +468,37 @@ select.inp{appearance:none;}
 .poll-add-opt{background:none;border:1px dashed var(--border);border-radius:8px;padding:8px;width:100%;color:var(--t3);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;}
 .poll-add-opt:hover{border-color:var(--blue);color:var(--t1);}
 
+/* ── SALARY ADVANCES ── */
+.req-view-btn{flex:1;padding:8px 0;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;}
+.req-view-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.adv-window-open{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#4ade80;display:flex;align-items:center;gap:8px;}
+.adv-window-closed{background:rgba(255,193,40,.06);border:1px solid rgba(255,193,40,.18);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--gold);}
+.adv-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:13px 14px;margin-bottom:9px;}
+.adv-card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.adv-emp-name{font-size:13px;font-weight:700;color:var(--t1);}
+.adv-dept{font-size:11px;color:var(--t3);}
+.adv-amounts{display:flex;gap:16px;margin:8px 0;}
+.adv-amt-box{flex:1;background:var(--bgc);border-radius:8px;padding:8px 10px;text-align:center;}
+.adv-amt-label{font-size:10px;color:var(--t3);margin-bottom:3px;}
+.adv-amt-val{font-size:15px;font-weight:700;color:var(--t1);}
+.adv-amt-val.approved{color:#4ade80;}
+.adv-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;}
+.adv-status.pending{background:rgba(255,193,40,.12);color:var(--gold);}
+.adv-status.dept_submitted{background:rgba(96,165,250,.12);color:#60a5fa;}
+.adv-status.gm_pending{background:rgba(167,139,250,.12);color:#a78bfa;}
+.adv-status.approved{background:rgba(74,222,128,.12);color:#4ade80;}
+.adv-status.rejected{background:rgba(248,113,113,.12);color:#f87171;}
+.adv-edit-inp{width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bgc);color:var(--t1);font-size:13px;font-family:inherit;box-sizing:border-box;}
+.adv-edit-inp:focus{outline:none;border-color:var(--blue);}
+.adv-section-hdr{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px;}
+.sig-canvas{border:1px solid var(--border);border-radius:10px;background:#fff;width:100%;height:160px;cursor:crosshair;display:block;touch-action:none;}
+.sig-clear-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 14px;color:var(--t3);font-size:12px;cursor:pointer;font-family:inherit;margin-top:6px;}
+.adv-summary-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.adv-summary-row:last-child{border-bottom:none;}
+.adv-summary-name{flex:1;font-weight:600;color:var(--t1);}
+.adv-summary-dept{color:var(--t3);font-size:11px;width:90px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
+.adv-summary-amt{font-weight:700;color:#4ade80;min-width:60px;text-align:right;}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(20,30,50,.97);border:1px solid var(--border);border-radius:var(--r1);padding:9px 18px;font-size:12px;color:var(--t1);z-index:1100;opacity:0;transition:all .3s;white-space:nowrap;backdrop-filter:blur(10px);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -1408,31 +1439,87 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
     <!-- ─── REQUESTS TAB ─── -->
     <div class="tab" id="tab-requests">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <h2 style="font-size:17px;font-weight:700" data-en="Requests" data-ar="الطلبات">Requests</h2>
-        <div id="newReqBtn" style="display:none">
-          <button style="padding:7px 14px;border-radius:20px;background:linear-gradient(135deg,#ffc128,#e6a800);border:none;color:#1a1000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openNewReqModal()" data-en="+ New Request" data-ar="+ طلب جديد">+ New Request</button>
+      <!-- View toggle: Requests / Advances -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="req-view-btn active" id="rvBtnReqs" onclick="switchReqView('reqs')" data-en="📋 Requests" data-ar="📋 الطلبات">📋 Requests</button>
+        <button class="req-view-btn" id="rvBtnAdv" onclick="switchReqView('advances')" data-en="💰 Advances" data-ar="💰 السلف">💰 Advances</button>
+      </div>
+
+      <!-- ── REQUESTS VIEW ── -->
+      <div id="reqViewReqs">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div id="newReqBtn" style="display:none">
+            <button style="padding:7px 14px;border-radius:20px;background:linear-gradient(135deg,#ffc128,#e6a800);border:none;color:#1a1000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openNewReqModal()" data-en="+ New Request" data-ar="+ طلب جديد">+ New Request</button>
+          </div>
+        </div>
+
+        <!-- Employee sees their own requests + passes -->
+        <div id="myReqsSection">
+          <div class="stitle" data-en="MY REQUESTS" data-ar="طلباتي">MY REQUESTS</div>
+          <div id="myReqsList"></div>
+          <div class="stitle" data-en="MY OFFICE PASSES" data-ar="تصاريح دخولي للمكتب">MY OFFICE PASSES</div>
+          <div id="myPassesList"></div>
+        </div>
+
+        <!-- Manager/dept officer sees incoming requests to approve -->
+        <div id="incomingReqsSection" style="display:none">
+          <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="reqFilterRow">
+            <div class="lang-btn active" onclick="filterReqs('pending',this)" data-en="Pending" data-ar="جديدة">Pending</div>
+            <div class="lang-btn" onclick="filterReqs('mine',this)" data-en="My Sent" data-ar="ما أرسلته">My Sent</div>
+            <div class="lang-btn" onclick="filterReqs('done',this)" data-en="Resolved" data-ar="محلولة">Resolved</div>
+          </div>
+          <div id="incomingList"></div>
         </div>
       </div>
 
-      <!-- Employee sees their own requests + passes -->
-      <div id="myReqsSection">
-        <div class="stitle" data-en="MY REQUESTS" data-ar="طلباتي">MY REQUESTS</div>
-        <div id="myReqsList"></div>
+      <!-- ── ADVANCES VIEW ── -->
+      <div id="reqViewAdv" style="display:none">
 
-        <div class="stitle" data-en="MY OFFICE PASSES" data-ar="تصاريح دخولي للمكتب">MY OFFICE PASSES</div>
-        <div id="myPassesList"></div>
-      </div>
+        <!-- Window banner (shown dynamically) -->
+        <div id="advWindowBanner"></div>
 
-      <!-- Manager/dept officer sees incoming requests to approve -->
-      <div id="incomingReqsSection" style="display:none">
-        <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;" id="reqFilterRow">
-          <div class="lang-btn active" onclick="filterReqs('pending',this)" data-en="Pending" data-ar="جديدة">Pending</div>
-          <div class="lang-btn" onclick="filterReqs('mine',this)" data-en="My Sent" data-ar="ما أرسلته">My Sent</div>
-          <div class="lang-btn" onclick="filterReqs('done',this)" data-en="Resolved" data-ar="محلولة">Resolved</div>
+        <!-- Employee: my advances + request button -->
+        <div id="advEmpView">
+          <div id="advRequestBtnRow" style="display:none;margin-bottom:10px">
+            <button style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#ffc128,#e6a800);border:none;color:#1a1000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openAdvanceModal()" data-en="💰 Request Salary Advance" data-ar="💰 طلب سلفة راتب">💰 Request Salary Advance</button>
+          </div>
+          <div class="stitle" data-en="MY ADVANCE REQUESTS" data-ar="طلبات سلفتي">MY ADVANCE REQUESTS</div>
+          <div id="advMyList"></div>
         </div>
-        <div id="incomingList"></div>
-      </div>
+
+        <!-- Manager: team advances + submit to accounting -->
+        <div id="advMgrView" style="display:none">
+          <div id="advTeamSection">
+            <div class="adv-section-hdr">
+              <div class="stitle" style="margin:0" data-en="TEAM ADVANCE REQUESTS" data-ar="طلبات سلف الفريق">TEAM ADVANCE REQUESTS</div>
+              <button id="advSubmitAccBtn" onclick="submitDeptToAccounting()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="Submit to Accounting ›" data-ar="أرسل للمحاسبة ›">Submit to Accounting ›</button>
+            </div>
+            <div id="advTeamList"></div>
+          </div>
+        </div>
+
+        <!-- Accounting Manager view -->
+        <div id="advAccView" style="display:none">
+          <div class="adv-section-hdr">
+            <div class="stitle" style="margin:0" data-en="DEPARTMENT SUBMISSIONS" data-ar="طلبات الأقسام">DEPARTMENT SUBMISSIONS</div>
+            <button id="advSendGMBtn" onclick="sendAdvancesToGM()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="Send to GM ›" data-ar="أرسل للمدير العام ›">Send to GM ›</button>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:10px" data-en="Edit the approved amount for each employee before sending to GM." data-ar="عدّل المبلغ المسموح لكل موظف قبل الإرسال للمدير العام.">Edit the approved amount for each employee before sending to GM.</div>
+          <div id="advAccList"></div>
+        </div>
+
+        <!-- GM view: approve all with signature -->
+        <div id="advGMView" style="display:none">
+          <div class="adv-section-hdr">
+            <div class="stitle" style="margin:0" data-en="PENDING GM APPROVAL" data-ar="بانتظار موافقة المدير العام">PENDING GM APPROVAL</div>
+          </div>
+          <div id="advGMList"></div>
+          <div id="advGMSignRow" style="display:none;margin-top:10px">
+            <button style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#4ade80,#16a34a);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openGMSignModal()" data-en="✍️ Sign & Approve All" data-ar="✍️ وقّع واعتمد الجميع">✍️ Sign & Approve All</button>
+          </div>
+        </div>
+
+      </div><!-- end reqViewAdv -->
     </div>
 
     <!-- ─── MESSAGES TAB ─── -->
@@ -1971,6 +2058,40 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     </div>
     <button class="btn-pri" onclick="submitPoll()" data-en="📊 Launch Poll" data-ar="📊 إطلاق التصويت">📊 Launch Poll</button>
     <button class="btn-sec" onclick="closeModal('pollModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── SALARY ADVANCE REQUEST MODAL ── -->
+<div class="modal-bg" id="advRequestModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="💰 Request Salary Advance" data-ar="💰 طلب سلفة راتب">💰 Request Salary Advance</div>
+    <div id="advModalCycle" style="background:rgba(255,193,40,.08);border:1px solid rgba(255,193,40,.2);border-radius:9px;padding:9px 13px;font-size:12px;color:var(--gold);margin-bottom:14px;"></div>
+    <label class="lbl" data-en="Amount Requested (AED)" data-ar="المبلغ المطلوب (درهم)">Amount Requested (AED)</label>
+    <input class="inp" id="advAmountInp" type="number" min="100" step="50" placeholder="e.g. 500" style="margin-bottom:4px">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:14px" id="advSalaryHint"></div>
+    <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
+    <input class="inp" id="advNoteInp" type="text" placeholder="Any note for your manager..." style="margin-bottom:0">
+    <button class="btn-pri" onclick="submitAdvanceRequest()" data-en="Submit Request" data-ar="إرسال الطلب">Submit Request</button>
+    <button class="btn-sec" onclick="closeModal('advRequestModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── GM SIGNATURE MODAL ── -->
+<div class="modal-bg" id="advSignModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="✍️ GM Approval Signature" data-ar="✍️ توقيع المدير العام">✍️ GM Approval Signature</div>
+    <div id="advSignSummary" style="font-size:12px;color:var(--t2);margin-bottom:12px;background:var(--bg2);border-radius:9px;padding:10px 13px;"></div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:6px" data-en="Sign below to approve all advances:" data-ar="وقّع أدناه لاعتماد جميع السلف:">Sign below to approve all advances:</div>
+    <canvas id="advSigCanvas" class="sig-canvas"></canvas>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="sig-clear-btn" onclick="clearAdvSignature()" data-en="Clear" data-ar="مسح">Clear</button>
+      <div style="flex:1"></div>
+    </div>
+    <input class="inp" id="advGMNote" type="text" placeholder="Optional note..." style="margin-top:10px">
+    <button class="btn-pri" onclick="submitGMApproval()" data-en="✅ Approve & Sign" data-ar="✅ اعتمد ووقّع">✅ Approve & Sign</button>
+    <button class="btn-sec" onclick="closeModal('advSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -4529,6 +4650,415 @@ function submitBroadcast() {
   if (document.getElementById('broadSubject')) document.getElementById('broadSubject').value = '';
   if (document.getElementById('broadBody')) document.getElementById('broadBody').value = '';
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// SALARY ADVANCES
+// ══════════════════════════════════════════════════════════════════════════
+let salaryAdvances = [];
+
+// ─── Role helpers ─────────────────────────────────────────────────────────
+function isAccountingMgr() {
+  if (!user) return false;
+  const utype = user.emp_type || user.type || '';
+  const dept  = (user.deptKey || user.dept_key || user.dept || '').toLowerCase();
+  return utype === 'manager' && (dept.includes('account') || dept.includes('financ') || dept.includes('مالي') || dept.includes('محاسب'));
+}
+
+// ─── Cycle / window helpers ────────────────────────────────────────────────
+function getAdvanceCycle() {
+  const d = new Date().getDate();
+  if (d >= 7 && d <= 10)  return 10;
+  if (d >= 17 && d <= 20) return 20;
+  return null;
+}
+function isAdvanceWindowOpen() { return getAdvanceCycle() !== null; }
+
+function advWindowMsg() {
+  const d = new Date().getDate();
+  const cycle = getAdvanceCycle();
+  if (cycle) return t(`✅ Advance window is OPEN — Submit your request for the ${cycle}th by today!`,`✅ نافذة السلف مفتوحة — أرسل طلبك لسلفة يوم ${cycle} اليوم!`);
+  if (d < 7)  return t('🔒 Next window: 7th – 10th (mid-month advance)',`🔒 النافذة القادمة: من اليوم 7 إلى 10 (سلفة منتصف الشهر)`);
+  if (d > 10 && d < 17) return t('🔒 Next window: 17th – 20th (end-of-month advance)',`🔒 النافذة القادمة: من اليوم 17 إلى 20 (سلفة نهاية الشهر)`);
+  return t('🔒 Next window opens on the 7th of next month',`🔒 النافذة التالية تفتح في اليوم 7 من الشهر القادم`);
+}
+
+// ─── View switcher ─────────────────────────────────────────────────────────
+function switchReqView(view) {
+  document.getElementById('reqViewReqs').style.display = view === 'reqs' ? '' : 'none';
+  document.getElementById('reqViewAdv').style.display  = view === 'advances' ? '' : 'none';
+  document.getElementById('rvBtnReqs').classList.toggle('active', view === 'reqs');
+  document.getElementById('rvBtnAdv').classList.toggle('active', view === 'advances');
+  if (view === 'advances') renderAdvances();
+}
+
+// ─── Load from Supabase ────────────────────────────────────────────────────
+async function loadSalaryAdvances() {
+  try {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year  = now.getFullYear();
+    const { data, error } = await sb.from('salary_advances')
+      .select('*')
+      .or(`cycle_month.eq.${month},cycle_month.eq.${month - 1 || 12}`)
+      .order('created_at', { ascending: false });
+    if (!error && data) salaryAdvances = data;
+  } catch(e) { console.warn('loadSalaryAdvances:', e); }
+}
+
+// ─── Render (role-based) ───────────────────────────────────────────────────
+function renderAdvances() {
+  if (!user) return;
+  const utype = user.emp_type || user.type || '';
+  const isAdmin  = utype === 'admin';
+  const isMgr    = ['manager','supervisor','dept_officer'].includes(utype);
+  const isAcc    = isAccountingMgr();
+  const myId     = user.id || role;
+
+  // Banner
+  const banner = document.getElementById('advWindowBanner');
+  if (banner) {
+    const open = isAdvanceWindowOpen();
+    banner.innerHTML = `<div class="${open ? 'adv-window-open' : 'adv-window-closed'}">${advWindowMsg()}</div>`;
+  }
+
+  // Show/hide role-specific panels
+  document.getElementById('advEmpView').style.display    = (!isAcc && !isAdmin) || isMgr ? '' : 'none';
+  document.getElementById('advMgrView').style.display    = (isMgr && !isAcc) ? '' : 'none';
+  document.getElementById('advAccView').style.display    = isAcc ? '' : 'none';
+  document.getElementById('advGMView').style.display     = isAdmin ? '' : 'none';
+
+  // Request button: show if window open and no pending/submitted request this cycle
+  const cycle = getAdvanceCycle();
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year  = now.getFullYear();
+  const myCurrentReq = salaryAdvances.find(a =>
+    a.emp_id === myId && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
+  );
+  const reqBtn = document.getElementById('advRequestBtnRow');
+  if (reqBtn) reqBtn.style.display = (isAdvanceWindowOpen() && !myCurrentReq && !isAdmin) ? 'block' : 'none';
+
+  // My advances
+  const myAdv = salaryAdvances.filter(a => a.emp_id === myId);
+  renderMyAdvancesList(myAdv);
+
+  // Manager: team advances (employees whose report_to or dept matches)
+  if (isMgr && !isAcc) {
+    const teamAdv = salaryAdvances.filter(a =>
+      a.emp_id !== myId && (
+        (a.dept === (user.deptKey || user.dept_key)) ||
+        employees.some(e => (e.id === a.emp_id) && (e.report_to === myId || e.supervisor_id === myId || e.dept_key === (user.deptKey || user.dept_key)))
+      )
+    ).filter(a => ['pending','dept_submitted'].includes(a.status));
+    renderTeamAdvancesList(teamAdv);
+    const hasSubmittable = teamAdv.some(a => a.status === 'pending');
+    const btn = document.getElementById('advSubmitAccBtn');
+    if (btn) btn.style.display = hasSubmittable ? 'inline-block' : 'none';
+  }
+
+  // Accounting manager view
+  if (isAcc) {
+    const accAdv = salaryAdvances.filter(a => a.status === 'dept_submitted');
+    renderAccountingList(accAdv);
+    const btn = document.getElementById('advSendGMBtn');
+    if (btn) btn.style.display = accAdv.length > 0 ? 'inline-block' : 'none';
+  }
+
+  // GM view
+  if (isAdmin) {
+    const gmAdv = salaryAdvances.filter(a => a.status === 'gm_pending');
+    renderGMList(gmAdv);
+    const signRow = document.getElementById('advGMSignRow');
+    if (signRow) signRow.style.display = gmAdv.length > 0 ? 'block' : 'none';
+  }
+}
+
+function statusLabel(s) {
+  const map = {
+    pending: t('Pending','قيد الانتظار'),
+    dept_submitted: t('Sent to Accounting','أُرسل للمحاسبة'),
+    gm_pending: t('Awaiting GM','بانتظار المدير العام'),
+    approved: t('Approved','معتمد'),
+    rejected: t('Rejected','مرفوض')
+  };
+  return map[s] || s;
+}
+
+function renderMyAdvancesList(list) {
+  const el = document.getElementById('advMyList');
+  if (!el) return;
+  if (!list || list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:18px 0">${t('No advance requests yet','لا توجد طلبات سلف بعد')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(a => `
+    <div class="adv-card">
+      <div class="adv-card-hdr">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--t1)">${t('Cycle: ','الدورة: ')}${a.cycle}${t('th','')} — ${monthName(a.cycle_month)} ${a.cycle_year}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${a.note||''}</div>
+        </div>
+        <span class="adv-status ${a.status}">${statusLabel(a.status)}</span>
+      </div>
+      <div class="adv-amounts">
+        <div class="adv-amt-box"><div class="adv-amt-label">${t('Requested','المطلوب')}</div><div class="adv-amt-val">${fmtAmt(a.amount_requested)}</div></div>
+        ${a.amount_approved != null ? `<div class="adv-amt-box"><div class="adv-amt-label">${t('Approved','المعتمد')}</div><div class="adv-amt-val approved">${fmtAmt(a.amount_approved)}</div></div>` : ''}
+      </div>
+      ${a.status === 'approved' && a.gm_signature ? `<div style="font-size:11px;color:#4ade80">✅ ${t('Approved by GM','معتمد من المدير العام')}</div>` : ''}
+      ${a.status === 'rejected' ? `<div style="font-size:11px;color:#f87171">❌ ${a.rejection_reason||t('Rejected','مرفوض')}</div>` : ''}
+    </div>`).join('');
+}
+
+function renderTeamAdvancesList(list) {
+  const el = document.getElementById('advTeamList');
+  if (!el) return;
+  if (!list || list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0">${t('No pending team requests','لا توجد طلبات فريق معلقة')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(a => `
+    <div class="adv-card">
+      <div class="adv-card-hdr">
+        <div>
+          <div class="adv-emp-name">${a.emp_name||a.emp_id}</div>
+          <div class="adv-dept">${a.dept_label||a.dept||''}</div>
+        </div>
+        <span class="adv-status ${a.status}">${statusLabel(a.status)}</span>
+      </div>
+      <div class="adv-amounts">
+        <div class="adv-amt-box"><div class="adv-amt-label">${t('Requested','المطلوب')}</div><div class="adv-amt-val">${fmtAmt(a.amount_requested)}</div></div>
+      </div>
+      ${a.note ? `<div style="font-size:11px;color:var(--t3)">📝 ${a.note}</div>` : ''}
+    </div>`).join('');
+}
+
+function renderAccountingList(list) {
+  const el = document.getElementById('advAccList');
+  if (!el) return;
+  if (!list || list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0">${t('No submissions from departments yet','لا توجد طلبات مُرسلة من الأقسام بعد')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(a => `
+    <div class="adv-card">
+      <div class="adv-card-hdr">
+        <div>
+          <div class="adv-emp-name">${a.emp_name||a.emp_id}</div>
+          <div class="adv-dept">${a.dept_label||a.dept||''} · ${t('Cycle','دورة')} ${a.cycle}${t('th','')}</div>
+        </div>
+        <span class="adv-status ${a.status}">${statusLabel(a.status)}</span>
+      </div>
+      <div class="adv-amounts">
+        <div class="adv-amt-box"><div class="adv-amt-label">${t('Requested','المطلوب')}</div><div class="adv-amt-val">${fmtAmt(a.amount_requested)}</div></div>
+        <div class="adv-amt-box" style="flex:1.2">
+          <div class="adv-amt-label">${t('Approved Amount','المبلغ المعتمد')}</div>
+          <input class="adv-edit-inp" type="number" min="0" step="50"
+            id="accAmt_${a.id}" value="${a.amount_approved ?? a.amount_requested}"
+            placeholder="${a.amount_requested}">
+        </div>
+      </div>
+      ${a.note ? `<div style="font-size:11px;color:var(--t3);margin-top:4px">📝 ${a.note}</div>` : ''}
+    </div>`).join('');
+}
+
+function renderGMList(list) {
+  const el = document.getElementById('advGMList');
+  if (!el) return;
+  if (!list || list.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:14px 0">${t('No advances pending your approval','لا توجد سلف بانتظار موافقتك')}</div>`;
+    return;
+  }
+  const total = list.reduce((s, a) => s + (a.amount_approved ?? a.amount_requested ?? 0), 0);
+  el.innerHTML = `
+    <div style="background:var(--bg2);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--t3)">${t('Total employees','إجمالي الموظفين')}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--t1)">${list.length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-size:12px;color:var(--t3)">${t('Total amount','إجمالي المبالغ')}</span>
+        <span style="font-size:15px;font-weight:700;color:#4ade80">${fmtAmt(total)}</span>
+      </div>
+    </div>
+    ${list.map(a => `
+      <div class="adv-summary-row">
+        <div class="adv-summary-name">${a.emp_name||a.emp_id}</div>
+        <div class="adv-summary-dept">${a.dept_label||a.dept||''}</div>
+        <div class="adv-summary-amt">${fmtAmt(a.amount_approved ?? a.amount_requested)}</div>
+      </div>`).join('')}`;
+}
+
+function fmtAmt(v) { return v != null ? 'AED ' + Number(v).toLocaleString() : '—'; }
+function monthName(m) {
+  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] || m;
+}
+
+// ─── Employee: submit request ──────────────────────────────────────────────
+function openAdvanceModal() {
+  const cycle = getAdvanceCycle();
+  if (!cycle) { toast(t('⚠️ Advance window is currently closed','⚠️ نافذة السلف مغلقة حالياً')); return; }
+  const now = new Date();
+  document.getElementById('advModalCycle').textContent =
+    t(`This request is for the ${cycle}th-cycle advance — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`,
+      `هذا الطلب لسلفة يوم ${cycle} — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`);
+  // Show salary hint
+  const mySalary = (employees.find(e => e.id === (user.id || role)) || {}).salary;
+  const hint = document.getElementById('advSalaryHint');
+  if (hint) hint.textContent = mySalary ? t(`Your salary: AED ${Number(mySalary).toLocaleString()}`, `راتبك: ${Number(mySalary).toLocaleString()} درهم`) : '';
+  document.getElementById('advAmountInp').value = '';
+  document.getElementById('advNoteInp').value = '';
+  openModal('advRequestModal');
+}
+
+async function submitAdvanceRequest() {
+  const amount = parseFloat(document.getElementById('advAmountInp')?.value || '0');
+  if (!amount || amount <= 0) { toast(t('⚠️ Please enter a valid amount','⚠️ الرجاء إدخال مبلغ صحيح')); return; }
+  const note   = document.getElementById('advNoteInp')?.value || '';
+  const cycle  = getAdvanceCycle();
+  const now    = new Date();
+  const month  = now.getMonth() + 1;
+  const year   = now.getFullYear();
+  const emp    = employees.find(e => e.id === (user.id || role));
+  const payload = {
+    emp_id: user.id || role,
+    emp_name: user.name,
+    dept: emp?.dept_key || emp?.dept || user.deptKey || '',
+    dept_label: emp?.dept_label || emp?.deptLabel || user.dept || '',
+    amount_requested: amount,
+    note,
+    cycle, cycle_month: month, cycle_year: year,
+    status: 'pending'
+  };
+  const { error } = await sb.from('salary_advances').insert(payload);
+  if (error) { toast('❌ ' + error.message); return; }
+  closeModal('advRequestModal');
+  await loadSalaryAdvances();
+  renderAdvances();
+  toast(t('✅ Advance request submitted!','✅ تم إرسال طلب السلفة!'));
+}
+
+// ─── Manager: submit dept batch to Accounting ─────────────────────────────
+async function submitDeptToAccounting() {
+  const myId   = user.id || role;
+  const myDept = user.deptKey || user.dept_key;
+  const toSubmit = salaryAdvances.filter(a =>
+    a.status === 'pending' && a.emp_id !== myId && (
+      a.dept === myDept ||
+      employees.some(e => e.id === a.emp_id && (e.report_to === myId || e.supervisor_id === myId || e.dept_key === myDept))
+    )
+  );
+  if (toSubmit.length === 0) { toast(t('No pending requests to submit','لا توجد طلبات معلقة للإرسال')); return; }
+  const ids = toSubmit.map(a => a.id);
+  const { error } = await sb.from('salary_advances')
+    .update({ status: 'dept_submitted', submitted_by_id: myId, submitted_by_name: user.name, submitted_at: new Date().toISOString() })
+    .in('id', ids);
+  if (error) { toast('❌ ' + error.message); return; }
+  await loadSalaryAdvances();
+  renderAdvances();
+  toast(t(`✅ ${ids.length} request(s) sent to Accounting`,`✅ تم إرسال ${ids.length} طلب للمحاسبة`));
+}
+
+// ─── Accounting Manager: edit amounts and send to GM ─────────────────────
+async function sendAdvancesToGM() {
+  const list = salaryAdvances.filter(a => a.status === 'dept_submitted');
+  if (list.length === 0) { toast(t('No submissions to send','لا توجد طلبات للإرسال')); return; }
+  const myId = user.id || role;
+  const updates = list.map(a => {
+    const inp = document.getElementById(`accAmt_${a.id}`);
+    const approved = inp ? parseFloat(inp.value) : a.amount_requested;
+    return { id: a.id, approved };
+  });
+  // Update each one
+  for (const u of updates) {
+    await sb.from('salary_advances').update({
+      status: 'gm_pending',
+      amount_approved: u.approved,
+      accounting_by_id: myId,
+      accounting_by_name: user.name,
+      accounting_at: new Date().toISOString()
+    }).eq('id', u.id);
+  }
+  await loadSalaryAdvances();
+  renderAdvances();
+  toast(t(`✅ ${updates.length} advance(s) sent to GM for approval`,`✅ تم إرسال ${updates.length} سلفة للمدير العام`));
+}
+
+// ─── GM: signature pad + approval ─────────────────────────────────────────
+let _sigCanvas, _sigCtx, _sigDrawing = false;
+
+function openGMSignModal() {
+  const list = salaryAdvances.filter(a => a.status === 'gm_pending');
+  if (list.length === 0) { toast(t('No advances pending','لا توجد سلف معلقة')); return; }
+  const total = list.reduce((s, a) => s + (a.amount_approved ?? a.amount_requested ?? 0), 0);
+  const sumEl = document.getElementById('advSignSummary');
+  if (sumEl) sumEl.textContent = t(`${list.length} employees · Total: AED ${Number(total).toLocaleString()}`,`${list.length} موظفين · الإجمالي: ${Number(total).toLocaleString()} درهم`);
+  document.getElementById('advGMNote').value = '';
+  openModal('advSignModal');
+  setTimeout(initAdvSignaturePad, 100);
+}
+
+function initAdvSignaturePad() {
+  _sigCanvas = document.getElementById('advSigCanvas');
+  if (!_sigCanvas) return;
+  _sigCtx = _sigCanvas.getContext('2d');
+  // Set canvas actual size to match display size
+  const rect = _sigCanvas.getBoundingClientRect();
+  _sigCanvas.width  = rect.width;
+  _sigCanvas.height = rect.height;
+  _sigCtx.lineWidth   = 2.5;
+  _sigCtx.lineCap     = 'round';
+  _sigCtx.lineJoin    = 'round';
+  _sigCtx.strokeStyle = '#111';
+
+  const getPos = (e) => {
+    const r = _sigCanvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  };
+  _sigCanvas.onmousedown = _sigCanvas.ontouchstart = (e) => {
+    e.preventDefault(); _sigDrawing = true;
+    const p = getPos(e); _sigCtx.beginPath(); _sigCtx.moveTo(p.x, p.y);
+  };
+  _sigCanvas.onmousemove = _sigCanvas.ontouchmove = (e) => {
+    e.preventDefault(); if (!_sigDrawing) return;
+    const p = getPos(e); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke();
+  };
+  _sigCanvas.onmouseup = _sigCanvas.ontouchend = () => { _sigDrawing = false; };
+}
+
+function clearAdvSignature() {
+  if (_sigCanvas && _sigCtx) _sigCtx.clearRect(0, 0, _sigCanvas.width, _sigCanvas.height);
+}
+
+function isSignatureEmpty() {
+  if (!_sigCanvas) return true;
+  const d = _sigCtx.getImageData(0, 0, _sigCanvas.width, _sigCanvas.height).data;
+  return !d.some(v => v !== 0);
+}
+
+async function submitGMApproval() {
+  if (isSignatureEmpty()) { toast(t('⚠️ Please sign before approving','⚠️ الرجاء التوقيع قبل الاعتماد')); return; }
+  const sigData = _sigCanvas.toDataURL('image/png');
+  const note    = document.getElementById('advGMNote')?.value || '';
+  const list    = salaryAdvances.filter(a => a.status === 'gm_pending');
+  const myId    = user.id || role;
+  for (const a of list) {
+    await sb.from('salary_advances').update({
+      status: 'approved',
+      gm_signature: sigData,
+      gm_note: note,
+      gm_approved_at: new Date().toISOString(),
+      approved_by_id: myId,
+      approved_by_name: user.name
+    }).eq('id', a.id);
+  }
+  closeModal('advSignModal');
+  await loadSalaryAdvances();
+  renderAdvances();
+  toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
+}
+
+// ─── Hook loadPolls ────────────────────────────────────────────────────────
 
 // ─── POLLS ───────────────────────────────────────────────────────────────────
 let polls = [];
@@ -7096,6 +7626,9 @@ loadSupabaseData = async function(isAdmin) {
   }
   // Show special schedule notice on schedule tab
   setTimeout(() => { try { renderSpecialScheduleNotice(); } catch(e2) {} }, 500);
+
+  // Load salary advances
+  try { await loadSalaryAdvances(); } catch(e2) {}
 
   // Load polls
   try { await loadPolls(); } catch(e2) {}
