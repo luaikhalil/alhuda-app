@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Alhuda Staff">
 <title>Alhuda Staff App</title>
+<link id="appFavicon" rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
+<link id="appTouchIcon" rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -235,7 +237,9 @@ body.rtl{font-family:var(--ffa);direction:rtl;}
 
 /* ══ LOGIN ══════════════════════════════════ */
 #loginScreen{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 20px 24px;background:var(--bg);overflow-y:auto;}
-.login-logo{width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#ffc12822,#cc880044);border:1px solid rgba(255,193,40,.4);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;animation:glow 3s infinite;}
+.login-logo{min-width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#ffc12822,#cc880044);border:1px solid rgba(255,193,40,.4);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;animation:glow 3s infinite;overflow:hidden;transition:all .3s ease;}
+.login-logo.has-logo{background:transparent;border-color:transparent;height:auto;max-height:100px;padding:4px;}
+.login-logo.has-logo img{max-height:96px;max-width:240px;object-fit:contain;display:block;}
 .login-title{font-size:20px;font-weight:700;text-align:center;}
 .login-sub{font-size:12px;color:var(--t2);margin-top:3px;margin-bottom:20px;text-align:center;}
 .lang-row{display:flex;gap:8px;margin-bottom:20px;}
@@ -1320,8 +1324,8 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
 <!-- Auto-login splash shown while re-authenticating -->
 <div id="autoLoginSplash" style="display:none;position:fixed;inset:0;z-index:1100;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,rgba(255,193,40,.2),rgba(204,136,0,.15));border:1px solid rgba(255,193,40,.35);display:flex;align-items:center;justify-content:center;font-size:28px">🏪</div>
-  <div style="font-size:15px;font-weight:600;color:var(--t1)">Alhuda Staff</div>
+  <div id="splashIcon" style="width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,rgba(255,193,40,.2),rgba(204,136,0,.15));border:1px solid rgba(255,193,40,.35);display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden">🏪</div>
+  <div id="splashName" style="font-size:15px;font-weight:600;color:var(--t1)">Alhuda Staff</div>
   <div style="display:flex;gap:6px;align-items:center">
     <div style="width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.2s infinite"></div>
     <div style="width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 1.2s .2s infinite"></div>
@@ -1331,9 +1335,9 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
 <!-- ══════════════════════════ LOGIN ══════════════════════════ -->
 <div id="loginScreen">
-  <div class="login-logo">🏪</div>
+  <div id="loginLogo" class="login-logo">🏪</div>
   <div class="login-title" data-en="Alhuda Staff Portal" data-ar="بوابة موظفي الهدى">Alhuda Staff Portal</div>
-  <div class="login-sub" data-en="Alhuda Advance Hypermarket" data-ar="هايبرماركت الهدى أدفانس">Alhuda Advance Hypermarket</div>
+  <div id="loginSubName" class="login-sub" data-en="Alhuda Advance Hypermarket" data-ar="هايبرماركت الهدى أدفانس">Alhuda Advance Hypermarket</div>
 
   <div class="lang-row">
     <button class="lang-btn" onclick="setLang('en',this.parentElement)">EN</button>
@@ -2509,15 +2513,37 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
           <input class="inp" type="text" id="coNameEn" placeholder="Alhuda Advance Hypermarket" style="margin-bottom:8px">
           <label class="lbl">وصف الشركة / Tagline</label>
           <input class="inp" type="text" id="coTagline" placeholder="وثيقة اعتماد سلف الرواتب" style="margin-bottom:12px">
-          <label class="lbl">شعار الشركة (Logo)</label>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-            <div id="coLogoPreview" style="width:72px;height:72px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">🏪</div>
+          <!-- Light Logo -->
+          <label class="lbl">🌤️ شعار الوضع الفاتح (Light Mode Logo)</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div id="coLogoLightPreview" style="width:110px;height:56px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;background:#f6f6f4">🏪</div>
             <div style="flex:1">
-              <input type="file" id="coLogoFile" accept="image/*" style="display:none" onchange="loadCompanyLogo(this)">
-              <button class="btn-sec" onclick="document.getElementById('coLogoFile').click()" style="width:100%;margin-bottom:6px">📁 اختر صورة الشعار</button>
-              <button class="btn-sec" onclick="clearCompanyLogo()" style="width:100%;font-size:11px;padding:6px">🗑️ حذف الشعار</button>
+              <input type="file" id="coLogoLightFile" accept="image/*" style="display:none" onchange="loadBrandAsset(this,'co_logo_light','coLogoLightPreview')">
+              <button class="btn-sec" onclick="document.getElementById('coLogoLightFile').click()" style="width:100%;margin-bottom:6px">📁 اختر شعار الوضع الفاتح</button>
+              <button class="btn-sec" onclick="clearBrandAsset('co_logo_light','coLogoLightPreview','🏪')" style="width:100%;font-size:11px;padding:6px">🗑️ حذف</button>
             </div>
           </div>
+          <!-- Dark Logo -->
+          <label class="lbl">🌙 شعار الوضع الداكن (Dark Mode Logo)</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <div id="coLogoDarkPreview" style="width:110px;height:56px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;background:#1b1b1b">🏪</div>
+            <div style="flex:1">
+              <input type="file" id="coLogoDarkFile" accept="image/*" style="display:none" onchange="loadBrandAsset(this,'co_logo_dark','coLogoDarkPreview')">
+              <button class="btn-sec" onclick="document.getElementById('coLogoDarkFile').click()" style="width:100%;margin-bottom:6px">📁 اختر شعار الوضع الداكن</button>
+              <button class="btn-sec" onclick="clearBrandAsset('co_logo_dark','coLogoDarkPreview','🏪')" style="width:100%;font-size:11px;padding:6px">🗑️ حذف</button>
+            </div>
+          </div>
+          <!-- App Icon -->
+          <label class="lbl">🎯 أيقونة التطبيق (App Icon — Favicon & Splash)</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div id="coIconPreview" style="width:64px;height:64px;border:2px dashed var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">🏪</div>
+            <div style="flex:1">
+              <input type="file" id="coIconFile" accept="image/*" style="display:none" onchange="loadBrandAsset(this,'co_icon','coIconPreview')">
+              <button class="btn-sec" onclick="document.getElementById('coIconFile').click()" style="width:100%;margin-bottom:6px">📁 اختر الأيقونة</button>
+              <button class="btn-sec" onclick="clearBrandAsset('co_icon','coIconPreview','🏪')" style="width:100%;font-size:11px;padding:6px">🗑️ حذف</button>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--t3);margin-top:4px;margin-bottom:4px">📐 الشعار: 400×200 بكسل أفضل · الأيقونة: 400×400 بكسل · PNG شفاف · أقل من 500 كيلوبايت</div>
         </div>
         <button class="btn-pri" onclick="saveCompanyProfile()">💾 حفظ معلومات الشركة</button>
       </div>
@@ -5619,29 +5645,40 @@ async function submitGMApproval() {
 
 // ─── Company Profile (stored in localStorage) ─────────────────────────────
 function getCompanyProfile() {
+  // co_logo (legacy) is treated as logoLight for backward compatibility
+  const legacyLogo = localStorage.getItem('co_logo') || null;
   return {
-    nameAr:  localStorage.getItem('co_name_ar')  || 'هايبرماركت الهدى المتقدم',
-    nameEn:  localStorage.getItem('co_name_en')  || 'Alhuda Advance Hypermarket',
-    tagline: localStorage.getItem('co_tagline')  || 'وثيقة اعتماد سلف الرواتب',
-    logo:    localStorage.getItem('co_logo')     || null
+    nameAr:    localStorage.getItem('co_name_ar')    || 'هايبرماركت الهدى المتقدم',
+    nameEn:    localStorage.getItem('co_name_en')    || 'Alhuda Advance Hypermarket',
+    tagline:   localStorage.getItem('co_tagline')    || 'وثيقة اعتماد سلف الرواتب',
+    logoLight: localStorage.getItem('co_logo_light') || legacyLogo,
+    logoDark:  localStorage.getItem('co_logo_dark')  || null,
+    icon:      localStorage.getItem('co_icon')       || null
   };
 }
-function loadCompanyLogo(input) {
+
+// Generic asset loader — handles all three brand images
+function loadBrandAsset(input, storageKey, previewId) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const prev = document.getElementById('coLogoPreview');
+    const prev = document.getElementById(previewId);
     if (prev) prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain">`;
-    localStorage.setItem('co_logo', e.target.result);
+    localStorage.setItem(storageKey, e.target.result);
+    applyCompanyBranding();
   };
   reader.readAsDataURL(file);
 }
-function clearCompanyLogo() {
-  localStorage.removeItem('co_logo');
-  const prev = document.getElementById('coLogoPreview');
-  if (prev) prev.innerHTML = '🏪';
+function clearBrandAsset(storageKey, previewId, placeholder) {
+  localStorage.removeItem(storageKey);
+  // Also clear legacy key if clearing light logo
+  if (storageKey === 'co_logo_light') localStorage.removeItem('co_logo');
+  const prev = document.getElementById(previewId);
+  if (prev) prev.innerHTML = placeholder || '🏪';
+  applyCompanyBranding();
 }
+
 function saveCompanyProfile() {
   const nameAr  = document.getElementById('coNameAr')?.value.trim();
   const nameEn  = document.getElementById('coNameEn')?.value.trim();
@@ -5649,18 +5686,77 @@ function saveCompanyProfile() {
   if (nameAr)  localStorage.setItem('co_name_ar',  nameAr);
   if (nameEn)  localStorage.setItem('co_name_en',  nameEn);
   if (tagline) localStorage.setItem('co_tagline',  tagline);
+  applyCompanyBranding();
   toast('✅ تم حفظ معلومات الشركة');
 }
+
 function loadCompanyProfileUI() {
   const co = getCompanyProfile();
   const nameArEl  = document.getElementById('coNameAr');
   const nameEnEl  = document.getElementById('coNameEn');
   const taglineEl = document.getElementById('coTagline');
-  const prevEl    = document.getElementById('coLogoPreview');
   if (nameArEl)  nameArEl.value  = co.nameAr;
   if (nameEnEl)  nameEnEl.value  = co.nameEn;
   if (taglineEl) taglineEl.value = co.tagline;
-  if (prevEl && co.logo) prevEl.innerHTML = `<img src="${co.logo}" style="width:100%;height:100%;object-fit:contain">`;
+  // Light logo preview
+  const prevLight = document.getElementById('coLogoLightPreview');
+  if (prevLight) prevLight.innerHTML = co.logoLight
+    ? `<img src="${co.logoLight}" style="width:100%;height:100%;object-fit:contain">`
+    : '🏪';
+  // Dark logo preview
+  const prevDark = document.getElementById('coLogoDarkPreview');
+  if (prevDark) prevDark.innerHTML = co.logoDark
+    ? `<img src="${co.logoDark}" style="width:100%;height:100%;object-fit:contain">`
+    : '🏪';
+  // Icon preview
+  const prevIcon = document.getElementById('coIconPreview');
+  if (prevIcon) prevIcon.innerHTML = co.icon
+    ? `<img src="${co.icon}" style="width:100%;height:100%;object-fit:contain">`
+    : '🏪';
+}
+
+// ─── Apply company branding to splash, login, favicon ─────────────────────
+function applyCompanyBranding() {
+  const co       = getCompanyProfile();
+  const isLight  = document.body.classList.contains('light');
+  const logo     = isLight ? (co.logoLight || co.logoDark) : (co.logoDark || co.logoLight);
+  const icon     = co.icon || logo;
+
+  // ── Favicon & Apple touch icon ──────────────────────────────────
+  if (icon) {
+    const fav = document.getElementById('appFavicon');
+    const touch = document.getElementById('appTouchIcon');
+    if (fav)   fav.href   = icon;
+    if (touch) touch.href = icon;
+  }
+
+  // ── Splash screen icon ───────────────────────────────────────────
+  const splashIconEl = document.getElementById('splashIcon');
+  if (splashIconEl) {
+    if (icon) {
+      splashIconEl.innerHTML = `<img src="${icon}" style="width:100%;height:100%;object-fit:contain">`;
+      splashIconEl.style.background = 'transparent';
+      splashIconEl.style.border = 'none';
+    } else {
+      splashIconEl.innerHTML = '🏪';
+      splashIconEl.style.background = '';
+      splashIconEl.style.border = '';
+    }
+  }
+  const splashNameEl = document.getElementById('splashName');
+  if (splashNameEl) splashNameEl.textContent = co.nameAr || 'Alhuda Staff';
+
+  // ── Login screen logo ────────────────────────────────────────────
+  const loginLogoEl = document.getElementById('loginLogo');
+  if (loginLogoEl) {
+    if (logo) {
+      loginLogoEl.classList.add('has-logo');
+      loginLogoEl.innerHTML = `<img src="${logo}" alt="logo">`;
+    } else {
+      loginLogoEl.classList.remove('has-logo');
+      loginLogoEl.innerHTML = '🏪';
+    }
+  }
 }
 
 // ─── Arabic month names for PDF ───────────────────────────────────────────
@@ -5678,8 +5774,10 @@ function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
   const total  = list.reduce((s, a) => s + Number(a.amount_approved || a.amount_requested || 0), 0);
   const today  = new Date().toLocaleDateString('ar-YE', { day:'2-digit', month:'long', year:'numeric' });
   const cycleLabel = cycle === 10 ? 'سلفة منتصف الشهر' : 'سلفة نهاية الشهر';
-  const logoHtml = co.logo
-    ? `<img src="${co.logo}" style="height:60px;object-fit:contain;display:block;margin-bottom:4px">`
+  // PDF is always on white background — use light logo, fallback to dark logo
+  const pdfLogo = co.logoLight || co.logoDark || null;
+  const logoHtml = pdfLogo
+    ? `<img src="${pdfLogo}" style="height:60px;object-fit:contain;display:block;margin-bottom:4px">`
     : `<span style="font-size:32px">🏪</span>`;
 
   const rows = list.map((a, i) => `
@@ -9707,6 +9805,8 @@ function applyTheme(theme) {
     if (lbl) lbl.textContent = lang === 'ar' ? 'داكن' : 'Dark';
     if (ico) ico.textContent = '🌙';
   }
+  // Switch logos when theme changes
+  try { applyCompanyBranding(); } catch(e) {}
 }
 function toggleTheme() {
   const isLight = document.body.classList.contains('light');
@@ -9746,6 +9846,8 @@ function updateLangButtons(l) {
 // ─── AUTO-LOGIN ON PAGE LOAD ───────────────────────────────────────────────
 window.addEventListener('load', () => {
   applyTheme(localStorage.getItem('alhuda_theme') || 'dark');
+  // Apply branding (logo, icon, favicon) immediately on load
+  try { applyCompanyBranding(); } catch(e) {}
   // Apply language immediately (default Arabic) so login screen is already translated.
   // Done after first paint via rAF to avoid blocking the initial render on slow phones.
   const initLang = localStorage.getItem('alhuda_lang') || 'ar';
