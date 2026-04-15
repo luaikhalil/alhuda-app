@@ -2499,6 +2499,29 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 
     <div id="apane-settings" class="apane" style="display:none">
 
+      <!-- Company Profile -->
+      <div class="setting-group">
+        <div class="setting-group-title">🏪 معلومات الشركة — Company Profile</div>
+        <div class="mg">
+          <label class="lbl">اسم الشركة بالعربية</label>
+          <input class="inp" type="text" id="coNameAr" placeholder="هايبرماركت الهدى المتقدم" style="margin-bottom:8px">
+          <label class="lbl">Company Name (English)</label>
+          <input class="inp" type="text" id="coNameEn" placeholder="Alhuda Advance Hypermarket" style="margin-bottom:8px">
+          <label class="lbl">وصف الشركة / Tagline</label>
+          <input class="inp" type="text" id="coTagline" placeholder="وثيقة اعتماد سلف الرواتب" style="margin-bottom:12px">
+          <label class="lbl">شعار الشركة (Logo)</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <div id="coLogoPreview" style="width:72px;height:72px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">🏪</div>
+            <div style="flex:1">
+              <input type="file" id="coLogoFile" accept="image/*" style="display:none" onchange="loadCompanyLogo(this)">
+              <button class="btn-sec" onclick="document.getElementById('coLogoFile').click()" style="width:100%;margin-bottom:6px">📁 اختر صورة الشعار</button>
+              <button class="btn-sec" onclick="clearCompanyLogo()" style="width:100%;font-size:11px;padding:6px">🗑️ حذف الشعار</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-pri" onclick="saveCompanyProfile()">💾 حفظ معلومات الشركة</button>
+      </div>
+
       <!-- Change Password -->
       <div class="setting-group">
         <div class="setting-group-title">🔑 Change Employee Password</div>
@@ -5594,6 +5617,52 @@ async function submitGMApproval() {
   setTimeout(() => generateAdvancePDF(list, sigData, accSig, user.name, accName), 400);
 }
 
+// ─── Company Profile (stored in localStorage) ─────────────────────────────
+function getCompanyProfile() {
+  return {
+    nameAr:  localStorage.getItem('co_name_ar')  || 'هايبرماركت الهدى المتقدم',
+    nameEn:  localStorage.getItem('co_name_en')  || 'Alhuda Advance Hypermarket',
+    tagline: localStorage.getItem('co_tagline')  || 'وثيقة اعتماد سلف الرواتب',
+    logo:    localStorage.getItem('co_logo')     || null
+  };
+}
+function loadCompanyLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prev = document.getElementById('coLogoPreview');
+    if (prev) prev.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain">`;
+    localStorage.setItem('co_logo', e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+function clearCompanyLogo() {
+  localStorage.removeItem('co_logo');
+  const prev = document.getElementById('coLogoPreview');
+  if (prev) prev.innerHTML = '🏪';
+}
+function saveCompanyProfile() {
+  const nameAr  = document.getElementById('coNameAr')?.value.trim();
+  const nameEn  = document.getElementById('coNameEn')?.value.trim();
+  const tagline = document.getElementById('coTagline')?.value.trim();
+  if (nameAr)  localStorage.setItem('co_name_ar',  nameAr);
+  if (nameEn)  localStorage.setItem('co_name_en',  nameEn);
+  if (tagline) localStorage.setItem('co_tagline',  tagline);
+  toast('✅ تم حفظ معلومات الشركة');
+}
+function loadCompanyProfileUI() {
+  const co = getCompanyProfile();
+  const nameArEl  = document.getElementById('coNameAr');
+  const nameEnEl  = document.getElementById('coNameEn');
+  const taglineEl = document.getElementById('coTagline');
+  const prevEl    = document.getElementById('coLogoPreview');
+  if (nameArEl)  nameArEl.value  = co.nameAr;
+  if (nameEnEl)  nameEnEl.value  = co.nameEn;
+  if (taglineEl) taglineEl.value = co.tagline;
+  if (prevEl && co.logo) prevEl.innerHTML = `<img src="${co.logo}" style="width:100%;height:100%;object-fit:contain">`;
+}
+
 // ─── Arabic month names for PDF ───────────────────────────────────────────
 function monthNameAr(m) {
   return ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][m] || m;
@@ -5602,12 +5671,16 @@ function monthNameAr(m) {
 // ─── Advance Approval PDF (always Arabic / RTL) ───────────────────────────
 function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
   if (!list || list.length === 0) return;
+  const co     = getCompanyProfile();
   const cycle  = list[0].cycle;
   const mon    = monthNameAr(list[0].cycle_month);
   const yr     = list[0].cycle_year;
   const total  = list.reduce((s, a) => s + Number(a.amount_approved || a.amount_requested || 0), 0);
   const today  = new Date().toLocaleDateString('ar-YE', { day:'2-digit', month:'long', year:'numeric' });
   const cycleLabel = cycle === 10 ? 'سلفة منتصف الشهر' : 'سلفة نهاية الشهر';
+  const logoHtml = co.logo
+    ? `<img src="${co.logo}" style="height:60px;object-fit:contain;display:block;margin-bottom:4px">`
+    : `<span style="font-size:32px">🏪</span>`;
 
   const rows = list.map((a, i) => `
     <tr>
@@ -5649,11 +5722,11 @@ function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
     .gm-stamp img{width:280px;max-height:140px;object-fit:contain;}
     .gm-stamp .stamp-label{font-size:12px;font-weight:700;color:#b8860b;margin-top:4px;}
     .footer-sigs{display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;padding-top:20px;border-top:1px solid #ddd;}
-    .sig-block{width:44%;text-align:center;}
-    .sig-block img{max-width:100%;height:90px;object-fit:contain;display:block;margin:0 auto 6px;}
-    .sig-block .sig-line{border-top:1.5px solid #333;padding-top:6px;font-size:12px;font-weight:700;color:#333;}
-    .sig-block .sig-role{font-size:11px;color:#666;margin-top:3px;}
-    .gm-sig-block img{height:120px;}
+    .sig-block{width:46%;text-align:center;}
+    .sig-block img{max-width:100%;height:150px;object-fit:contain;display:block;margin:0 auto 8px;}
+    .sig-block .sig-line{border-top:1.5px solid #333;padding-top:6px;font-size:13px;font-weight:700;color:#333;}
+    .sig-block .sig-role{font-size:12px;color:#666;margin-top:3px;}
+    .sig-placeholder{height:150px;}
     .total-summary{display:flex;justify-content:flex-start;margin-top:10px;padding:10px 14px;background:#fdf8ee;border:1px solid #e8dfc0;border-radius:6px;}
     .total-item{text-align:right;}
     .total-label{font-size:10px;color:#888;margin-bottom:2px;}
@@ -5664,8 +5737,9 @@ function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
 <body>
   <div class="letterhead">
     <div>
-      <div class="company-name">🏪 هايبرماركت الهدى المتقدم</div>
-      <div class="company-sub">وثيقة اعتماد سلف الرواتب</div>
+      ${logoHtml}
+      <div class="company-name">${co.nameAr}</div>
+      <div class="company-sub">${co.tagline}</div>
     </div>
     <div class="doc-info">
       <div><strong>الدورة:</strong> يوم ${cycle} — ${mon} ${yr}</div>
@@ -5713,13 +5787,13 @@ function generateAdvancePDF(list, gmSig, accSig, gmName, accName) {
   </div>
 
   <div class="footer-sigs">
-    <div class="sig-block gm-sig-block">
-      ${gmSig ? `<img src="${gmSig}" alt="توقيع المدير العام">` : '<div style="height:120px"></div>'}
+    <div class="sig-block">
+      ${gmSig ? `<img src="${gmSig}" alt="توقيع المدير العام">` : '<div class="sig-placeholder"></div>'}
       <div class="sig-line">${gmName}</div>
       <div class="sig-role">المدير العام</div>
     </div>
     <div class="sig-block">
-      ${accSig ? `<img src="${accSig}" alt="توقيع مدير الحسابات">` : '<div style="height:90px"></div>'}
+      ${accSig ? `<img src="${accSig}" alt="توقيع مدير الحسابات">` : '<div class="sig-placeholder"></div>'}
       <div class="sig-line">${accName}</div>
       <div class="sig-role">مدير الحسابات</div>
     </div>
@@ -5957,6 +6031,7 @@ function switchAdminTab(tab) {
     try { renderPendingChanges(); } catch(e) { console.warn('renderPendingChanges err', e); }
   }
   if (tab === 'settings') {
+    try { loadCompanyProfileUI(); } catch(e) {}
     try { renderDeptList(); } catch(e) { console.warn('renderDeptList err', e); }
     try { renderJobTitleList(); } catch(e) { console.warn('renderJobTitleList err', e); }
     try { renderReqTypeSettings(); } catch(e) { console.warn('renderReqTypeSettings err', e); }
