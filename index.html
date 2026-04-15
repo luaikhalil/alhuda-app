@@ -4996,8 +4996,8 @@ function renderAdvances() {
     banner.innerHTML = `<div class="${open ? 'adv-window-open' : 'adv-window-closed'}">${advWindowMsg()}</div>`;
   }
 
-  // Everyone except accounting manager and GM can submit their own request
-  document.getElementById('advEmpView').style.display = (!isAcc && !isAdmin) ? '' : 'none';
+  // Everyone except GM can submit their own advance request
+  document.getElementById('advEmpView').style.display = !isAdmin ? '' : 'none';
   document.getElementById('advAccView').style.display = isAcc ? '' : 'none';
   document.getElementById('advGMView').style.display  = isAdmin ? '' : 'none';
 
@@ -5010,14 +5010,14 @@ function renderAdvances() {
     a.emp_id === myId && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
   );
   const reqBtn = document.getElementById('advRequestBtnRow');
-  if (reqBtn) reqBtn.style.display = (isAdvanceWindowOpen() && !myCurrentReq) ? 'block' : 'none';
+  if (reqBtn) reqBtn.style.display = (!isAdmin && isAdvanceWindowOpen() && !myCurrentReq) ? 'block' : 'none';
 
-  // My advances list
-  renderMyAdvancesList(salaryAdvances.filter(a => a.emp_id === myId));
+  // My advances list (everyone except GM)
+  if (!isAdmin) renderMyAdvancesList(salaryAdvances.filter(a => a.emp_id === myId));
 
-  // Accounting manager: see ALL pending requests from all staff
+  // Accounting manager: see ALL pending requests except their own
   if (isAcc) {
-    const accAdv = salaryAdvances.filter(a => a.status === 'pending');
+    const accAdv = salaryAdvances.filter(a => a.status === 'pending' && a.emp_id !== myId);
     renderAccountingList(accAdv);
     const btn = document.getElementById('advSendGMBtn');
     if (btn) btn.style.display = accAdv.length > 0 ? 'inline-block' : 'none';
@@ -5219,30 +5219,36 @@ function openAdvanceModal() {
       hint.innerHTML = `<span style="color:var(--t3)">${t('No salary on record — contact HR','لا يوجد راتب مسجل — تواصل مع الموارد البشرية')}</span>`;
       if (amtInp) { amtInp.removeAttribute('max'); amtInp.disabled = false; }
     } else {
-      const rows = [
-        { icon:'📅', label: t('Days worked this month','أيام العمل هذا الشهر'), val: `${limit.daysWorked} ${t('days','يوم')}` },
-        { icon:'💵', label: t('Daily rate (salary ÷ 30)','المعدل اليومي (الراتب ÷ 30)'), val: fmtAmt(Math.round(limit.dailyRate)) },
-        { icon:'💰', label: t('Earned so far','المستحق حتى الآن'), val: fmtAmt(Math.round(limit.earnedSoFar)) },
-      ];
-      if (limit.prevTotal > 0) {
-        rows.push({ icon:'📤', label: t('Previous advances this month','السلف السابقة هذا الشهر'), val: '− ' + fmtAmt(limit.prevTotal) });
-      }
+      // Show full salary breakdown to employees
+      const maxAmt = Math.floor(limit.maxAllowed);
       hint.innerHTML = `
-        <div style="background:var(--bgc);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:4px">
-          ${rows.map(r => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px">
-              <span style="color:var(--t3)">${r.icon} ${r.label}</span>
-              <span style="color:var(--t2);font-weight:600">${r.val}</span>
-            </div>`).join('')}
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:5px">
-            <span style="font-size:12px;font-weight:700;color:var(--t1)">✅ ${t('Your maximum limit','الحد الأقصى المسموح')}</span>
-            <span style="font-size:14px;font-weight:800;color:#4ade80">${fmtAmt(Math.floor(limit.maxAllowed))}</span>
+        <div style="background:var(--bgc);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:4px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:11px;color:var(--t3)">📅 ${t('Days worked','أيام العمل')}</span>
+            <span style="font-size:11px;color:var(--t2);font-weight:600">${limit.daysWorked} ${t('days','يوم')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:11px;color:var(--t3)">💵 ${t('Daily rate','المعدل اليومي')}</span>
+            <span style="font-size:11px;color:var(--t2);font-weight:600">${fmtAmt(Math.round(limit.dailyRate))}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:${limit.prevTotal > 0 ? '5px' : '0'}">
+            <span style="font-size:11px;color:var(--t3)">💰 ${t('Earned so far','المستحق حتى الآن')}</span>
+            <span style="font-size:11px;color:var(--t2);font-weight:600">${fmtAmt(Math.round(limit.earnedSoFar))}</span>
+          </div>
+          ${limit.prevTotal > 0 ? `
+          <div style="display:flex;justify-content:space-between;margin-bottom:0">
+            <span style="font-size:11px;color:var(--t3)">📤 ${t('Previous advances','السلف السابقة')}</span>
+            <span style="font-size:11px;color:#f87171;font-weight:600">− ${fmtAmt(limit.prevTotal)}</span>
+          </div>` : ''}
+          <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:7px;margin-top:7px;align-items:center">
+            <span style="font-size:12px;color:var(--t1);font-weight:700">${t('Max you can request','الحد الأقصى للطلب')}</span>
+            <span style="font-size:16px;font-weight:800;color:${maxAmt > 0 ? '#4ade80' : '#f87171'}">${fmtAmt(maxAmt)}</span>
           </div>
         </div>`;
       if (amtInp) {
-        amtInp.max = Math.floor(limit.maxAllowed);
-        amtInp.disabled = limit.maxAllowed <= 0;
-        if (limit.maxAllowed <= 0) amtInp.placeholder = t('No remaining limit','لا يوجد رصيد متبقٍّ');
+        amtInp.max = maxAmt;
+        amtInp.disabled = maxAmt <= 0;
+        if (maxAmt <= 0) amtInp.placeholder = t('No remaining limit','لا يوجد رصيد متبقٍّ');
       }
     }
   }
@@ -5429,8 +5435,9 @@ async function submitAccSignAndSend() {
   if (isAccSignatureEmpty()) { toast(t('⚠️ Please sign before sending','⚠️ الرجاء التوقيع قبل الإرسال')); return; }
   const sigData = _accSigCanvas.toDataURL('image/png');
   const note    = document.getElementById('advAccNote')?.value || '';
-  const list    = salaryAdvances.filter(a => a.status === 'pending');
   const myId    = user.id || role;
+  // All pending requests (others' requests that were reviewed + accounting manager's own)
+  const list    = salaryAdvances.filter(a => a.status === 'pending');
   for (const a of list) {
     const inp = document.getElementById(`accAmt_${a.id}`);
     const approved = inp ? parseFloat(inp.value) || a.amount_requested : a.amount_requested;
