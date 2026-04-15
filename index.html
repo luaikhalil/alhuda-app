@@ -5216,39 +5216,15 @@ function openAdvanceModal() {
   const amtInp = document.getElementById('advAmountInp');
   if (hint) {
     if (!limit) {
-      hint.innerHTML = `<span style="color:var(--t3)">${t('No salary on record — contact HR','لا يوجد راتب مسجل — تواصل مع الموارد البشرية')}</span>`;
+      if (hint) hint.innerHTML = '';
       if (amtInp) { amtInp.removeAttribute('max'); amtInp.disabled = false; }
     } else {
-      // Show full salary breakdown to employees
-      const maxAmt = Math.floor(limit.maxAllowed);
-      hint.innerHTML = `
-        <div style="background:var(--bgc);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:4px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:11px;color:var(--t3)">📅 ${t('Days worked','أيام العمل')}</span>
-            <span style="font-size:11px;color:var(--t2);font-weight:600">${limit.daysWorked} ${t('days','يوم')}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:11px;color:var(--t3)">💵 ${t('Daily rate','المعدل اليومي')}</span>
-            <span style="font-size:11px;color:var(--t2);font-weight:600">${fmtAmt(Math.round(limit.dailyRate))}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:${limit.prevTotal > 0 ? '5px' : '0'}">
-            <span style="font-size:11px;color:var(--t3)">💰 ${t('Earned so far','المستحق حتى الآن')}</span>
-            <span style="font-size:11px;color:var(--t2);font-weight:600">${fmtAmt(Math.round(limit.earnedSoFar))}</span>
-          </div>
-          ${limit.prevTotal > 0 ? `
-          <div style="display:flex;justify-content:space-between;margin-bottom:0">
-            <span style="font-size:11px;color:var(--t3)">📤 ${t('Previous advances','السلف السابقة')}</span>
-            <span style="font-size:11px;color:#f87171;font-weight:600">− ${fmtAmt(limit.prevTotal)}</span>
-          </div>` : ''}
-          <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:7px;margin-top:7px;align-items:center">
-            <span style="font-size:12px;color:var(--t1);font-weight:700">${t('Max you can request','الحد الأقصى للطلب')}</span>
-            <span style="font-size:16px;font-weight:800;color:${maxAmt > 0 ? '#4ade80' : '#f87171'}">${fmtAmt(maxAmt)}</span>
-          </div>
-        </div>`;
+      // Limit check runs silently in background — do not reveal calculation to employee
+      if (hint) hint.innerHTML = '';
       if (amtInp) {
-        amtInp.max = maxAmt;
-        amtInp.disabled = maxAmt <= 0;
-        if (maxAmt <= 0) amtInp.placeholder = t('No remaining limit','لا يوجد رصيد متبقٍّ');
+        amtInp.removeAttribute('max');
+        amtInp.disabled = limit.maxAllowed <= 0;
+        if (limit.maxAllowed <= 0) amtInp.placeholder = t('No advance available this cycle','لا تتوفر سلفة في هذه الدورة');
       }
     }
   }
@@ -5272,10 +5248,7 @@ async function submitAdvanceRequest() {
   if (limit) {
     const maxAllowed = Math.floor(limit.maxAllowed);
     if (amount > maxAllowed) {
-      const msg = lang === 'ar'
-        ? `⚠️ المبلغ يتجاوز حدك المسموح.\nالمستحق حتى اليوم ${limit.daysWorked}: ${fmtAmt(Math.round(limit.earnedSoFar))}\nالسلف السابقة: ${fmtAmt(limit.prevTotal)}\nالحد الأقصى: ${fmtAmt(maxAllowed)}`
-        : `⚠️ Amount exceeds your limit.\nEarned to day ${limit.daysWorked}: ${fmtAmt(Math.round(limit.earnedSoFar))}\nPrevious advances: ${fmtAmt(limit.prevTotal)}\nYour limit: ${fmtAmt(maxAllowed)}`;
-      toast(msg);
+      toast(t(`⚠️ Sorry, you can only request a maximum of ${fmtAmt(maxAllowed)} for this cycle`,`⚠️ عذراً، الحد الأقصى المسموح لك في هذه الدورة هو ${fmtAmt(maxAllowed)}`));
       return;
     }
     if (limit.maxAllowed <= 0) {
