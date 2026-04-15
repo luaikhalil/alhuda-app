@@ -1336,8 +1336,8 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
   <div class="login-sub" data-en="Alhuda Advance Hypermarket" data-ar="هايبرماركت الهدى أدفانس">Alhuda Advance Hypermarket</div>
 
   <div class="lang-row">
-    <button class="lang-btn active" onclick="setLang('en',this.parentElement)">EN</button>
-    <button class="lang-btn" onclick="setLang('ar',this.parentElement)">عربي</button>
+    <button class="lang-btn" onclick="setLang('en',this.parentElement)">EN</button>
+    <button class="lang-btn active" onclick="setLang('ar',this.parentElement)">عربي</button>
   </div>
 
   <div class="login-card">
@@ -3300,7 +3300,7 @@ const CHATS = {
 };
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
-let lang = 'en';
+let lang = 'ar';
 let role = null;
 let user = null;
 let clockedIn = true;
@@ -3567,7 +3567,7 @@ function showForcedPwChange() {
   scr.style.display = 'flex';
   scr.style.pointerEvents = 'auto';
   // Use the most up-to-date language: current lang var or localStorage fallback
-  const l = lang || localStorage.getItem('alhuda_lang') || 'en';
+  const l = lang || localStorage.getItem('alhuda_lang') || 'ar';
   // Translate all text elements in the screen
   scr.querySelectorAll('[data-en]').forEach(el => {
     el.textContent = el.getAttribute('data-' + l) || el.getAttribute('data-en');
@@ -9613,15 +9613,17 @@ function updateLangButtons(l) {
 // ─── AUTO-LOGIN ON PAGE LOAD ───────────────────────────────────────────────
 window.addEventListener('load', () => {
   applyTheme(localStorage.getItem('alhuda_theme') || 'dark');
-  // NOTE: language is applied AFTER login (see applyPostLoginLang) — not here,
-  // because running setLang on the login screen causes slow DOM reflow on phones.
+  // Apply language immediately (default Arabic) so login screen is already translated.
+  // Done after first paint via rAF to avoid blocking the initial render on slow phones.
+  const initLang = localStorage.getItem('alhuda_lang') || 'ar';
+  requestAnimationFrame(() => setLang(initLang));
   tryAutoLogin();
   initSlideButton();
 });
 
 // Apply saved language once the app is fully loaded after login
 function applyPostLoginLang() {
-  const savedLang = localStorage.getItem('alhuda_lang') || 'en';
+  const savedLang = localStorage.getItem('alhuda_lang') || 'ar';
   if (savedLang === 'ar' && lang !== 'ar') setLang('ar');
   else if (savedLang === 'en' && lang !== 'en') setLang('en');
   updateLangButtons(lang);
