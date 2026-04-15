@@ -6279,6 +6279,7 @@ async function saveEmployee() {
   if (!proceed) return;
 
   // Supabase payload
+  const pwField = document.getElementById('ePw').value;
   const sbData = {
     id: data.id, first_name: data.firstName, last_name: data.lastName,
     dept: data.dept, dept_key: data.dept_key, dept_label: data.deptLabel,
@@ -6288,21 +6289,25 @@ async function saveEmployee() {
     phone: data.phone, salary: data.salary, start_date: data.startDate,
     active: data.active, init: data.init,
     default_shift: data.defaultShift || null,
-    ...(document.getElementById('ePw').value ? { password: document.getElementById('ePw').value, must_change_pw: true } : {})
+    // Always include password so NOT NULL constraint is satisfied; default = employee's own ID
+    password: pwField || data.id,
+    must_change_pw: !!pwField ? true : !editId  // new employees without a custom pw must change default
   };
 
   if (editId) {
+    // For edits, only override password/must_change_pw if admin explicitly set a new one
+    if (!pwField) { delete sbData.password; delete sbData.must_change_pw; }
     const idx = employees.findIndex(e => e.id === editId);
     if (idx > -1) { employees[idx] = { ...employees[idx], ...data }; }
+    const { error: updErr } = await sb.from('employees').update(sbData).eq('id', editId);
+    if (updErr) { toast('❌ Save failed: ' + updErr.message); console.error('Supabase emp update failed:', updErr); return; }
     toast('✅ Employee updated successfully');
-    sb.from('employees').update(sbData).eq('id', editId)
-      .then(({ error }) => { if (error) console.warn('Supabase emp update failed:', error); });
   } else {
     if (employees.find(e => e.id === empId)) { toast('⚠️ Employee ID already exists'); return; }
+    const { error: insErr } = await sb.from('employees').insert(sbData);
+    if (insErr) { toast('❌ Save failed: ' + insErr.message); console.error('Supabase emp insert failed:', insErr); return; }
     employees.push(data);
     toast('✅ Employee added: ' + firstName + ' ' + lastName);
-    sb.from('employees').insert(sbData)
-      .then(({ error }) => { if (error) console.warn('Supabase emp insert failed:', error); });
   }
   closeModal('empModal');
   renderEmployees();
