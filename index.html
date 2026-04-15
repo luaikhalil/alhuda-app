@@ -5430,23 +5430,23 @@ async function submitAccSignAndSend() {
       accounting_note: note,
       acc_signature: sigData
     }).eq('id', a.id);
-    if (!error) {
-      // Update local cache immediately so UI reflects change without waiting for reload
-      const local = salaryAdvances.find(x => x.id === a.id);
-      if (local) {
-        local.status = 'gm_pending';
-        local.amount_approved = approved;
-        local.accounting_by_id = myId;
-        local.accounting_by_name = user.name;
-        local.accounting_at = now;
-        local.acc_signature = sigData;
-      }
+    if (error) { toast('❌ ' + error.message); return; }
+    // Update local cache immediately
+    const local = salaryAdvances.find(x => x.id === a.id);
+    if (local) {
+      local.status = 'gm_pending';
+      local.amount_approved = approved;
+      local.accounting_by_id = myId;
+      local.accounting_by_name = user.name;
+      local.accounting_at = now;
+      local.acc_signature = sigData;
     }
   }
   closeModal('advAccSignModal');
   renderAdvances(); // immediate re-render from updated local cache
+  await loadSalaryAdvances();
+  renderAdvances(); // re-render with fresh Supabase data
   toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
-  loadSalaryAdvances().then(() => renderAdvances()); // background sync
   // Notify GM
   const total = list.reduce((s,a) => s + Number(a.amount_approved||a.amount_requested||0), 0);
   sendPush(getAdminFCMTokens(),
