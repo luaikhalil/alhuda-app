@@ -4964,7 +4964,10 @@ function switchReqView(view) {
   document.getElementById('reqViewAdv').style.display  = view === 'advances' ? '' : 'none';
   document.getElementById('rvBtnReqs').classList.toggle('active', view === 'reqs');
   document.getElementById('rvBtnAdv').classList.toggle('active', view === 'advances');
-  if (view === 'advances') renderAdvances();
+  if (view === 'advances') {
+    renderAdvances(); // render immediately with cached data
+    loadSalaryAdvances().then(() => renderAdvances()); // then reload fresh from Supabase
+  }
 }
 
 // ─── Load from Supabase ────────────────────────────────────────────────────
@@ -5205,30 +5208,30 @@ function monthName(m) {
 function openAdvanceModal() {
   const cycle = getAdvanceCycle();
   if (!cycle) { toast(t('⚠️ Advance window is currently closed','⚠️ نافذة السلف مغلقة حالياً')); return; }
+  const myId  = user.id || role;
+  const limit = calcAdvanceLimit(myId);
+  if (!limit) {
+    toast(t('⚠️ No salary on record. Please contact HR.','⚠️ لا يوجد راتب مسجل. تواصل مع الموارد البشرية.'));
+    return;
+  }
+  if (limit.maxAllowed <= 0) {
+    toast(t('⚠️ You have no remaining advance limit for this cycle','⚠️ لا يوجد رصيد سلفة متبقٍّ في هذه الدورة'));
+    return;
+  }
   const now = new Date();
   document.getElementById('advModalCycle').textContent =
     t(`This request is for the ${cycle}th-cycle advance — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`,
       `هذا الطلب لسلفة يوم ${cycle} — ${monthName(now.getMonth()+1)} ${now.getFullYear()}`);
-  // Show days-worked limit breakdown
-  const myId  = user.id || role;
-  const limit = calcAdvanceLimit(myId);
   const hint  = document.getElementById('advSalaryHint');
   const amtInp = document.getElementById('advAmountInp');
-  if (hint) {
-    if (!limit) {
-      if (hint) hint.innerHTML = '';
-      if (amtInp) { amtInp.removeAttribute('max'); amtInp.disabled = false; }
-    } else {
-      // Limit check runs silently in background — do not reveal calculation to employee
-      if (hint) hint.innerHTML = '';
-      if (amtInp) {
-        amtInp.removeAttribute('max');
-        amtInp.disabled = limit.maxAllowed <= 0;
-        if (limit.maxAllowed <= 0) amtInp.placeholder = t('No advance available this cycle','لا تتوفر سلفة في هذه الدورة');
-      }
-    }
+  // Limit runs silently — do not show calculation to employee
+  if (hint) hint.innerHTML = '';
+  if (amtInp) {
+    amtInp.removeAttribute('max');
+    amtInp.disabled = false;
+    amtInp.placeholder = '';
+    amtInp.value = '';
   }
-  if (amtInp) amtInp.value = '';
   document.getElementById('advNoteInp').value = '';
   openModal('advRequestModal');
 }
@@ -5245,16 +5248,19 @@ async function submitAdvanceRequest() {
 
   // ── Days-worked limit check ────────────────────────────────────────────────
   const limit = calcAdvanceLimit(myId);
-  if (limit) {
-    const maxAllowed = Math.floor(limit.maxAllowed);
-    if (amount > maxAllowed) {
-      toast(t(`⚠️ Sorry, you can only request a maximum of ${fmtAmt(maxAllowed)} for this cycle`,`⚠️ عذراً، الحد الأقصى المسموح لك في هذه الدورة هو ${fmtAmt(maxAllowed)}`));
-      return;
-    }
-    if (limit.maxAllowed <= 0) {
-      toast(t('⚠️ You have no remaining advance limit for this month','⚠️ لا يوجد رصيد سلفة متبقٍّ هذا الشهر'));
-      return;
-    }
+  if (!limit) {
+    // No salary on record — block advance entirely
+    toast(t('⚠️ No salary on record. Please contact HR.','⚠️ لا يوجد راتب مسجل. تواصل مع الموارد البشرية.'));
+    return;
+  }
+  const maxAllowed = Math.floor(limit.maxAllowed);
+  if (limit.maxAllowed <= 0) {
+    toast(t('⚠️ You have no remaining advance limit for this cycle','⚠️ لا يوجد رصيد سلفة متبقٍّ في هذه الدورة'));
+    return;
+  }
+  if (amount > maxAllowed) {
+    toast(t(`⚠️ Sorry, you can only request a maximum of ${fmtAmt(maxAllowed)} for this cycle`,`⚠️ عذراً، الحد الأقصى المسموح لك في هذه الدورة هو ${fmtAmt(maxAllowed)}`));
+    return;
   }
 
   // Hard duplicate check — one request per cycle per employee
@@ -5425,9 +5431,9 @@ async function submitAccSignAndSend() {
     }).eq('id', a.id);
   }
   closeModal('advAccSignModal');
+  toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
   await loadSalaryAdvances();
   renderAdvances();
-  toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
   // Notify GM
   const total = list.reduce((s,a) => s + Number(a.amount_approved||a.amount_requested||0), 0);
   sendPush(getAdminFCMTokens(),
@@ -5523,9 +5529,9 @@ async function submitGMApproval() {
   }
 
   closeModal('advSignModal');
+  toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
   await loadSalaryAdvances();
   renderAdvances();
-  toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
 
   // Generate and open approval PDF
   const accSig  = list[0]?.acc_signature || null;
@@ -8562,8 +8568,12 @@ loadSupabaseData = async function(isAdmin) {
   // Show special schedule notice on schedule tab
   setTimeout(() => { try { renderSpecialScheduleNotice(); } catch(e2) {} }, 500);
 
-  // Load salary advances
-  try { await loadSalaryAdvances(); } catch(e2) {}
+  // Load salary advances then re-render if the tab is already open
+  try {
+    await loadSalaryAdvances();
+    const advTab = document.getElementById('reqViewAdv');
+    if (advTab && advTab.style.display !== 'none') renderAdvances();
+  } catch(e2) {}
 
   // Load polls
   try { await loadPolls(); } catch(e2) {}
