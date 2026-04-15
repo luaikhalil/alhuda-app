@@ -3149,7 +3149,7 @@ async function loadSupabaseData(isAdmin) {
       const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label,phone,salary,supervisor_id,report_to';
       const empRes = await sb.from('employees').select(empFields).eq('active', true).order('id');
       if (empRes.data && empRes.data.length > 0) {
-        employees = empRes.data.map(e => ({
+        employees = empRes.data.filter(e => e && e.id).map(e => ({
           id: e.id, firstName: e.first_name, lastName: e.last_name,
           dept: e.dept, dept_key: e.dept_key || e.dept, deptLabel: e.dept_label,
           role: e.role, emp_type: e.emp_type,
@@ -5950,12 +5950,14 @@ function renderEmployees() {
   if (q) _empPage = 1;
 
   let emps = employees.filter(e => {
+    if (!e || !e.id) return false; // skip null/corrupt entries
     if (e.dept === 'admin') return false; // don't show admin in list
     if (empFilter !== 'all') {
       if (empFilter === 'active' && !e.active) return false;
       if (empFilter === 'inactive' && e.active) return false;
-      if (empFilter !== 'active' && empFilter !== 'inactive' && e.dept !== empFilter && !e.dept.startsWith('office_' + empFilter.replace('office','').trim())) {
-        if (!e.dept.includes(empFilter)) return false;
+      const eDept = e.dept || e.dept_key || '';
+      if (empFilter !== 'active' && empFilter !== 'inactive' && eDept !== empFilter && !eDept.startsWith('office_' + empFilter.replace('office','').trim())) {
+        if (!eDept.includes(empFilter)) return false;
       }
     }
     if (q) {
@@ -6117,10 +6119,15 @@ function populateEmpFormDropdowns(selectedDept, selectedLocation, selectedDeptLa
     let html = '';
     if (isHierarchical) {
       allDepts.forEach(main => {
+        if (!main || !main.key) return; // skip null/corrupt entries
         const mainLabel = (lang === 'ar' && main.nameAr) ? main.nameAr : main.name;
         const subs = main.subs || [];
         if (subs.length > 0) {
           html += `<optgroup label="${mainLabel}">`;
+          // Main dept itself — selectable for managers of the whole department
+          const mainSel = main.key === selectedDept ? ' selected' : '';
+          const mainOptLabel = lang === 'ar' ? `${mainLabel} (عام)` : `${mainLabel} (General)`;
+          html += `<option value="${main.key}"${mainSel}>${mainOptLabel}</option>`;
           subs.forEach(s => {
             const subLabel = (lang === 'ar' && s.nameAr) ? s.nameAr : s.name;
             const sel = s.key === selectedDept ? ' selected' : '';
@@ -6283,9 +6290,8 @@ async function saveEmployee() {
   const sbData = {
     id: data.id, first_name: data.firstName, last_name: data.lastName,
     dept: data.dept, dept_key: data.dept_key, dept_label: data.deptLabel,
-    location: data.location, location_label: data.locationLabel,
     role: data.role, emp_type: data.emp_type,
-    supervisor_id: data.supervisor_id, report_to: data.report_to,
+    report_to: data.report_to,
     phone: data.phone, salary: data.salary, start_date: data.startDate,
     active: data.active, init: data.init,
     default_shift: data.defaultShift || null,
