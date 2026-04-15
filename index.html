@@ -2845,27 +2845,12 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <select class="inp" id="eLocation" style="margin-bottom:0"></select>
       </div>
     </div>
-    <!-- Reporting chain — shown for basic employees only -->
+    <!-- Reporting chain -->
     <div id="reportingSection" style="margin-top:8px">
       <label class="lbl" data-en="Reports To" data-ar="يتبع إلى">Reports To</label>
-      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r1);overflow:hidden;margin-bottom:8px">
-        <button id="tabSupervisor" onclick="switchReportTab('supervisor')"
-          style="flex:1;padding:8px;background:var(--blue);color:#000;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit"
-          data-en="Supervisor" data-ar="المشرف">Supervisor</button>
-        <button id="tabManager" onclick="switchReportTab('manager')"
-          style="flex:1;padding:8px;background:var(--bgc);color:var(--t2);font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit"
-          data-en="Manager" data-ar="المدير">Manager</button>
-      </div>
-      <div id="paneSupervisor">
-        <select class="inp" id="eSupervisor" style="margin-bottom:0">
-          <option value="">— None —</option>
-        </select>
-      </div>
-      <div id="paneManager" style="display:none">
-        <select class="inp" id="eManager" style="margin-bottom:0">
-          <option value="">— None —</option>
-        </select>
-      </div>
+      <select class="inp" id="eReportTo" style="margin-bottom:0">
+        <option value="">— None —</option>
+      </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <div class="mg">
@@ -6224,79 +6209,44 @@ function renderEmployees() {
     </div>`).join('') + moreBtn;
 }
 
-function switchReportTab(tab) {
-  const isSup = tab === 'supervisor';
-  document.getElementById('paneSupervisor').style.display = isSup ? 'block' : 'none';
-  document.getElementById('paneManager').style.display    = isSup ? 'none'  : 'block';
-  const activeStyle   = 'flex:1;padding:8px;background:var(--blue);color:#000;font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit';
-  const inactiveStyle = 'flex:1;padding:8px;background:var(--bgc);color:var(--t2);font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit';
-  document.getElementById('tabSupervisor').style.cssText = isSup ? activeStyle : inactiveStyle;
-  document.getElementById('tabManager').style.cssText    = isSup ? inactiveStyle : activeStyle;
-}
+function switchReportTab() {} // no-op — tabs removed
 
 function buildReportingDropdowns(supervisorId, managerId, empType) {
-  // Hierarchy:
-  //   employee/security  → Supervisor tab + Manager tab
-  //   supervisor         → Manager tab only
-  //   manager            → Manager tab only (reports to General Manager)
-  //   admin              → hidden
-
   const section = document.getElementById('reportingSection');
-  const tabRow  = document.getElementById('tabSupervisor')?.parentElement;
-
   if (empType === 'admin') {
     if (section) section.style.display = 'none';
     return;
   }
   if (section) section.style.display = 'block';
 
-  // Determine this employee's level directly from emp_type (role = job title now, not power level)
-  let level = empType === 'manager' ? 'manager' : empType === 'supervisor' ? 'supervisor' : 'employee';
-
-  // Only regular employees see the Supervisor tab
-  const showSupervisorTab = (level === 'employee');
-  if (tabRow) tabRow.style.display = showSupervisorTab ? 'flex' : 'none';
-
   const selfId = document.getElementById('empEditId')?.value;
+  // The current report_to value: prefer explicit managerId, fall back to supervisorId (legacy)
+  const currentVal = managerId || supervisorId || '';
 
-  // Helper — determine level directly from emp_type (job title is now free text, not used for power)
   const getLevel = e => {
-    if (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '1') return 'manager';
+    if (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '001' || e.id === '1') return 'manager';
     if (e.emp_type === 'manager' || e.emp_type === 'dept_officer' || e.emp_type === 'acc_mgr') return 'manager';
     if (e.emp_type === 'supervisor' || e.emp_type === 'security_sup') return 'supervisor';
     return 'employee';
   };
 
-  // Supervisor dropdown — only employees whose level is 'supervisor'
-  const supSel = document.getElementById('eSupervisor');
-  if (supSel) {
-    const sups = employees
-      .filter(e => e.active && e.id !== selfId && getLevel(e) === 'supervisor')
-      .sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
-    supSel.innerHTML = `<option value="">${t('— No Supervisor —','— بدون مشرف —')}</option>` +
-      sups.map(s =>
-        `<option value="${s.id}" ${s.id === supervisorId ? 'selected' : ''}>
-          ${s.firstName} ${s.lastName} · ${tr(s.role||'')} (${s.id.replace(/^[A-Z]+-/,'')})
-        </option>`
-      ).join('');
-  }
+  const sel = document.getElementById('eReportTo');
+  if (!sel) return;
 
-  // Manager dropdown — only employees whose level is 'manager'
-  const mgrSel = document.getElementById('eManager');
-  if (mgrSel) {
-    const mgrs = employees
-      .filter(e => e.active && e.id !== selfId && getLevel(e) === 'manager')
-      .sort((a,b) => (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName));
-    mgrSel.innerHTML = `<option value="">${t('— No Manager —','— بدون مدير —')}</option>` +
-      mgrs.map(m =>
-        `<option value="${m.id}" ${m.id === managerId ? 'selected' : ''}>
-          ${m.firstName} ${m.lastName} · ${tr(m.role||'')} (${m.id.replace(/^[A-Z]+-/,'')})
-        </option>`
-      ).join('');
-  }
+  // Show all supervisors and managers except self, grouped
+  const mgrs = employees.filter(e => e.active && e.id !== selfId && ['manager','supervisor'].includes(getLevel(e)))
+    .sort((a,b) => {
+      const la = getLevel(a), lb = getLevel(b);
+      if (la !== lb) return la === 'manager' ? -1 : 1; // managers first
+      return (a.firstName+a.lastName).localeCompare(b.firstName+b.lastName);
+    });
 
-  // Default active tab
-  switchReportTab(showSupervisorTab ? 'supervisor' : 'manager');
+  sel.innerHTML = `<option value="">${t('— None —','— بدون —')}</option>` +
+    mgrs.map(e =>
+      `<option value="${e.id}" ${e.id === currentVal ? 'selected' : ''}>
+        ${e.firstName} ${e.lastName} · ${tr(e.role||'')} (${e.id.replace(/^[A-Z]+-/,'')})
+      </option>`
+    ).join('');
 }
 
 // Keep old name as alias so nothing else breaks
@@ -6468,8 +6418,7 @@ async function saveEmployee() {
 
   const deptVal = document.getElementById('eDept').value;
   const locationVal    = document.getElementById('eLocation')?.value || '';
-  const supervisorVal  = document.getElementById('eSupervisor')?.value || null;
-  const managerVal     = document.getElementById('eManager')?.value || null;
+  const reportToVal    = document.getElementById('eReportTo')?.value || null;
   const deptObj = getDeptByKey(deptVal);
   const locObj  = allLocations.find(l => l.key === locationVal);
 
@@ -6483,8 +6432,8 @@ async function saveEmployee() {
     locationLabel: locObj ? locObj.name : locationVal,
     role: document.getElementById('eRole').value.trim(),
     emp_type: empTypeVal,
-    supervisor_id: supervisorVal,
-    report_to: managerVal,
+    supervisor_id: null,
+    report_to: reportToVal,
     phone: document.getElementById('ePhone').value,
     startDate: document.getElementById('eStartDate').value,
     salary: parseInt(document.getElementById('eSalary')?.value) || parseInt(document.getElementById('eSalaryHidden')?.value) || 0,
