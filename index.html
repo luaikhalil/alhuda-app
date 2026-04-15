@@ -4987,8 +4987,8 @@ async function loadSalaryAdvances() {
 // ─── Render (role-based) ───────────────────────────────────────────────────
 function renderAdvances() {
   if (!user) return;
-  const utype  = user.emp_type || user.type || '';
-  const isAdmin = utype === 'admin';
+  // isAdmin = only the actual General Manager (ADM-001)
+  const isAdmin = (role === 'admin' || user.id === 'ADM-001');
   const isAcc   = isAccountingMgr();
   const myId    = user.id || role;
 
@@ -8765,8 +8765,9 @@ async function sendPush(tokens, title, body) {
 
 // Helpers to collect FCM tokens from the employees array
 function getAdminFCMTokens() {
+  // Only the actual GM — ADM-001
   return employees
-    .filter(e => e.active && (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '1'))
+    .filter(e => e.active && e.id === 'ADM-001')
     .map(e => e.fcm_token).filter(Boolean);
 }
 function getEmpFCMToken(empId) {
