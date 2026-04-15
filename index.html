@@ -3011,7 +3011,7 @@ async function doLogin() {
     };
 
     // Load live data from Supabase
-    await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
+    await loadSupabaseData(data.emp_type === 'admin' || data.id === '001' || data.id === '1' || data.id === 'ADM-001');
 
     // Save session so page refresh keeps user logged in
     localStorage.setItem('alhuda_session', JSON.stringify({ empId, pw }));
@@ -3062,7 +3062,7 @@ async function tryAutoLogin() {
       canIncident: !!(data.emp_type === 'supervisor'),
       salary: data.salary || null
     };
-    await loadSupabaseData(data.emp_type === 'admin' || data.id === '1' || data.id === 'ADM-001');
+    await loadSupabaseData(data.emp_type === 'admin' || data.id === '001' || data.id === '1' || data.id === 'ADM-001');
     document.getElementById('autoLoginSplash').style.display = 'none';
     login(roleKey);
     if (data.must_change_pw) setTimeout(() => showForcedPwChange(), 150);
@@ -3085,7 +3085,7 @@ function showLoginErr(msg) {
 
 // Map employee DB record to a role key so existing UI logic works
 function empIdToRoleKey(e) {
-  if (e.id === 'ADM-001' || e.id === '1' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
+  if (e.id === 'ADM-001' || e.id === '001' || e.id === '1' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
   // Derive from emp_type + dept_key
   if (e.emp_type === 'manager')     return 'gf_mgr';
   if (e.emp_type === 'dept_officer') {
@@ -4987,8 +4987,8 @@ async function loadSalaryAdvances() {
 // ─── Render (role-based) ───────────────────────────────────────────────────
 function renderAdvances() {
   if (!user) return;
-  // isAdmin = only the actual General Manager (ADM-001)
-  const isAdmin = (role === 'admin' || user.id === 'ADM-001');
+  // isAdmin = only the actual General Manager (ID: 001 / ADM-001)
+  const isAdmin = (role === 'admin' || user.id === 'ADM-001' || user.id === '001');
   const isAcc   = isAccountingMgr();
   const myId    = user.id || role;
 
@@ -5415,25 +5415,38 @@ async function submitAccSignAndSend() {
   const sigData = _accSigCanvas.toDataURL('image/png');
   const note    = document.getElementById('advAccNote')?.value || '';
   const myId    = user.id || role;
+  const now     = new Date().toISOString();
   // All pending requests (others' requests that were reviewed + accounting manager's own)
   const list    = salaryAdvances.filter(a => a.status === 'pending');
   for (const a of list) {
     const inp = document.getElementById(`accAmt_${a.id}`);
     const approved = inp ? parseFloat(inp.value) || a.amount_requested : a.amount_requested;
-    await sb.from('salary_advances').update({
+    const { error } = await sb.from('salary_advances').update({
       status: 'gm_pending',
       amount_approved: approved,
       accounting_by_id: myId,
       accounting_by_name: user.name,
-      accounting_at: new Date().toISOString(),
+      accounting_at: now,
       accounting_note: note,
       acc_signature: sigData
     }).eq('id', a.id);
+    if (!error) {
+      // Update local cache immediately so UI reflects change without waiting for reload
+      const local = salaryAdvances.find(x => x.id === a.id);
+      if (local) {
+        local.status = 'gm_pending';
+        local.amount_approved = approved;
+        local.accounting_by_id = myId;
+        local.accounting_by_name = user.name;
+        local.accounting_at = now;
+        local.acc_signature = sigData;
+      }
+    }
   }
   closeModal('advAccSignModal');
+  renderAdvances(); // immediate re-render from updated local cache
   toast(t(`✅ ${list.length} advance(s) signed & sent to GM`,`✅ تم التوقيع وإرسال ${list.length} سلفة للمدير العام`));
-  await loadSalaryAdvances();
-  renderAdvances();
+  loadSalaryAdvances().then(() => renderAdvances()); // background sync
   // Notify GM
   const total = list.reduce((s,a) => s + Number(a.amount_approved||a.amount_requested||0), 0);
   sendPush(getAdminFCMTokens(),
@@ -5505,7 +5518,7 @@ async function submitGMApproval() {
   const now     = new Date().toISOString();
 
   for (const a of list) {
-    await sb.from('salary_advances').update({
+    const { error } = await sb.from('salary_advances').update({
       status: 'approved',
       gm_signature: sigData,
       gm_note: note,
@@ -5513,7 +5526,23 @@ async function submitGMApproval() {
       approved_by_id: myId,
       approved_by_name: user.name
     }).eq('id', a.id);
+    if (!error) {
+      // Update local cache immediately
+      const local = salaryAdvances.find(x => x.id === a.id);
+      if (local) {
+        local.status = 'approved';
+        local.gm_signature = sigData;
+        local.gm_approved_at = now;
+        local.approved_by_id = myId;
+        local.approved_by_name = user.name;
+      }
+    }
   }
+
+  closeModal('advSignModal');
+  renderAdvances(); // immediate re-render from updated local cache
+  toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
+  loadSalaryAdvances().then(() => renderAdvances()); // background sync
 
   // Push notify each employee whose advance was approved
   for (const a of list) {
@@ -5527,11 +5556,6 @@ async function submitGMApproval() {
       );
     }
   }
-
-  closeModal('advSignModal');
-  toast(t(`✅ ${list.length} advance(s) approved!`,`✅ تم اعتماد ${list.length} سلفة!`));
-  await loadSalaryAdvances();
-  renderAdvances();
 
   // Generate and open approval PDF
   const accSig  = list[0]?.acc_signature || null;
@@ -8765,9 +8789,9 @@ async function sendPush(tokens, title, body) {
 
 // Helpers to collect FCM tokens from the employees array
 function getAdminFCMTokens() {
-  // Only the actual GM — ADM-001
+  // Only the actual GM — ID 001 / ADM-001
   return employees
-    .filter(e => e.active && e.id === 'ADM-001')
+    .filter(e => e.active && (e.id === 'ADM-001' || e.id === '001'))
     .map(e => e.fcm_token).filter(Boolean);
 }
 function getEmpFCMToken(empId) {
