@@ -5955,7 +5955,10 @@ function renderLoans() {
 
     const infoEl = document.getElementById('loanEmpInfo');
     if (infoEl) {
-      if (!tenureOk) {
+      if (active) {
+        // Already has a loan — suppress all eligibility warnings
+        infoEl.style.display = 'none';
+      } else if (!tenureOk) {
         const days = daysWorked(me?.startDate || me?.start_date) || 0;
         const remaining = Math.max(0, 180 - days);
         infoEl.style.display = '';
@@ -5968,12 +5971,6 @@ function renderLoans() {
         infoEl.innerHTML = `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:10px">
           📁 <strong>ملفات الضمان غير مكتملة</strong><br>
           <span style="color:var(--t2)">تواصل مع مدير الموارد البشرية لإكمال ملفاتك قبل تقديم طلب القرض.</span>
-        </div>`;
-      } else if (active) {
-        infoEl.style.display = '';
-        infoEl.innerHTML = `<div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:#a78bfa;margin-bottom:10px">
-          💼 <strong>لديك قرض نشط بالفعل</strong><br>
-          <span style="color:var(--t2)">لا يمكن تقديم طلب قرض جديد حتى يتم إغلاق قرضك الحالي.</span>
         </div>`;
       } else {
         infoEl.style.display = 'none';
