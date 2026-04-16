@@ -10,6 +10,20 @@
 <title>Alhuda Staff App</title>
 <link id="appFavicon" rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
 <link id="appTouchIcon" rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
+<link id="appManifest" rel="manifest">
+<script>
+(function(){
+  var icon = localStorage.getItem('co_icon') || localStorage.getItem('co_logo_light') || localStorage.getItem('co_logo_dark');
+  var name = localStorage.getItem('co_name_en') || 'Alhuda Staff';
+  var nameAr = localStorage.getItem('co_name_ar') || 'هايبرماركت الهدى المتقدم';
+  var icons = icon
+    ? [{"src":icon,"sizes":"192x192","type":"image/png"},{"src":icon,"sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+    : [{"src":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%AA%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml"}];
+  var manifest = {name:nameAr+' — '+name,short_name:name,start_url:'./',display:'standalone',background_color:'#1b1b1b',theme_color:'#1b1b1b',orientation:'portrait',icons:icons};
+  var blob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  document.getElementById('appManifest').href = URL.createObjectURL(blob);
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -1321,6 +1335,8 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       var sp = document.getElementById('autoLoginSplash');
       if (ls) ls.style.display = 'none';
       if (sp) sp.style.display = 'flex';
+      // Apply branding immediately so splash shows the real logo, not the placeholder
+      try { applyCompanyBranding(); } catch(e) {}
     });
   }
 </script>
@@ -5870,6 +5886,19 @@ function applyCompanyBranding() {
   const splashNameEl = document.getElementById('splashName');
   if (splashNameEl) splashNameEl.textContent = co.nameAr || 'Alhuda Staff';
 
+  // ── PWA manifest (keeps home-screen icon in sync) ────────────────
+  try {
+    const manifestEl = document.getElementById('appManifest');
+    if (manifestEl) {
+      const icons = icon
+        ? [{"src":icon,"sizes":"192x192","type":"image/png"},{"src":icon,"sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+        : [];
+      const mf = {name:(co.nameAr||'هايبرماركت الهدى')+' — '+(co.nameEn||'Alhuda Staff'),short_name:co.nameEn||'Alhuda Staff',start_url:'./',display:'standalone',background_color:'#1b1b1b',theme_color:'#1b1b1b',orientation:'portrait',icons};
+      const blob = new Blob([JSON.stringify(mf)],{type:'application/json'});
+      manifestEl.href = URL.createObjectURL(blob);
+    }
+  } catch(e) {}
+
   // ── Login screen logo ────────────────────────────────────────────
   const loginLogoEl = document.getElementById('loginLogo');
   if (loginLogoEl) {
@@ -5970,7 +5999,7 @@ function renderLoans() {
         infoEl.style.display = '';
         infoEl.innerHTML = `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:10px">
           📁 <strong>ملفات الضمان غير مكتملة</strong><br>
-          <span style="color:var(--t2)">تواصل مع مدير الموارد البشرية لإكمال ملفاتك قبل تقديم طلب القرض.</span>
+          <span style="color:var(--t2)">تواصل مع مدير المحاسبة لإكمال ملفاتك قبل تقديم طلب القرض.</span>
         </div>`;
       } else {
         infoEl.style.display = 'none';
@@ -6007,7 +6036,7 @@ function renderMyLoan(loans) {
     el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا يوجد قرض نشط</div>`;
     return;
   }
-  const statusLabel = { pending:'⏳ بانتظار مدير الموارد البشرية', hr_approved:'✅ تمت الموافقة من الموارد البشرية — بانتظار المحاسبة', gm_pending:'🔄 بانتظار المدير العام', approved:'✅ معتمد', rejected:'❌ مرفوض' };
+  const statusLabel = { pending:'⏳ بانتظار مدير المحاسبة', hr_approved:'⏳ بانتظار مدير المحاسبة', gm_pending:'🔄 بانتظار المدير العام', approved:'✅ معتمد', rejected:'❌ مرفوض' };
   const statusColor = { pending:'var(--orange)', hr_approved:'var(--blue)', gm_pending:'var(--purple)', approved:'var(--green)', rejected:'var(--red)' };
   el.innerHTML = loans.map(l => `
     <div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
@@ -6107,7 +6136,7 @@ function openLoanModal() {
   const myId = user.id || role;
   const me = employees.find(e => String(e.id) === String(myId));
   if (!me?.files_complete) {
-    toast(t('⚠️ Your guarantee files are not complete. Contact HR.','⚠️ ملفات ضمانك غير مكتملة. تواصل مع الموارد البشرية.'));
+    toast(t('⚠️ Your guarantee files are not complete. Contact the Accounting Manager.','⚠️ ملفات ضمانك غير مكتملة. تواصل مع مدير المحاسبة.'));
     return;
   }
   const active = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
