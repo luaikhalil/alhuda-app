@@ -6025,7 +6025,7 @@ function renderHRLoanList(loans) {
   el.innerHTML = loans.map(l => {
     const emp = employees.find(e => String(e.id) === String(l.emp_id));
     const salary = emp?.salary || 0;
-    const maxLoan = salary * 3;
+    const maxLoan = salary * 1;
     return `<div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
       <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
       <div style="font-size:11px;color:var(--t2);margin-bottom:8px">${l.dept_label||l.dept||''}</div>
@@ -6107,9 +6107,9 @@ function openLoanModal() {
   const active = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
   if (active) { toast(t('⚠️ You already have an active loan.','⚠️ لديك قرض نشط بالفعل.')); return; }
   const salary = me.salary || 0;
-  const maxLoan = salary * 3;
+  const maxLoan = salary * 1;
   const info = document.getElementById('loanModalInfo');
-  if (info) info.innerHTML = `الراتب: <strong>${Number(salary).toLocaleString()} ريال</strong> — الحد الأقصى للقرض: <strong>${Number(maxLoan).toLocaleString()} ريال</strong> (3 أشهر كحد أقصى)`;
+  if (info) info.innerHTML = `الراتب: <strong>${Number(salary).toLocaleString()} ريال</strong> — الحد الأقصى للقرض: <strong>${Number(maxLoan).toLocaleString()} ريال</strong> (راتب شهر واحد — حد أقصى 4 أشهر للسداد)`;
   const calcEl = document.getElementById('loanMonthsCalc');
   if (calcEl) calcEl.textContent = 'أدخل مبلغ القرض والخصم الشهري لحساب مدة السداد';
   document.getElementById('loanAmountInp').value = '';
@@ -6125,12 +6125,13 @@ function recalcLoanMonths() {
   if (!calcEl) return;
   if (!amount || !deduction) { calcEl.textContent = 'أدخل المبلغ والخصم الشهري'; return; }
   const months = Math.ceil(amount / deduction);
-  if (months > 3) {
+  const monthWord = months === 1 ? 'شهر' : months === 2 ? 'شهران' : 'أشهر';
+  if (months > 4) {
     calcEl.style.color = 'var(--red)';
-    calcEl.textContent = `⚠️ مدة السداد ${months} أشهر — تجاوز الحد الأقصى (3 أشهر)`;
+    calcEl.textContent = `⚠️ مدة السداد ${months} أشهر — تجاوز الحد الأقصى (4 أشهر)`;
   } else {
     calcEl.style.color = 'var(--green)';
-    calcEl.textContent = `✅ مدة السداد: ${months} ${months===1?'شهر':months===2?'شهران':'أشهر'} — إجمالي السداد: ${Number(amount).toLocaleString()} ريال`;
+    calcEl.textContent = `✅ مدة السداد: ${months} ${monthWord} — إجمالي السداد: ${Number(amount).toLocaleString()} ريال`;
   }
 }
 
@@ -6143,9 +6144,9 @@ async function submitLoanRequest() {
   if (!amount || amount <= 0) { toast(t('⚠️ Enter a valid loan amount','⚠️ أدخل مبلغ القرض')); return; }
   if (!deduction || deduction <= 0) { toast(t('⚠️ Enter a valid monthly deduction','⚠️ أدخل الخصم الشهري')); return; }
   const months = Math.ceil(amount / deduction);
-  if (months > 3) { toast(t('⚠️ Repayment exceeds 3 months. Increase the monthly deduction.','⚠️ مدة السداد تتجاوز 3 أشهر. زد الخصم الشهري.')); return; }
+  if (months > 4) { toast(t('⚠️ Repayment exceeds 4 months. Increase the monthly deduction.','⚠️ مدة السداد تتجاوز 4 أشهر. زد الخصم الشهري.')); return; }
   const salary = me?.salary || 0;
-  if (amount > salary * 3) { toast(t(`⚠️ Max loan is ${Number(salary*3).toLocaleString()} YER`,`⚠️ الحد الأقصى للقرض هو ${Number(salary*3).toLocaleString()} ريال`)); return; }
+  if (amount > salary) { toast(t(`⚠️ Max loan is your monthly salary: ${Number(salary).toLocaleString()} YER`,`⚠️ الحد الأقصى للقرض هو راتبك الشهري: ${Number(salary).toLocaleString()} ريال`)); return; }
   const now = new Date();
   const payload = {
     emp_id: myId, emp_name: user.name || (me?.firstName + ' ' + me?.lastName),
