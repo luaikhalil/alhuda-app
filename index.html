@@ -3317,7 +3317,7 @@ async function loadSupabaseData(isAdmin) {
           supervisor_id: e.supervisor_id || null, report_to: e.report_to || null,
           files_complete: e.files_complete || false,
           location: e.location, locationLabel: e.location_label,
-          phone: e.phone || null, salary: (isAdmin || user?.emp_type === 'manager' || e.id === (user?.id || role)) ? e.salary : null,
+          phone: e.phone || null, salary: (isAdmin || user?.emp_type === 'manager' || normId(e.id) === normId(user?.id || role)) ? e.salary : null,
           password: isAdmin ? e.password : null,
           startDate: e.start_date || null, active: e.active, init: e.init,
           fcm_token: e.fcm_token || null,
