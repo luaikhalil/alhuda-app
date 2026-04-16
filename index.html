@@ -3307,7 +3307,7 @@ async function loadSupabaseData(isAdmin) {
 
     // Load employees for everyone — admins get full data, others get basic info only
     {
-      const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label,phone,salary,supervisor_id,report_to,files_complete';
+      const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label,phone,salary,supervisor_id,report_to,files_complete,start_date';
       const empRes = await sb.from('employees').select(empFields).eq('active', true).order('id');
       if (empRes.data && empRes.data.length > 0) {
         employees = empRes.data.filter(e => e && e.id).map(e => ({
@@ -5910,34 +5910,55 @@ async function loadSalaryLoans() {
   } catch(e) { console.warn('loadSalaryLoans:', e); }
 }
 
+// ─── Helper: days worked ──────────────────────────────────────────────────────
+function daysWorked(startDate) {
+  if (!startDate) return null;
+  const start = new Date(startDate);
+  const today = new Date();
+  return Math.floor((today - start) / (1000 * 60 * 60 * 24));
+}
+function hasWorked6Months(startDate) {
+  if (!startDate) return false;
+  return daysWorked(startDate) >= 180;
+}
+
 // ─── Main render dispatcher ────────────────────────────────────────────────────
 function renderLoans() {
   if (!user) return;
   const isAdm = (role === 'admin' || user.id === 'ADM-001' || user.id === '001');
   const isAcc = isAccountingMgr();
-  const isHR  = isHRMgr();
   const myId  = user.id || role;
 
   document.getElementById('loanEmpView').style.display = !isAdm ? '' : 'none';
-  document.getElementById('loanHRView').style.display  = isHR  ? '' : 'none';
+  document.getElementById('loanHRView').style.display  = 'none'; // HR step removed
   document.getElementById('loanAccView').style.display = isAcc ? '' : 'none';
   document.getElementById('loanGMView').style.display  = isAdm ? '' : 'none';
 
-  // Employee: request button only if files_complete and no active loan
+  // Employee: request button + eligibility checks
   if (!isAdm) {
-    const me      = employees.find(e => String(e.id) === String(myId));
-    const filesOk = me?.files_complete === true;
-    const active  = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
-    const reqBtn  = document.getElementById('loanRequestBtnRow');
-    if (reqBtn) reqBtn.style.display = (filesOk && !active) ? 'block' : 'none';
-    // Show status message when button is hidden
+    const me        = employees.find(e => String(e.id) === String(myId));
+    const filesOk   = me?.files_complete === true;
+    const tenureOk  = hasWorked6Months(me?.startDate || me?.start_date);
+    const active    = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
+    const canReq    = filesOk && tenureOk && !active;
+    const reqBtn    = document.getElementById('loanRequestBtnRow');
+    if (reqBtn) reqBtn.style.display = canReq ? 'block' : 'none';
+
     const infoEl = document.getElementById('loanEmpInfo');
     if (infoEl) {
-      if (!filesOk) {
+      if (!tenureOk) {
+        const days = daysWorked(me?.startDate || me?.start_date) || 0;
+        const remaining = Math.max(0, 180 - days);
+        infoEl.style.display = '';
+        infoEl.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--red);margin-bottom:10px">
+          ⏳ <strong>لم تكتمل مدة الخدمة المطلوبة</strong><br>
+          <span style="color:var(--t2)">يشترط العمل لمدة 6 أشهر على الأقل للتأهل للحصول على قرض. تبقّى لك حوالي <strong>${remaining} يوم</strong> (${days} يوم من أصل 180).</span>
+        </div>`;
+      } else if (!filesOk) {
         infoEl.style.display = '';
         infoEl.innerHTML = `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:10px">
           📁 <strong>ملفات الضمان غير مكتملة</strong><br>
-          <span style="color:var(--t2)">لا يمكنك طلب قرض حتى يتم اعتماد ملفاتك من قِبَل الموارد البشرية. تواصل مع مدير الموارد البشرية لإكمال ملفاتك.</span>
+          <span style="color:var(--t2)">تواصل مع مدير الموارد البشرية لإكمال ملفاتك قبل تقديم طلب القرض.</span>
         </div>`;
       } else if (active) {
         infoEl.style.display = '';
@@ -5952,15 +5973,9 @@ function renderLoans() {
     renderMyLoan(salaryLoans.filter(l => String(l.emp_id) === String(myId)));
   }
 
-  // HR: pending loans (not their own)
-  if (isHR) {
-    const hrPending = salaryLoans.filter(l => l.status === 'pending' && String(l.emp_id) !== String(myId));
-    renderHRLoanList(hrPending);
-  }
-
-  // Accounting: hr_approved loans + approved loans for print
+  // Accounting: pending loans (direct from employee, no HR step)
   if (isAcc) {
-    const accPending = salaryLoans.filter(l => l.status === 'hr_approved' && String(l.emp_id) !== String(myId));
+    const accPending = salaryLoans.filter(l => l.status === 'pending' && String(l.emp_id) !== String(myId));
     renderAccLoanList(accPending);
     const signBtn = document.getElementById('loanAccSignBtn');
     if (signBtn) signBtn.style.display = accPending.length ? '' : 'none';
@@ -6034,17 +6049,27 @@ function renderAccLoanList(loans) {
     el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا توجد قروض للمراجعة حالياً</div>`;
     return;
   }
-  el.innerHTML = loans.map(l => `
+  el.innerHTML = loans.map(l => {
+    const emp = employees.find(e => String(e.id) === String(l.emp_id));
+    const startDate = emp?.start_date || emp?.startDate || null;
+    const days = daysWorked(startDate);
+    const startStr = startDate ? new Date(startDate).toLocaleDateString('ar-YE') : '—';
+    const daysStr  = days !== null ? `${days} يوم` : '—';
+    return `
     <div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
       <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
       <div style="font-size:11px;color:var(--t2);margin-bottom:6px">${l.dept_label||l.dept||''}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--t2)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--t2);margin-bottom:6px">
         <div>القرض: <strong style="color:var(--t1)">${Number(l.loan_amount).toLocaleString()} ريال</strong></div>
         <div>الخصم/شهر: <strong style="color:var(--t1)">${Number(l.monthly_deduction).toLocaleString()} ريال</strong></div>
         <div>المدة: <strong style="color:var(--t1)">${l.months_to_pay} أشهر</strong></div>
-        <div>موافقة HR: <strong style="color:var(--green)">✅ ${l.hr_by_name||''}</strong></div>
       </div>
-    </div>`).join('');
+      <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:7px 10px;font-size:11px;color:var(--t2)">
+        📅 تاريخ التعيين: <strong style="color:var(--t1)">${startStr}</strong>
+        &nbsp;|&nbsp; ⏳ مدة الخدمة: <strong style="color:var(--t1)">${daysStr}</strong>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── GM: list of gm_pending loans ─────────────────────────────────────────────
@@ -6135,9 +6160,9 @@ async function submitLoanRequest() {
   toast(t('✅ Loan request submitted','✅ تم إرسال طلب القرض'));
   await loadSalaryLoans();
   renderLoans();
-  // Notify HR
-  const hrTokens = getHRFCMTokens();
-  if (hrTokens.length) sendPush(hrTokens, '💼 طلب قرض جديد', `${payload.emp_name} — ${Number(amount).toLocaleString()} ريال`);
+  // Notify Accounting Manager
+  const accTokens = getAccFCMTokens();
+  if (accTokens.length) sendPush(accTokens, '💼 طلب قرض جديد', `${payload.emp_name} — ${Number(amount).toLocaleString()} ريال`);
 }
 
 // ─── HR: review modal ─────────────────────────────────────────────────────────
@@ -6201,7 +6226,7 @@ async function rejectHRLoan() {
 
 // ─── Accounting: signature pad ────────────────────────────────────────────────
 function openAccLoanSignModal() {
-  const pending = salaryLoans.filter(l => l.status === 'hr_approved');
+  const pending = salaryLoans.filter(l => l.status === 'pending');
   if (!pending.length) { toast(t('No loans to sign','لا توجد قروض للتوقيع')); return; }
   const total = pending.reduce((s,l) => s + Number(l.loan_amount), 0);
   const sumEl = document.getElementById('loanAccSignSummary');
@@ -6232,7 +6257,7 @@ async function submitAccLoanSignature() {
   const note     = document.getElementById('loanAccNote').value.trim();
   const myId     = user.id || role;
   const now      = new Date().toISOString();
-  const pending  = salaryLoans.filter(l => l.status === 'hr_approved');
+  const pending  = salaryLoans.filter(l => l.status === 'pending');
   for (const l of pending) {
     const { error } = await sb.from('salary_loans').update({
       status: 'gm_pending', accounting_by_id: myId, accounting_by_name: user.name,
