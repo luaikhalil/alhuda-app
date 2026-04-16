@@ -6155,7 +6155,6 @@ async function submitLoanRequest() {
   const myId     = user.id || role;
   const me       = employees.find(e => String(e.id) === String(myId));
   const amount    = parseFloat(document.getElementById('loanAmountInp').value);
-  const deduction = parseFloat(document.getElementById('loanDeductionInp').value);
   const note      = document.getElementById('loanNoteInp').value.trim();
   if (!amount || amount <= 0) { toast(t('⚠️ Enter a valid loan amount','⚠️ أدخل مبلغ القرض')); return; }
   const months = _selectedLoanMonths;
