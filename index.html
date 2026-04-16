@@ -1512,6 +1512,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button class="req-view-btn active" id="rvBtnReqs" onclick="switchReqView('reqs')" data-en="📋 Requests" data-ar="📋 الطلبات">📋 Requests</button>
         <button class="req-view-btn" id="rvBtnAdv" onclick="switchReqView('advances')" data-en="💰 Advances" data-ar="💰 السلف">💰 Advances</button>
+        <button class="req-view-btn" id="rvBtnLoans" onclick="switchReqView('loans')" data-en="💼 Loans" data-ar="💼 القروض">💼 Loans</button>
       </div>
 
       <!-- ── REQUESTS VIEW ── -->
@@ -1583,6 +1584,51 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </div>
 
       </div><!-- end reqViewAdv -->
+
+      <!-- ── LOANS VIEW ── -->
+      <div id="reqViewLoans" style="display:none">
+
+        <!-- Employee: request button + my loan status -->
+        <div id="loanEmpView">
+          <div id="loanRequestBtnRow" style="display:none;margin-bottom:10px">
+            <button style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#a78bfa,#7c3aed);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit" onclick="openLoanModal()" data-en="💼 Request Salary Loan" data-ar="💼 طلب قرض راتب">💼 Request Salary Loan</button>
+          </div>
+          <div class="stitle" data-en="MY LOAN" data-ar="قرضي">MY LOAN</div>
+          <div id="loanMyStatus"></div>
+        </div>
+
+        <!-- HR Manager view -->
+        <div id="loanHRView" style="display:none">
+          <div class="adv-section-hdr">
+            <div class="stitle" style="margin:0" data-en="LOAN REQUESTS" data-ar="طلبات القروض">LOAN REQUESTS</div>
+          </div>
+          <div id="loanHRList"></div>
+        </div>
+
+        <!-- Accounting Manager view -->
+        <div id="loanAccView" style="display:none">
+          <div class="adv-section-hdr">
+            <div class="stitle" style="margin:0" data-en="LOANS TO REVIEW" data-ar="القروض للمراجعة">LOANS TO REVIEW</div>
+            <button id="loanAccSignBtn" onclick="openAccLoanSignModal()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="✍️ Sign & Send to GM ›" data-ar="✍️ وقّع وأرسل للمدير العام ›">✍️ Sign & Send to GM ›</button>
+          </div>
+          <div id="loanAccList"></div>
+          <div id="loanAccPrintRow" style="display:none;margin-top:12px">
+            <button onclick="printApprovedLoans()" style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#4ade80,#16a34a);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖨️ طباعة وثيقة القروض المعتمدة</button>
+          </div>
+        </div>
+
+        <!-- GM view -->
+        <div id="loanGMView" style="display:none">
+          <div class="adv-section-hdr">
+            <div class="stitle" style="margin:0" data-en="LOANS PENDING APPROVAL" data-ar="قروض بانتظار الموافقة">LOANS PENDING APPROVAL</div>
+          </div>
+          <div id="loanGMList"></div>
+          <div id="loanGMSignRow" style="display:none;margin-top:10px">
+            <button onclick="openGMLoanSignModal()" style="width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,#4ade80,#16a34a);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit" data-en="✍️ Sign & Approve All Loans" data-ar="✍️ وقّع واعتمد جميع القروض">✍️ Sign & Approve All Loans</button>
+          </div>
+        </div>
+
+      </div><!-- end reqViewLoans -->
     </div>
 
     <!-- ─── MESSAGES TAB ─── -->
@@ -2172,6 +2218,75 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <input class="inp" id="advAccNote" type="text" data-ph-en="Optional note..." data-ph-ar="ملاحظة اختيارية..." placeholder="Optional note..." style="margin-top:10px">
     <button class="btn-pri" onclick="submitAccSignAndSend()" data-en="✅ Sign & Send to GM" data-ar="✅ وقّع وأرسل للمدير العام">✅ Sign & Send to GM</button>
     <button class="btn-sec" onclick="closeModal('advAccSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ LOAN REQUEST MODAL ══ -->
+<div class="modal-bg" id="loanRequestModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="💼 Request Salary Loan" data-ar="💼 طلب قرض راتب">💼 Request Salary Loan</div>
+    <div id="loanModalInfo" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:9px 13px;font-size:12px;color:#a78bfa;margin-bottom:14px;"></div>
+    <label class="lbl" data-en="Loan Amount (YER)" data-ar="مبلغ القرض (ريال)">Loan Amount (YER)</label>
+    <input class="inp" id="loanAmountInp" type="number" min="1000" step="500" placeholder="0" style="margin-bottom:8px" oninput="recalcLoanMonths()">
+    <label class="lbl" data-en="Monthly Deduction (YER)" data-ar="الخصم الشهري (ريال)">Monthly Deduction (YER)</label>
+    <input class="inp" id="loanDeductionInp" type="number" min="1000" step="500" placeholder="0" style="margin-bottom:4px" oninput="recalcLoanMonths()">
+    <div id="loanMonthsCalc" style="font-size:11px;color:var(--t3);margin-bottom:14px;padding:6px 10px;background:var(--bg2);border-radius:8px;"></div>
+    <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
+    <input class="inp" id="loanNoteInp" type="text" placeholder="..." style="margin-bottom:0">
+    <button class="btn-pri" onclick="submitLoanRequest()" data-en="Submit Loan Request" data-ar="إرسال طلب القرض">Submit Loan Request</button>
+    <button class="btn-sec" onclick="closeModal('loanRequestModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ HR LOAN REVIEW MODAL ══ -->
+<div class="modal-bg" id="loanHRReviewModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="💼 Loan Review" data-ar="💼 مراجعة القرض">💼 Loan Review</div>
+    <input type="hidden" id="loanHRReviewId">
+    <div id="loanHRReviewDetails" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.7"></div>
+    <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
+    <input class="inp" id="loanHRNote" type="text" placeholder="..." style="margin-bottom:12px">
+    <div style="display:flex;gap:8px">
+      <button class="btn-pri" style="flex:1;background:linear-gradient(135deg,#4ade80,#16a34a)" onclick="approveHRLoan()" data-en="✅ Approve" data-ar="✅ موافقة">✅ Approve</button>
+      <button class="btn-sec" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:var(--red)" onclick="rejectHRLoan()" data-en="❌ Reject" data-ar="❌ رفض">❌ Reject</button>
+    </div>
+    <button class="btn-sec" onclick="closeModal('loanHRReviewModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ ACCOUNTING LOAN SIGNATURE MODAL ══ -->
+<div class="modal-bg" id="loanAccSignModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="✍️ Accounting Signature — Loans" data-ar="✍️ توقيع مدير المحاسبة — القروض">✍️ توقيع مدير المحاسبة — القروض</div>
+    <div id="loanAccSignSummary" style="font-size:12px;color:var(--t2);margin-bottom:12px;background:var(--bg2);border-radius:9px;padding:10px 13px;"></div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:6px" data-en="Sign to confirm and forward to GM:" data-ar="وقّع لتأكيد القروض وإرسالها للمدير العام:">وقّع لتأكيد القروض وإرسالها للمدير العام:</div>
+    <canvas id="loanAccSigCanvas" class="sig-canvas"></canvas>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="sig-clear-btn" onclick="clearLoanAccSignature()" data-en="Clear" data-ar="مسح">Clear</button>
+    </div>
+    <input class="inp" id="loanAccNote" type="text" placeholder="ملاحظة اختيارية..." style="margin-top:10px">
+    <button class="btn-pri" onclick="submitAccLoanSignature()" data-en="✅ Sign & Send to GM" data-ar="✅ وقّع وأرسل للمدير العام">✅ وقّع وأرسل للمدير العام</button>
+    <button class="btn-sec" onclick="closeModal('loanAccSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ GM LOAN SIGNATURE MODAL ══ -->
+<div class="modal-bg" id="loanGMSignModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="✍️ GM Approval — Loans" data-ar="✍️ موافقة المدير العام — القروض">✍️ موافقة المدير العام — القروض</div>
+    <div id="loanGMSignSummary" style="font-size:12px;color:var(--t2);margin-bottom:12px;background:var(--bg2);border-radius:9px;padding:10px 13px;"></div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:6px" data-en="Sign below to approve all loans:" data-ar="وقّع أدناه لاعتماد جميع القروض:">وقّع أدناه لاعتماد جميع القروض:</div>
+    <canvas id="loanGMSigCanvas" class="sig-canvas"></canvas>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="sig-clear-btn" onclick="clearLoanGMSignature()" data-en="Clear" data-ar="مسح">Clear</button>
+    </div>
+    <input class="inp" id="loanGMNote" type="text" placeholder="ملاحظة اختيارية..." style="margin-top:10px">
+    <button class="btn-pri" onclick="submitGMLoanApproval()" data-en="✅ Approve & Sign All" data-ar="✅ اعتمد ووقّع الجميع">✅ اعتمد ووقّع الجميع</button>
+    <button class="btn-sec" onclick="closeModal('loanGMSignModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -2878,6 +2993,13 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div class="tog on" id="empActiveToggle" onclick="this.classList.toggle('on')"></div>
       <span style="font-size:13px">Active Employee</span>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px;background:var(--bgc);border:1px solid var(--border);border-radius:var(--r1)">
+      <div class="tog" id="empFilesCompleteToggle" onclick="this.classList.toggle('on')"></div>
+      <div>
+        <div style="font-size:13px">📁 Guarantee Files Complete</div>
+        <div style="font-size:10px;color:var(--t3)">Employee can request salary loans when enabled</div>
+      </div>
+    </div>
     <button class="btn-pri" onclick="saveEmployee()">💾 Save Employee</button>
     <button class="btn-sec" onclick="closeModal('empModal')">Cancel</button>
   </div>
@@ -3192,6 +3314,7 @@ async function loadSupabaseData(isAdmin) {
           dept: e.dept, dept_key: e.dept_key || e.dept, deptLabel: e.dept_label,
           role: e.role, emp_type: e.emp_type,
           supervisor_id: e.supervisor_id || null, report_to: e.report_to || null,
+          files_complete: e.files_complete || false,
           location: e.location, locationLabel: e.location_label,
           phone: e.phone || null, salary: (isAdmin || user?.emp_type === 'manager' || e.id === (user?.id || role)) ? e.salary : null,
           password: isAdmin ? e.password : null,
@@ -4998,13 +5121,19 @@ function advWindowMsg() {
 
 // ─── View switcher ─────────────────────────────────────────────────────────
 function switchReqView(view) {
-  document.getElementById('reqViewReqs').style.display = view === 'reqs' ? '' : 'none';
-  document.getElementById('reqViewAdv').style.display  = view === 'advances' ? '' : 'none';
-  document.getElementById('rvBtnReqs').classList.toggle('active', view === 'reqs');
-  document.getElementById('rvBtnAdv').classList.toggle('active', view === 'advances');
+  document.getElementById('reqViewReqs').style.display  = view === 'reqs'     ? '' : 'none';
+  document.getElementById('reqViewAdv').style.display   = view === 'advances' ? '' : 'none';
+  document.getElementById('reqViewLoans').style.display = view === 'loans'    ? '' : 'none';
+  document.getElementById('rvBtnReqs').classList.toggle('active',  view === 'reqs');
+  document.getElementById('rvBtnAdv').classList.toggle('active',   view === 'advances');
+  document.getElementById('rvBtnLoans').classList.toggle('active', view === 'loans');
   if (view === 'advances') {
-    renderAdvances(); // render immediately with cached data
-    loadSalaryAdvances().then(() => renderAdvances()); // then reload fresh from Supabase
+    renderAdvances();
+    loadSalaryAdvances().then(() => renderAdvances());
+  }
+  if (view === 'loans') {
+    renderLoans();
+    loadSalaryLoans().then(() => renderLoans());
   }
 }
 
@@ -5744,6 +5873,523 @@ function applyCompanyBranding() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ─── SALARY LOANS FEATURE ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+let salaryLoans = [];
+let _loanAccCanvas, _loanAccCtx, _loanAccDrawing = false;
+let _loanGMCanvas,  _loanGMCtx,  _loanGMDrawing  = false;
+
+// ─── Role helpers ─────────────────────────────────────────────────────────────
+function isHRMgr() {
+  if (!user) return false;
+  const utype = user.emp_type || user.type || '';
+  const dept  = (user.deptKey || user.dept_key || user.dept || '').toLowerCase();
+  return utype === 'manager' && (dept.includes('hr') || dept.includes('human') || dept.includes('resource') || dept.includes('موارد') || dept.includes('بشري'));
+}
+function getHRFCMTokens() {
+  return employees.filter(e => {
+    const d = (e.dept_key || e.dept || '').toLowerCase();
+    return e.active && e.emp_type === 'manager' && (d.includes('hr') || d.includes('human') || d.includes('resource'));
+  }).map(e => e.fcm_token).filter(Boolean);
+}
+function getAccFCMTokens() {
+  return employees.filter(e => {
+    const d = (e.dept_key || e.dept || '').toLowerCase();
+    return e.active && e.emp_type === 'manager' && (d.includes('account') || d.includes('financ'));
+  }).map(e => e.fcm_token).filter(Boolean);
+}
+
+// ─── Load from Supabase ────────────────────────────────────────────────────────
+async function loadSalaryLoans() {
+  try {
+    const { data, error } = await sb.from('salary_loans').select('*').order('created_at', { ascending: false });
+    if (!error && data) salaryLoans = data;
+  } catch(e) { console.warn('loadSalaryLoans:', e); }
+}
+
+// ─── Main render dispatcher ────────────────────────────────────────────────────
+function renderLoans() {
+  if (!user) return;
+  const isAdm = (role === 'admin' || user.id === 'ADM-001' || user.id === '001');
+  const isAcc = isAccountingMgr();
+  const isHR  = isHRMgr();
+  const myId  = user.id || role;
+
+  document.getElementById('loanEmpView').style.display = !isAdm ? '' : 'none';
+  document.getElementById('loanHRView').style.display  = isHR  ? '' : 'none';
+  document.getElementById('loanAccView').style.display = isAcc ? '' : 'none';
+  document.getElementById('loanGMView').style.display  = isAdm ? '' : 'none';
+
+  // Employee: request button only if files_complete and no active loan
+  if (!isAdm) {
+    const me = employees.find(e => String(e.id) === String(myId));
+    const filesOk = me?.files_complete === true;
+    const active  = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
+    const reqBtn  = document.getElementById('loanRequestBtnRow');
+    if (reqBtn) reqBtn.style.display = (filesOk && !active) ? 'block' : 'none';
+    renderMyLoan(salaryLoans.filter(l => String(l.emp_id) === String(myId)));
+  }
+
+  // HR: pending loans (not their own)
+  if (isHR) {
+    const hrPending = salaryLoans.filter(l => l.status === 'pending' && String(l.emp_id) !== String(myId));
+    renderHRLoanList(hrPending);
+  }
+
+  // Accounting: hr_approved loans + approved loans for print
+  if (isAcc) {
+    const accPending = salaryLoans.filter(l => l.status === 'hr_approved' && String(l.emp_id) !== String(myId));
+    renderAccLoanList(accPending);
+    const signBtn = document.getElementById('loanAccSignBtn');
+    if (signBtn) signBtn.style.display = accPending.length ? '' : 'none';
+    const approved = salaryLoans.filter(l => l.status === 'approved');
+    const printRow = document.getElementById('loanAccPrintRow');
+    if (printRow) printRow.style.display = approved.length ? '' : 'none';
+  }
+
+  // GM: gm_pending loans
+  if (isAdm) {
+    const gmPending = salaryLoans.filter(l => l.status === 'gm_pending');
+    renderGMLoanList(gmPending);
+    const signRow = document.getElementById('loanGMSignRow');
+    if (signRow) signRow.style.display = gmPending.length ? '' : 'none';
+  }
+}
+
+// ─── Employee: my loan status ──────────────────────────────────────────────────
+function renderMyLoan(loans) {
+  const el = document.getElementById('loanMyStatus');
+  if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا يوجد قرض نشط</div>`;
+    return;
+  }
+  const statusLabel = { pending:'⏳ بانتظار مدير الموارد البشرية', hr_approved:'✅ تمت الموافقة من الموارد البشرية — بانتظار المحاسبة', gm_pending:'🔄 بانتظار المدير العام', approved:'✅ معتمد', rejected:'❌ مرفوض' };
+  const statusColor = { pending:'var(--orange)', hr_approved:'var(--blue)', gm_pending:'var(--purple)', approved:'var(--green)', rejected:'var(--red)' };
+  el.innerHTML = loans.map(l => `
+    <div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:var(--t1)">${Number(l.loan_amount).toLocaleString()} ريال</span>
+        <span style="font-size:11px;font-weight:600;color:${statusColor[l.status]||'var(--t2)'}">${statusLabel[l.status]||l.status}</span>
+      </div>
+      <div style="font-size:11px;color:var(--t2)">الخصم الشهري: <strong>${Number(l.monthly_deduction).toLocaleString()} ريال</strong> × ${l.months_to_pay} أشهر</div>
+      ${l.rejection_reason ? `<div style="font-size:11px;color:var(--red);margin-top:4px">سبب الرفض: ${l.rejection_reason}</div>` : ''}
+    </div>`).join('');
+}
+
+// ─── HR: list of pending loans ─────────────────────────────────────────────────
+function renderHRLoanList(loans) {
+  const el = document.getElementById('loanHRList');
+  if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا توجد طلبات قروض جديدة</div>`;
+    return;
+  }
+  el.innerHTML = loans.map(l => {
+    const emp = employees.find(e => String(e.id) === String(l.emp_id));
+    const salary = emp?.salary || 0;
+    const maxLoan = salary * 3;
+    return `<div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">${l.dept_label||l.dept||''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--t2);margin-bottom:10px">
+        <div>القرض: <strong style="color:var(--t1)">${Number(l.loan_amount).toLocaleString()} ريال</strong></div>
+        <div>الخصم/شهر: <strong style="color:var(--t1)">${Number(l.monthly_deduction).toLocaleString()} ريال</strong></div>
+        <div>مدة السداد: <strong style="color:var(--t1)">${l.months_to_pay} أشهر</strong></div>
+        <div>الراتب: <strong style="color:var(--t1)">${Number(salary).toLocaleString()} ريال</strong></div>
+      </div>
+      ${l.hr_note ? `<div style="font-size:11px;color:var(--t3);margin-bottom:8px">ملاحظة: ${l.hr_note}</div>` : ''}
+      <button onclick="openHRLoanReview('${l.id}')" style="width:100%;padding:9px;border-radius:9px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">مراجعة الطلب</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── Accounting: list of hr_approved loans ─────────────────────────────────────
+function renderAccLoanList(loans) {
+  const el = document.getElementById('loanAccList');
+  if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا توجد قروض للمراجعة حالياً</div>`;
+    return;
+  }
+  el.innerHTML = loans.map(l => `
+    <div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:6px">${l.dept_label||l.dept||''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--t2)">
+        <div>القرض: <strong style="color:var(--t1)">${Number(l.loan_amount).toLocaleString()} ريال</strong></div>
+        <div>الخصم/شهر: <strong style="color:var(--t1)">${Number(l.monthly_deduction).toLocaleString()} ريال</strong></div>
+        <div>المدة: <strong style="color:var(--t1)">${l.months_to_pay} أشهر</strong></div>
+        <div>موافقة HR: <strong style="color:var(--green)">✅ ${l.hr_by_name||''}</strong></div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── GM: list of gm_pending loans ─────────────────────────────────────────────
+function renderGMLoanList(loans) {
+  const el = document.getElementById('loanGMList');
+  if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا توجد قروض بانتظار موافقتك</div>`;
+    return;
+  }
+  const total = loans.reduce((s,l) => s + Number(l.loan_amount), 0);
+  el.innerHTML = `<div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#a78bfa">
+    ${loans.length} قرض — الإجمالي: ${total.toLocaleString()} ريال</div>` +
+  loans.map(l => `
+    <div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:6px">${l.dept_label||l.dept||''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;color:var(--t2)">
+        <div>القرض: <strong style="color:var(--t1)">${Number(l.loan_amount).toLocaleString()}</strong></div>
+        <div>الخصم/شهر: <strong style="color:var(--t1)">${Number(l.monthly_deduction).toLocaleString()}</strong></div>
+        <div>المدة: <strong style="color:var(--t1)">${l.months_to_pay} شهر</strong></div>
+      </div>
+      ${l.accounting_note ? `<div style="font-size:11px;color:var(--t3);margin-top:6px">ملاحظة المحاسبة: ${l.accounting_note}</div>` : ''}
+    </div>`).join('');
+}
+
+// ─── Employee: open loan request modal ───────────────────────────────────────
+function openLoanModal() {
+  const myId = user.id || role;
+  const me = employees.find(e => String(e.id) === String(myId));
+  if (!me?.files_complete) {
+    toast(t('⚠️ Your guarantee files are not complete. Contact HR.','⚠️ ملفات ضمانك غير مكتملة. تواصل مع الموارد البشرية.'));
+    return;
+  }
+  const active = salaryLoans.find(l => String(l.emp_id) === String(myId) && !['rejected'].includes(l.status));
+  if (active) { toast(t('⚠️ You already have an active loan.','⚠️ لديك قرض نشط بالفعل.')); return; }
+  const salary = me.salary || 0;
+  const maxLoan = salary * 3;
+  const info = document.getElementById('loanModalInfo');
+  if (info) info.innerHTML = `الراتب: <strong>${Number(salary).toLocaleString()} ريال</strong> — الحد الأقصى للقرض: <strong>${Number(maxLoan).toLocaleString()} ريال</strong> (3 أشهر كحد أقصى)`;
+  const calcEl = document.getElementById('loanMonthsCalc');
+  if (calcEl) calcEl.textContent = 'أدخل مبلغ القرض والخصم الشهري لحساب مدة السداد';
+  document.getElementById('loanAmountInp').value = '';
+  document.getElementById('loanDeductionInp').value = '';
+  document.getElementById('loanNoteInp').value = '';
+  openModal('loanRequestModal');
+}
+
+function recalcLoanMonths() {
+  const amount    = parseFloat(document.getElementById('loanAmountInp').value) || 0;
+  const deduction = parseFloat(document.getElementById('loanDeductionInp').value) || 0;
+  const calcEl    = document.getElementById('loanMonthsCalc');
+  if (!calcEl) return;
+  if (!amount || !deduction) { calcEl.textContent = 'أدخل المبلغ والخصم الشهري'; return; }
+  const months = Math.ceil(amount / deduction);
+  if (months > 3) {
+    calcEl.style.color = 'var(--red)';
+    calcEl.textContent = `⚠️ مدة السداد ${months} أشهر — تجاوز الحد الأقصى (3 أشهر)`;
+  } else {
+    calcEl.style.color = 'var(--green)';
+    calcEl.textContent = `✅ مدة السداد: ${months} ${months===1?'شهر':months===2?'شهران':'أشهر'} — إجمالي السداد: ${Number(amount).toLocaleString()} ريال`;
+  }
+}
+
+async function submitLoanRequest() {
+  const myId     = user.id || role;
+  const me       = employees.find(e => String(e.id) === String(myId));
+  const amount    = parseFloat(document.getElementById('loanAmountInp').value);
+  const deduction = parseFloat(document.getElementById('loanDeductionInp').value);
+  const note      = document.getElementById('loanNoteInp').value.trim();
+  if (!amount || amount <= 0) { toast(t('⚠️ Enter a valid loan amount','⚠️ أدخل مبلغ القرض')); return; }
+  if (!deduction || deduction <= 0) { toast(t('⚠️ Enter a valid monthly deduction','⚠️ أدخل الخصم الشهري')); return; }
+  const months = Math.ceil(amount / deduction);
+  if (months > 3) { toast(t('⚠️ Repayment exceeds 3 months. Increase the monthly deduction.','⚠️ مدة السداد تتجاوز 3 أشهر. زد الخصم الشهري.')); return; }
+  const salary = me?.salary || 0;
+  if (amount > salary * 3) { toast(t(`⚠️ Max loan is ${Number(salary*3).toLocaleString()} YER`,`⚠️ الحد الأقصى للقرض هو ${Number(salary*3).toLocaleString()} ريال`)); return; }
+  const now = new Date();
+  const payload = {
+    emp_id: myId, emp_name: user.name || (me?.firstName + ' ' + me?.lastName),
+    dept: me?.dept || '', dept_label: me?.deptLabel || me?.dept || '',
+    loan_amount: amount, monthly_deduction: deduction, months_to_pay: months,
+    status: 'pending',
+    cycle_month: now.getMonth() + 1, cycle_year: now.getFullYear()
+  };
+  const { error } = await sb.from('salary_loans').insert(payload);
+  if (error) { toast('❌ ' + error.message); return; }
+  closeModal('loanRequestModal');
+  toast(t('✅ Loan request submitted','✅ تم إرسال طلب القرض'));
+  await loadSalaryLoans();
+  renderLoans();
+  // Notify HR
+  const hrTokens = getHRFCMTokens();
+  if (hrTokens.length) sendPush(hrTokens, '💼 طلب قرض جديد', `${payload.emp_name} — ${Number(amount).toLocaleString()} ريال`);
+}
+
+// ─── HR: review modal ─────────────────────────────────────────────────────────
+function openHRLoanReview(loanId) {
+  const l   = salaryLoans.find(x => x.id === loanId);
+  if (!l) return;
+  const emp = employees.find(e => String(e.id) === String(l.emp_id));
+  document.getElementById('loanHRReviewId').value = loanId;
+  document.getElementById('loanHRNote').value = '';
+  const det = document.getElementById('loanHRReviewDetails');
+  if (det) det.innerHTML = `
+    <div><strong>الموظف:</strong> ${l.emp_name}</div>
+    <div><strong>القسم:</strong> ${l.dept_label||l.dept||'—'}</div>
+    <div><strong>الراتب:</strong> ${Number(emp?.salary||0).toLocaleString()} ريال</div>
+    <div><strong>مبلغ القرض:</strong> ${Number(l.loan_amount).toLocaleString()} ريال</div>
+    <div><strong>الخصم الشهري:</strong> ${Number(l.monthly_deduction).toLocaleString()} ريال</div>
+    <div><strong>مدة السداد:</strong> ${l.months_to_pay} أشهر</div>
+    <div><strong>ملفات الضمان:</strong> ${emp?.files_complete ? '✅ مكتملة' : '❌ غير مكتملة'}</div>`;
+  openModal('loanHRReviewModal');
+}
+
+async function approveHRLoan() {
+  const loanId = document.getElementById('loanHRReviewId').value;
+  const note   = document.getElementById('loanHRNote').value.trim();
+  const myId   = user.id || role;
+  const now    = new Date().toISOString();
+  const { error } = await sb.from('salary_loans').update({
+    status: 'hr_approved', hr_by_id: myId, hr_by_name: user.name, hr_at: now, hr_note: note
+  }).eq('id', loanId);
+  if (error) { toast('❌ ' + error.message); return; }
+  const local = salaryLoans.find(x => x.id === loanId);
+  if (local) { local.status = 'hr_approved'; local.hr_by_id = myId; local.hr_by_name = user.name; local.hr_at = now; local.hr_note = note; }
+  closeModal('loanHRReviewModal');
+  renderLoans();
+  toast(t('✅ Loan approved and forwarded to Accounting','✅ تمت الموافقة وأُرسل للمحاسبة'));
+  const accTokens = getAccFCMTokens();
+  const l = salaryLoans.find(x => x.id === loanId);
+  if (accTokens.length && l) sendPush(accTokens, '💼 قرض بانتظار مراجعتك', `${l.emp_name} — ${Number(l.loan_amount).toLocaleString()} ريال`);
+  await loadSalaryLoans(); renderLoans();
+}
+
+async function rejectHRLoan() {
+  const loanId = document.getElementById('loanHRReviewId').value;
+  const note   = document.getElementById('loanHRNote').value.trim();
+  const reason = note || prompt(t('Rejection reason:','سبب الرفض:')) || t('Rejected by HR','مرفوض من الموارد البشرية');
+  const myId   = user.id || role;
+  const now    = new Date().toISOString();
+  const { error } = await sb.from('salary_loans').update({
+    status: 'rejected', rejection_reason: reason, hr_by_id: myId, hr_by_name: user.name, hr_at: now
+  }).eq('id', loanId);
+  if (error) { toast('❌ ' + error.message); return; }
+  const local = salaryLoans.find(x => x.id === loanId);
+  if (local) { local.status = 'rejected'; local.rejection_reason = reason; }
+  closeModal('loanHRReviewModal');
+  renderLoans();
+  toast(t('❌ Loan request rejected','❌ تم رفض طلب القرض'));
+  const l = salaryLoans.find(x => x.id === loanId);
+  if (l) { const tok = getEmpFCMToken(l.emp_id); if (tok.length) sendPush(tok, '💼 طلب قرض مرفوض', `${reason}`); }
+  await loadSalaryLoans(); renderLoans();
+}
+
+// ─── Accounting: signature pad ────────────────────────────────────────────────
+function openAccLoanSignModal() {
+  const pending = salaryLoans.filter(l => l.status === 'hr_approved');
+  if (!pending.length) { toast(t('No loans to sign','لا توجد قروض للتوقيع')); return; }
+  const total = pending.reduce((s,l) => s + Number(l.loan_amount), 0);
+  const sumEl = document.getElementById('loanAccSignSummary');
+  if (sumEl) sumEl.innerHTML = `${pending.length} قرض — إجمالي: ${total.toLocaleString()} ريال<br>${pending.map(l=>`• ${l.emp_name}: ${Number(l.loan_amount).toLocaleString()} ريال`).join('<br>')}`;
+  document.getElementById('loanAccNote').value = '';
+  openModal('loanAccSignModal');
+  setTimeout(initLoanAccSigPad, 100);
+}
+
+function initLoanAccSigPad() {
+  _loanAccCanvas = document.getElementById('loanAccSigCanvas');
+  if (!_loanAccCanvas) return;
+  _loanAccCtx = _loanAccCanvas.getContext('2d');
+  const rect = _loanAccCanvas.getBoundingClientRect();
+  _loanAccCanvas.width = rect.width; _loanAccCanvas.height = rect.height;
+  _loanAccCtx.lineWidth = 2.5; _loanAccCtx.lineCap = 'round'; _loanAccCtx.strokeStyle = '#111';
+  const getPos = e => { const r = _loanAccCanvas.getBoundingClientRect(), s = e.touches?e.touches[0]:e; return {x:s.clientX-r.left,y:s.clientY-r.top}; };
+  _loanAccCanvas.onmousedown = _loanAccCanvas.ontouchstart = e => { e.preventDefault(); _loanAccDrawing=true; const p=getPos(e); _loanAccCtx.beginPath(); _loanAccCtx.moveTo(p.x,p.y); };
+  _loanAccCanvas.onmousemove = _loanAccCanvas.ontouchmove = e => { e.preventDefault(); if(!_loanAccDrawing)return; const p=getPos(e); _loanAccCtx.lineTo(p.x,p.y); _loanAccCtx.stroke(); };
+  _loanAccCanvas.onmouseup = _loanAccCanvas.ontouchend = () => { _loanAccDrawing=false; };
+}
+function clearLoanAccSignature() { if (_loanAccCanvas && _loanAccCtx) _loanAccCtx.clearRect(0,0,_loanAccCanvas.width,_loanAccCanvas.height); }
+function isLoanAccSigEmpty() { if (!_loanAccCanvas) return true; return !_loanAccCtx.getImageData(0,0,_loanAccCanvas.width,_loanAccCanvas.height).data.some(v=>v!==0); }
+
+async function submitAccLoanSignature() {
+  if (isLoanAccSigEmpty()) { toast(t('⚠️ Please sign first','⚠️ الرجاء التوقيع أولاً')); return; }
+  const sigData  = _loanAccCanvas.toDataURL('image/png');
+  const note     = document.getElementById('loanAccNote').value.trim();
+  const myId     = user.id || role;
+  const now      = new Date().toISOString();
+  const pending  = salaryLoans.filter(l => l.status === 'hr_approved');
+  for (const l of pending) {
+    const { error } = await sb.from('salary_loans').update({
+      status: 'gm_pending', accounting_by_id: myId, accounting_by_name: user.name,
+      accounting_at: now, accounting_note: note, acc_signature: sigData
+    }).eq('id', l.id);
+    if (!error) {
+      const loc = salaryLoans.find(x => x.id === l.id);
+      if (loc) { loc.status='gm_pending'; loc.accounting_by_id=myId; loc.accounting_by_name=user.name; loc.accounting_at=now; loc.acc_signature=sigData; }
+    }
+  }
+  closeModal('loanAccSignModal');
+  renderLoans();
+  toast(t('✅ Loans signed and sent to GM','✅ تم التوقيع وإرسال القروض للمدير العام'));
+  const gmTokens = getAdminFCMTokens();
+  if (gmTokens.length) sendPush(gmTokens, '💼 قروض بانتظار موافقتك', `${pending.length} قرض — إجمالي: ${pending.reduce((s,l)=>s+Number(l.loan_amount),0).toLocaleString()} ريال`);
+  await loadSalaryLoans(); renderLoans();
+}
+
+// ─── GM: signature pad ────────────────────────────────────────────────────────
+function openGMLoanSignModal() {
+  const pending = salaryLoans.filter(l => l.status === 'gm_pending');
+  if (!pending.length) { toast(t('No loans pending','لا توجد قروض معلقة')); return; }
+  const total = pending.reduce((s,l) => s + Number(l.loan_amount), 0);
+  const sumEl = document.getElementById('loanGMSignSummary');
+  if (sumEl) sumEl.innerHTML = `${pending.length} قرض — إجمالي: ${total.toLocaleString()} ريال<br>${pending.map(l=>`• ${l.emp_name}: ${Number(l.loan_amount).toLocaleString()} ريال`).join('<br>')}`;
+  document.getElementById('loanGMNote').value = '';
+  openModal('loanGMSignModal');
+  setTimeout(initLoanGMSigPad, 100);
+}
+
+function initLoanGMSigPad() {
+  _loanGMCanvas = document.getElementById('loanGMSigCanvas');
+  if (!_loanGMCanvas) return;
+  _loanGMCtx = _loanGMCanvas.getContext('2d');
+  const rect = _loanGMCanvas.getBoundingClientRect();
+  _loanGMCanvas.width = rect.width; _loanGMCanvas.height = rect.height;
+  _loanGMCtx.lineWidth = 2.5; _loanGMCtx.lineCap = 'round'; _loanGMCtx.strokeStyle = '#111';
+  const getPos = e => { const r = _loanGMCanvas.getBoundingClientRect(), s = e.touches?e.touches[0]:e; return {x:s.clientX-r.left,y:s.clientY-r.top}; };
+  _loanGMCanvas.onmousedown = _loanGMCanvas.ontouchstart = e => { e.preventDefault(); _loanGMDrawing=true; const p=getPos(e); _loanGMCtx.beginPath(); _loanGMCtx.moveTo(p.x,p.y); };
+  _loanGMCanvas.onmousemove = _loanGMCanvas.ontouchmove = e => { e.preventDefault(); if(!_loanGMDrawing)return; const p=getPos(e); _loanGMCtx.lineTo(p.x,p.y); _loanGMCtx.stroke(); };
+  _loanGMCanvas.onmouseup = _loanGMCanvas.ontouchend = () => { _loanGMDrawing=false; };
+}
+function clearLoanGMSignature() { if (_loanGMCanvas && _loanGMCtx) _loanGMCtx.clearRect(0,0,_loanGMCanvas.width,_loanGMCanvas.height); }
+function isLoanGMSigEmpty() { if (!_loanGMCanvas) return true; return !_loanGMCtx.getImageData(0,0,_loanGMCanvas.width,_loanGMCanvas.height).data.some(v=>v!==0); }
+
+async function submitGMLoanApproval() {
+  if (isLoanGMSigEmpty()) { toast(t('⚠️ Please sign first','⚠️ الرجاء التوقيع أولاً')); return; }
+  const sigData  = _loanGMCanvas.toDataURL('image/png');
+  const note     = document.getElementById('loanGMNote').value.trim();
+  const myId     = user.id || role;
+  const now      = new Date().toISOString();
+  const pending  = salaryLoans.filter(l => l.status === 'gm_pending');
+  for (const l of pending) {
+    const { error } = await sb.from('salary_loans').update({
+      status: 'approved', gm_by_id: myId, gm_name: user.name, gm_at: now, gm_signature: sigData
+    }).eq('id', l.id);
+    if (!error) {
+      const loc = salaryLoans.find(x => x.id === l.id);
+      if (loc) { loc.status='approved'; loc.gm_by_id=myId; loc.gm_name=user.name; loc.gm_at=now; loc.gm_signature=sigData; }
+      // Notify employee
+      const empTok = getEmpFCMToken(l.emp_id);
+      if (empTok.length) sendPush(empTok, '💼 تمت الموافقة على قرضك', `تمت الموافقة على قرضك بمبلغ ${Number(l.loan_amount).toLocaleString()} ريال`);
+    }
+  }
+  closeModal('loanGMSignModal');
+  renderLoans();
+  toast(t('✅ All loans approved','✅ تمت الموافقة على جميع القروض'));
+  // Notify Accounting Manager
+  const accTok = getAccFCMTokens();
+  if (accTok.length) sendPush(accTok, '💼 القروض معتمدة — جاهزة للطباعة', `${pending.length} قرض معتمد`);
+  await loadSalaryLoans(); renderLoans();
+  // Auto-open PDF
+  setTimeout(() => generateLoanPDF(salaryLoans.filter(l => l.status === 'approved')), 400);
+}
+
+// ─── Print approved loans (Accounting Manager) ────────────────────────────────
+function printApprovedLoans() {
+  const approved = salaryLoans.filter(l => l.status === 'approved');
+  if (!approved.length) { toast('لا توجد قروض معتمدة'); return; }
+  generateLoanPDF(approved);
+}
+
+// ─── Loan PDF (Arabic / RTL) ──────────────────────────────────────────────────
+function generateLoanPDF(loans) {
+  if (!loans || !loans.length) return;
+  const co      = getCompanyProfile();
+  const today   = new Date().toLocaleDateString('ar-YE', { day:'2-digit', month:'long', year:'numeric' });
+  const pdfLogo = co.logoLight || co.logoDark || null;
+  const logoHtml = pdfLogo ? `<img src="${pdfLogo}" style="height:60px;object-fit:contain;display:block;margin-bottom:4px">` : `<span style="font-size:32px">🏪</span>`;
+  const gmSig  = loans[0]?.gm_signature   || null;
+  const accSig = loans[0]?.acc_signature  || null;
+  const gmName = loans[0]?.gm_name        || 'المدير العام';
+  const accName= loans[0]?.accounting_by_name || 'مدير الحسابات';
+  const total  = loans.reduce((s,l) => s + Number(l.loan_amount), 0);
+
+  const rows = loans.map((l,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td class="name-cell">${l.emp_name}</td>
+      <td>${l.emp_id}</td>
+      <td class="name-cell">${l.dept_label||l.dept||'—'}</td>
+      <td class="amt">${Number(l.loan_amount).toLocaleString()} ريال</td>
+      <td class="amt">${Number(l.monthly_deduction).toLocaleString()} ريال</td>
+      <td>${l.months_to_pay} أشهر</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><title>وثيقة اعتماد القروض</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Cairo',sans-serif;direction:rtl;background:#fff;color:#1a1a1a;padding:28px;}
+  .hdr{text-align:center;border-bottom:3px solid #1a1a1a;padding-bottom:16px;margin-bottom:20px;}
+  .hdr-name{font-size:22px;font-weight:800;margin-bottom:2px;}
+  .hdr-sub{font-size:13px;color:#555;margin-bottom:6px;}
+  .doc-title{font-size:16px;font-weight:700;background:#1a1a1a;color:#fff;display:inline-block;padding:5px 24px;border-radius:4px;margin-top:8px;}
+  .meta{display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:18px;background:#f7f7f7;padding:10px 14px;border-radius:6px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
+  th{background:#1a1a1a;color:#fff;padding:9px 8px;text-align:center;font-weight:700;}
+  td{padding:8px;border-bottom:1px solid #e5e5e5;text-align:center;vertical-align:middle;}
+  tr:nth-child(even) td{background:#fafafa;}
+  .name-cell{text-align:right;padding-right:10px;}
+  .amt{font-weight:700;}
+  .total-row td{background:#f0f0f0;font-weight:800;font-size:13px;}
+  .sigs{display:flex;gap:30px;margin-top:28px;}
+  .sig-box{flex:1;border:1px solid #ccc;border-radius:8px;padding:14px;text-align:center;}
+  .sig-title{font-size:12px;font-weight:700;margin-bottom:8px;color:#333;}
+  .sig-img{width:100%;height:130px;object-fit:contain;border:1px solid #eee;border-radius:6px;background:#fafafa;}
+  .sig-name{font-size:11px;color:#555;margin-top:8px;border-top:1px solid #ddd;padding-top:6px;}
+  .note{font-size:10px;color:#888;text-align:center;margin-top:14px;}
+  @media print{body{padding:10px;}}
+</style></head><body>
+<div class="hdr">
+  ${logoHtml}
+  <div class="hdr-name">${co.nameAr}</div>
+  <div class="hdr-sub">${co.tagline}</div>
+  <div class="doc-title">وثيقة اعتماد قروض الرواتب</div>
+</div>
+<div class="meta">
+  <span>التاريخ: ${today}</span>
+  <span>عدد القروض: ${loans.length}</span>
+  <span>إجمالي القروض: ${total.toLocaleString()} ريال</span>
+</div>
+<table>
+  <thead><tr>
+    <th>#</th><th>اسم الموظف</th><th>الرقم الوظيفي</th><th>القسم</th>
+    <th>مبلغ القرض</th><th>الخصم الشهري</th><th>مدة السداد</th>
+  </tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="total-row">
+      <td colspan="4">الإجمالي</td>
+      <td class="amt">${total.toLocaleString()} ريال</td>
+      <td colspan="2">—</td>
+    </tr>
+  </tbody>
+</table>
+<div class="sigs">
+  <div class="sig-box">
+    <div class="sig-title">توقيع المدير العام</div>
+    ${gmSig ? `<img class="sig-img" src="${gmSig}">` : '<div class="sig-img" style="line-height:130px;color:#ccc;font-size:12px">لا يوجد توقيع</div>'}
+    <div class="sig-name">${gmName}</div>
+  </div>
+  <div class="sig-box">
+    <div class="sig-title">توقيع مدير الحسابات</div>
+    ${accSig ? `<img class="sig-img" src="${accSig}">` : '<div class="sig-img" style="line-height:130px;color:#ccc;font-size:12px">لا يوجد توقيع</div>'}
+    <div class="sig-name">${accName}</div>
+  </div>
+</div>
+<div class="note">يُعدّ هذا المستند وثيقة رسمية معتمدة من إدارة ${co.nameAr} — ${today}</div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
 // ─── Arabic month names for PDF ───────────────────────────────────────────
 function monthNameAr(m) {
   return ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][m] || m;
@@ -6233,8 +6879,12 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
   const sel = document.getElementById('eReportTo');
   if (!sel) return;
 
+  // Normalise for comparison — strip leading zeros so '048' == '48' == 48
+  const normId = v => /^\d+$/.test(String(v).trim()) ? String(parseInt(String(v).trim(), 10)) : String(v).trim();
+  const currentStr = normId(currentVal);
+
   // Show all supervisors and managers except self, grouped
-  const mgrs = employees.filter(e => e.active && e.id !== selfId && ['manager','supervisor'].includes(getLevel(e)))
+  const mgrs = employees.filter(e => e.active && normId(e.id) !== normId(selfId) && ['manager','supervisor'].includes(getLevel(e)))
     .sort((a,b) => {
       const la = getLevel(a), lb = getLevel(b);
       if (la !== lb) return la === 'manager' ? -1 : 1; // managers first
@@ -6243,8 +6893,8 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
 
   sel.innerHTML = `<option value="">${t('— None —','— بدون —')}</option>` +
     mgrs.map(e =>
-      `<option value="${e.id}" ${e.id === currentVal ? 'selected' : ''}>
-        ${e.firstName} ${e.lastName} · ${tr(e.role||'')} (${e.id.replace(/^[A-Z]+-/,'')})
+      `<option value="${e.id}" ${normId(e.id) === currentStr ? 'selected' : ''}>
+        ${e.firstName} ${e.lastName} · ${tr(e.role||'')} (${String(e.id).replace(/^[A-Z]+-/,'')})
       </option>`
     ).join('');
 }
@@ -6391,6 +7041,8 @@ function openEmpModal(empId) {
     document.getElementById('ePw').value = '';
     const tog = document.getElementById('empActiveToggle');
     e.active ? tog.classList.add('on') : tog.classList.remove('on');
+    const filesTog = document.getElementById('empFilesCompleteToggle');
+    if (filesTog) e.files_complete ? filesTog.classList.add('on') : filesTog.classList.remove('on');
     buildReportingDropdowns(e.supervisor_id || '', e.report_to || '', e.emp_type || '');
     populateDefaultShiftDropdown(e.defaultShift || '');
   } else {
@@ -6399,6 +7051,8 @@ function openEmpModal(empId) {
     document.getElementById('eEmpType').value = 'employee';
     document.getElementById('eStartDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('empActiveToggle').classList.add('on');
+    const filesTog2 = document.getElementById('empFilesCompleteToggle');
+    if (filesTog2) filesTog2.classList.remove('on');
     populateEmpFormDropdowns('', '');
     buildReportingDropdowns('', '', 'employee');
     populateDefaultShiftDropdown('');
@@ -6439,6 +7093,7 @@ async function saveEmployee() {
     salary: parseInt(document.getElementById('eSalary')?.value) || parseInt(document.getElementById('eSalaryHidden')?.value) || 0,
     password: document.getElementById('ePw').value || '1234',
     active: document.getElementById('empActiveToggle').classList.contains('on'),
+    files_complete: document.getElementById('empFilesCompleteToggle')?.classList.contains('on') || false,
     defaultShift: document.getElementById('eDefaultShift')?.value || null,
     init: (firstName[0] + (lastName[0] || '')).toUpperCase()
   };
@@ -6462,7 +7117,7 @@ async function saveEmployee() {
     role: data.role, emp_type: data.emp_type,
     report_to: data.report_to,
     phone: data.phone, salary: data.salary, start_date: data.startDate,
-    active: data.active, init: data.init,
+    active: data.active, init: data.init, files_complete: data.files_complete || false,
     default_shift: data.defaultShift || null,
     // Always include password so NOT NULL constraint is satisfied; default = employee's own ID
     password: pwField || data.id,
