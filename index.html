@@ -3307,7 +3307,7 @@ async function loadSupabaseData(isAdmin) {
 
     // Load employees for everyone — admins get full data, others get basic info only
     {
-      const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label,phone,salary,supervisor_id,report_to';
+      const empFields = isAdmin ? '*' : 'id,first_name,last_name,dept,dept_key,dept_label,role,emp_type,active,init,fcm_token,location,location_label,phone,salary,supervisor_id,report_to,files_complete';
       const empRes = await sb.from('employees').select(empFields).eq('active', true).order('id');
       if (empRes.data && empRes.data.length > 0) {
         employees = empRes.data.filter(e => e && e.id).map(e => ({
