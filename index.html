@@ -306,6 +306,9 @@ select.inp{appearance:none;}
 .btn-pri:active{opacity:.8;}
 .btn-sec{width:100%;padding:11px;border-radius:var(--r1);background:var(--bgc);border:1px solid var(--border);color:var(--t2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px;}
 .btn-ok{flex:1;padding:9px;border-radius:var(--r1);background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+.loan-month-btn{padding:10px 4px;border-radius:10px;background:var(--bgc);border:2px solid var(--border);color:var(--t2);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;transition:all .15s;}
+.loan-month-btn.selected{background:rgba(139,92,246,.15);border-color:#a78bfa;color:#a78bfa;}
+.loan-month-btn:active{opacity:.7;}
 .btn-no{flex:1;padding:9px;border-radius:var(--r1);background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.15);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
 .btn-ok:active{background:rgba(16,185,129,.25);}
 .btn-no:active{background:rgba(239,68,68,.2);}
@@ -2229,10 +2232,16 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <div class="mtitle" data-en="💼 Request Salary Loan" data-ar="💼 طلب قرض راتب">💼 Request Salary Loan</div>
     <div id="loanModalInfo" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);border-radius:9px;padding:9px 13px;font-size:12px;color:#a78bfa;margin-bottom:14px;"></div>
     <label class="lbl" data-en="Loan Amount (YER)" data-ar="مبلغ القرض (ريال)">Loan Amount (YER)</label>
-    <input class="inp" id="loanAmountInp" type="number" min="1000" step="500" placeholder="0" style="margin-bottom:8px" oninput="recalcLoanMonths()">
-    <label class="lbl" data-en="Monthly Deduction (YER)" data-ar="الخصم الشهري (ريال)">Monthly Deduction (YER)</label>
-    <input class="inp" id="loanDeductionInp" type="number" min="1000" step="500" placeholder="0" style="margin-bottom:4px" oninput="recalcLoanMonths()">
-    <div id="loanMonthsCalc" style="font-size:11px;color:var(--t3);margin-bottom:14px;padding:6px 10px;background:var(--bg2);border-radius:8px;"></div>
+    <input class="inp" id="loanAmountInp" type="number" min="1000" step="500" placeholder="0" style="margin-bottom:12px" oninput="recalcLoanMonths()">
+    <label class="lbl" data-en="Number of Monthly Instalments" data-ar="عدد الأقساط الشهرية">Number of Monthly Instalments</label>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      <button type="button" class="loan-month-btn" data-months="1" onclick="selectLoanMonths(1)">1<br><span style="font-size:9px;opacity:.7" data-en="month" data-ar="شهر">شهر</span></button>
+      <button type="button" class="loan-month-btn" data-months="2" onclick="selectLoanMonths(2)">2<br><span style="font-size:9px;opacity:.7" data-en="months" data-ar="شهر">شهر</span></button>
+      <button type="button" class="loan-month-btn" data-months="3" onclick="selectLoanMonths(3)">3<br><span style="font-size:9px;opacity:.7" data-en="months" data-ar="أشهر">أشهر</span></button>
+      <button type="button" class="loan-month-btn" data-months="4" onclick="selectLoanMonths(4)">4<br><span style="font-size:9px;opacity:.7" data-en="months" data-ar="أشهر">أشهر</span></button>
+    </div>
+    <input type="hidden" id="loanDeductionInp">
+    <div id="loanMonthsCalc" style="font-size:12px;color:var(--t3);margin-bottom:14px;padding:8px 12px;background:var(--bg2);border-radius:8px;min-height:34px"></div>
     <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
     <input class="inp" id="loanNoteInp" type="text" placeholder="..." style="margin-bottom:0">
     <button class="btn-pri" onclick="submitLoanRequest()" data-en="Submit Loan Request" data-ar="إرسال طلب القرض">Submit Loan Request</button>
@@ -6110,29 +6119,36 @@ function openLoanModal() {
   const maxLoan = salary * 1;
   const info = document.getElementById('loanModalInfo');
   if (info) info.innerHTML = `الراتب: <strong>${Number(salary).toLocaleString()} ريال</strong> — الحد الأقصى للقرض: <strong>${Number(maxLoan).toLocaleString()} ريال</strong> (راتب شهر واحد — حد أقصى 4 أشهر للسداد)`;
+  _selectedLoanMonths = 0;
+  document.querySelectorAll('.loan-month-btn').forEach(b => b.classList.remove('selected'));
   const calcEl = document.getElementById('loanMonthsCalc');
-  if (calcEl) calcEl.textContent = 'أدخل مبلغ القرض والخصم الشهري لحساب مدة السداد';
+  if (calcEl) { calcEl.style.color = 'var(--t3)'; calcEl.textContent = 'اختر عدد الأقساط وأدخل مبلغ القرض'; }
   document.getElementById('loanAmountInp').value = '';
   document.getElementById('loanDeductionInp').value = '';
   document.getElementById('loanNoteInp').value = '';
   openModal('loanRequestModal');
 }
 
+let _selectedLoanMonths = 0;
+
+function selectLoanMonths(n) {
+  _selectedLoanMonths = n;
+  document.querySelectorAll('.loan-month-btn').forEach(b => b.classList.toggle('selected', Number(b.dataset.months) === n));
+  recalcLoanMonths();
+}
+
 function recalcLoanMonths() {
-  const amount    = parseFloat(document.getElementById('loanAmountInp').value) || 0;
-  const deduction = parseFloat(document.getElementById('loanDeductionInp').value) || 0;
-  const calcEl    = document.getElementById('loanMonthsCalc');
+  const amount  = parseFloat(document.getElementById('loanAmountInp').value) || 0;
+  const months  = _selectedLoanMonths;
+  const calcEl  = document.getElementById('loanMonthsCalc');
   if (!calcEl) return;
-  if (!amount || !deduction) { calcEl.textContent = 'أدخل المبلغ والخصم الشهري'; return; }
-  const months = Math.ceil(amount / deduction);
-  const monthWord = months === 1 ? 'شهر' : months === 2 ? 'شهران' : 'أشهر';
-  if (months > 4) {
-    calcEl.style.color = 'var(--red)';
-    calcEl.textContent = `⚠️ مدة السداد ${months} أشهر — تجاوز الحد الأقصى (4 أشهر)`;
-  } else {
-    calcEl.style.color = 'var(--green)';
-    calcEl.textContent = `✅ مدة السداد: ${months} ${monthWord} — إجمالي السداد: ${Number(amount).toLocaleString()} ريال`;
-  }
+  if (!amount && !months) { calcEl.style.color = 'var(--t3)'; calcEl.textContent = 'اختر عدد الأقساط وأدخل مبلغ القرض'; return; }
+  if (!amount) { calcEl.style.color = 'var(--t3)'; calcEl.textContent = 'أدخل مبلغ القرض'; return; }
+  if (!months) { calcEl.style.color = 'var(--t3)'; calcEl.textContent = 'اختر عدد الأقساط الشهرية'; return; }
+  const deduction = Math.ceil(amount / months);
+  document.getElementById('loanDeductionInp').value = deduction;
+  calcEl.style.color = 'var(--green)';
+  calcEl.textContent = `✅ القسط الشهري: ${Number(deduction).toLocaleString()} ريال × ${months} ${months === 1 ? 'شهر' : 'أشهر'} = ${Number(amount).toLocaleString()} ريال`;
 }
 
 async function submitLoanRequest() {
@@ -6142,9 +6158,9 @@ async function submitLoanRequest() {
   const deduction = parseFloat(document.getElementById('loanDeductionInp').value);
   const note      = document.getElementById('loanNoteInp').value.trim();
   if (!amount || amount <= 0) { toast(t('⚠️ Enter a valid loan amount','⚠️ أدخل مبلغ القرض')); return; }
-  if (!deduction || deduction <= 0) { toast(t('⚠️ Enter a valid monthly deduction','⚠️ أدخل الخصم الشهري')); return; }
-  const months = Math.ceil(amount / deduction);
-  if (months > 4) { toast(t('⚠️ Repayment exceeds 4 months. Increase the monthly deduction.','⚠️ مدة السداد تتجاوز 4 أشهر. زد الخصم الشهري.')); return; }
+  const months = _selectedLoanMonths;
+  if (!months) { toast(t('⚠️ Select number of monthly instalments','⚠️ اختر عدد الأقساط الشهرية')); return; }
+  const deduction = Math.ceil(amount / months);
   const salary = me?.salary || 0;
   if (amount > salary) { toast(t(`⚠️ Max loan is your monthly salary: ${Number(salary).toLocaleString()} YER`,`⚠️ الحد الأقصى للقرض هو راتبك الشهري: ${Number(salary).toLocaleString()} ريال`)); return; }
   const now = new Date();
