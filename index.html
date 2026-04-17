@@ -1970,7 +1970,9 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     <!-- Dropdown menu -->
     <div id="groupMenuDropdown" style="display:none;position:absolute;top:56px;right:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:200;min-width:180px">
       <div onclick="openManageMembersModal()" style="padding:11px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><span>👥</span> Manage Members</div>
-      <div onclick="unpinGroupMessage()" style="padding:11px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px" id="unpinMenuItem"><span>📌</span> Unpin Message</div>
+      <div onclick="unpinGroupMessage()" style="padding:11px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px" id="unpinMenuItem"><span>📌</span> Unpin Message</div>
+      <div id="muteGroupMenuItem" onclick="toggleMuteGroup()" style="padding:11px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px"><span id="muteGroupIcon">🔔</span> <span id="muteGroupLabel">Mute Notifications</span></div>
+      <div id="leaveGroupMenuItem" onclick="leaveGroup()" style="padding:11px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;color:#e55"><span>🚪</span> Leave Group</div>
     </div>
   </div>
   <!-- Pinned message banner (hidden by default) -->
@@ -1983,6 +1985,10 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       </div>
     </div>
   </div>
+  <!-- Read-only bar shown for non-posting members in announcement groups -->
+  <div id="announceReadonlyBar" style="display:none;background:rgba(255,193,40,.07);border-top:1px solid rgba(255,193,40,.2);padding:10px 16px;text-align:center;font-size:12px;color:var(--t3)">
+    📢 This is an announcement group — only managers and supervisors can post
+  </div>
   <div class="chat-msgs" id="chatMsgsEl"></div>
   <div class="chat-input-row">
     <div id="filePendingBar" style="display:none" class="file-pending">
@@ -1990,9 +1996,9 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <span class="fp-name" id="filePendingName"></span>
       <button class="fp-rm" onclick="removePendingFile()">✕</button>
     </div>
-    <div class="chat-input-inner">
+    <div class="chat-input-inner" id="chatInputInner">
       <input type="file" id="fileInput" style="display:none" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.mp4,.mov" onchange="attachFile(this)">
-      <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
+      <button id="chatAttachBtn" class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
       <input class="chat-inp" type="text" id="chatInpEl" data-ph-en="Type a message..." data-ph-ar="اكتب رسالة..." placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
       <button class="send-btn" onclick="sendMsg()">➤</button>
     </div>
@@ -4983,6 +4989,18 @@ let _pendingFile = null;
 function attachFile(input) {
   const file = input.files[0];
   if (!file) return;
+  // Check group attach permission
+  if (activeGroupId) {
+    const g = groups.find(gr => gr.id === activeGroupId);
+    if (g) {
+      const perms = getGroupSendPerms(g);
+      if (!perms.canAttach) {
+        toast('⚠️ ' + t('Only managers and supervisors can send attachments.','فقط المدراء والمشرفون يمكنهم إرسال المرفقات.'));
+        input.value = '';
+        return;
+      }
+    }
+  }
   if (file.size > 20 * 1024 * 1024) { toast('⚠️ ' + t('File too large (max 20MB)','الملف كبير جداً (الحد 20MB)')); input.value=''; return; }
   _pendingFile = file;
   document.getElementById('filePendingName').textContent = file.name;
@@ -5037,6 +5055,16 @@ async function sendMsg() {
   const txt = inp.value.trim();
   if (!txt && !_pendingFile) return;
 
+  // Enforce group send permissions
+  if (activeGroupId) {
+    const g = groups.find(gr => gr.id === activeGroupId);
+    if (g) {
+      const perms = getGroupSendPerms(g);
+      if (!perms.canSend) { toast('⚠️ You cannot send messages in this group.'); return; }
+      if (_pendingFile && !perms.canAttach) { toast('⚠️ Only managers and supervisors can send attachments.'); removePendingFile(); return; }
+    }
+  }
+
   if (_pendingFile) {
     await _sendFileMsg(_pendingFile, txt);
     inp.value = '';
@@ -5052,31 +5080,55 @@ async function sendMsg() {
   // For group chats: push into CHATS with sender metadata so role highlight is applied
   if (activeGroupId && CHATS['grp-' + activeGroupId]) {
     const senderType = user?.emp_type || user?.type || 'employee';
-    CHATS['grp-' + activeGroupId].msgs.push({
+    const msgObj = {
       rx: false, text: txt, t: now,
       senderId: user?.id || role,
       senderName: user?.name || '',
-      senderType
-    });
+      senderType,
+      createdAt: new Date().toISOString()
+    };
+    CHATS['grp-' + activeGroupId].msgs.push(msgObj);
     renderGroupMessages(activeGroupId);
     msgs.scrollTop = msgs.scrollHeight;
+    // Save to Supabase and store row ID back on the msgObj
+    if (user) {
+      sb.from('messages').insert({
+        chat_id: activeChat,
+        sender_id: user.id || role,
+        sender_name: user.name,
+        body: txt,
+        seen_by: [user.id || role]
+      }).select('id').single()
+        .then(({ data, error }) => {
+          if (error) console.warn('Supabase sendMsg failed:', error);
+          else if (data?.id) msgObj._sbId = data.id;
+        });
+    }
   } else {
     // Regular 1-to-1 chat: direct DOM append
     msgs.innerHTML += `<div class="bubble tx">${txt}<span class="bt">${now}</span></div>`;
     msgs.scrollTop = msgs.scrollHeight;
-  }
-
-  if (activeChat && user) {
-    sb.from('messages').insert({
-      chat_id: activeChat,
-      sender_id: user.id || role,
-      sender_name: user.name,
-      body: txt
-    }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
+    if (activeChat && user) {
+      sb.from('messages').insert({
+        chat_id: activeChat,
+        sender_id: user.id || role,
+        sender_name: user.name,
+        body: txt
+      }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
+    }
   }
 }
 
 async function _sendFileMsg(file, caption) {
+  // Enforce attach permission
+  if (activeGroupId) {
+    const g = groups.find(gr => gr.id === activeGroupId);
+    if (g) {
+      const perms = getGroupSendPerms(g);
+      if (!perms.canAttach) { toast('⚠️ Only managers and supervisors can send attachments.'); return; }
+    }
+  }
+
   const msgs = document.getElementById('chatMsgsEl');
   const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   const tmpId = 'fup-' + Date.now();
@@ -5093,27 +5145,40 @@ async function _sendFileMsg(file, caption) {
     // For group chats: push into CHATS with sender metadata and re-render
     if (activeGroupId && CHATS['grp-' + activeGroupId]) {
       const senderType = user?.emp_type || user?.type || 'employee';
-      CHATS['grp-' + activeGroupId].msgs.push({
+      const msgObj = {
         rx: false, text: body, t: now,
         senderId: user?.id || role,
         senderName: user?.name || '',
-        senderType
-      });
+        senderType,
+        createdAt: new Date().toISOString()
+      };
+      CHATS['grp-' + activeGroupId].msgs.push(msgObj);
       // Remove the tmp placeholder and re-render
       const tmpEl = document.getElementById(tmpId);
       if (tmpEl) tmpEl.remove();
       renderGroupMessages(activeGroupId);
+      // Save to Supabase and store row ID
+      if (user) {
+        sb.from('messages').insert({
+          chat_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, body, seen_by: [user.id||role]
+        }).select('id').single()
+          .then(({ data, error }) => {
+            if (error) console.warn('sendFileMsg failed:', error);
+            else if (data?.id) msgObj._sbId = data.id;
+          });
+      }
     } else {
       const tmpEl = document.getElementById(tmpId);
       if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
+      if (activeChat && user) {
+        sb.from('messages').insert({
+          chat_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, body
+        }).then(({error}) => { if (error) console.warn('sendFileMsg failed:', error); });
+      }
     }
     msgs.scrollTop = msgs.scrollHeight;
-    if (activeChat && user) {
-      sb.from('messages').insert({
-        chat_id: activeChat, sender_id: user.id||role,
-        sender_name: user.name, body
-      }).then(({error}) => { if (error) console.warn('sendFileMsg failed:', error); });
-    }
   } catch(e) {
     const tmpEl = document.getElementById(tmpId);
     if (tmpEl) tmpEl.innerHTML = `❌ ${t('Upload failed','فشل الرفع')}: ${e.message}<span class="bt">${now}</span>`;
@@ -7964,17 +8029,158 @@ function renderSettingGroups() {
 }
 
 // ─── RESOLVE GROUP MEMBERS ────────────────────────────────────────────────────
+// dept_key values in Supabase: accounts, cashiers, treasury, dataentry,
+// purchasing, transfers, sales, supervisors, store_staff, merchandising,
+// receiving, stockcontrol, expirymonitoring, cctvteam, securityguards,
+// office_supervision, office_hr, office_marketing, office_maintenance
 function resolveGroupMembers(g) {
-  if (g.type === 'all') return employees.filter(e => e.dept !== 'admin' && e.active);
-  if (g.type === 'dept_gf')        return employees.filter(e => e.dept === 'gf' && e.active);
-  if (g.type === 'dept_warehouse')  return employees.filter(e => e.dept === 'warehouse' && e.active);
-  if (g.type === 'dept_sf')         return employees.filter(e => e.dept === 'sf' && e.active);
-  if (g.type === 'dept_restaurant') return employees.filter(e => e.dept === 'restaurant' && e.active);
-  if (g.type === 'dept_security')   return employees.filter(e => e.dept === 'security' && e.active);
-  if (g.type === 'dept_office')     return employees.filter(e => e.dept.startsWith('office_') && e.active);
-  if (g.type === 'dept_managers')   return employees.filter(e => ['Store Manager','Warehouse Manager','HR Manager','Head of Supervision'].includes(e.role) && e.active);
+  if (g.type === 'all')
+    return employees.filter(e => e.emp_type !== 'admin' && e.active);
+
+  if (g.type === 'dept_gf')
+    return employees.filter(e => ['cashiers','sales','supervisors','store_staff','merchandising'].includes(e.dept_key) && e.active);
+
+  if (g.type === 'dept_warehouse')
+    return employees.filter(e => ['receiving','stockcontrol','expirymonitoring','transfers','purchasing'].includes(e.dept_key) && e.active);
+
+  if (g.type === 'dept_sf')
+    return employees.filter(e => ['sales','store_staff'].includes(e.dept_key) && e.active);
+
+  if (g.type === 'dept_restaurant')
+    return employees.filter(e => e.dept_key === 'restaurant' && e.active);
+
+  if (g.type === 'dept_security')
+    return employees.filter(e => ['securityguards','cctvteam'].includes(e.dept_key) && e.active);
+
+  if (g.type === 'dept_office')
+    return employees.filter(e => ['accounts','treasury','dataentry','office_supervision','office_hr','office_marketing','office_maintenance'].includes(e.dept_key) && e.active);
+
+  if (g.type === 'dept_managers')
+    return employees.filter(e => (e.emp_type === 'manager' || e.emp_type === 'admin') && e.active);
+
   // custom — use members array
-  return employees.filter(e => g.members.includes(e.id) && e.active);
+  return employees.filter(e => (g.members || []).includes(e.id) && e.active);
+}
+
+// ─── GROUP MESSAGING PERMISSIONS ─────────────────────────────────────────────
+// Returns { canSend, canAttach, isAnnounce, isAllStaff }
+// isAnnounce → dept groups: manager/sup of that dept posts; employees read-only
+// isAllStaff → type 'all': everyone sends text, nobody attaches
+function getGroupSendPerms(g) {
+  if (!g || !user) return { canSend:false, canAttach:false, isAnnounce:false, isAllStaff:false };
+  const myType  = user.emp_type || user.type || 'employee';
+  const isAdmin = myType === 'admin' || user.id === 'ADM-001';
+  const isMgr   = isAdmin || myType === 'manager';
+  const isSup   = isMgr  || ['supervisor','acc_mgr','security_sup'].includes(myType);
+
+  // ALL STAFF — everyone texts, nobody attaches
+  if (g.type === 'all') {
+    return { canSend:true, canAttach:false, isAnnounce:false, isAllStaff:true };
+  }
+
+  // MANAGERS GROUP — managers + admin only; text and attach
+  if (g.type === 'dept_managers') {
+    return { canSend:isMgr, canAttach:isMgr, isAnnounce:false, isAllStaff:false };
+  }
+
+  // DEPT / ANNOUNCEMENT GROUPS — supervisor+ posts, employees read-only
+  if (g.type && g.type.startsWith('dept_')) {
+    // Check if user is maintainer of this group (always allowed to post)
+    const isMaintainer = g.maintainerId && normId(g.maintainerId) === normId(user.id || role);
+    const canPost = isSup || isMaintainer;
+    return { canSend:canPost, canAttach:canPost, isAnnounce:true, isAllStaff:false };
+  }
+
+  // CUSTOM GROUPS — everyone texts; managers/supervisors attach
+  return { canSend:true, canAttach:isSup, isAnnounce:false, isAllStaff:false };
+}
+
+// ─── GROUP MUTE STATE (persisted in localStorage) ────────────────────────────
+function isGroupMuted(groupId) {
+  try { return JSON.parse(localStorage.getItem('mutedGroups') || '[]').includes(groupId); } catch { return false; }
+}
+function setGroupMuted(groupId, muted) {
+  try {
+    let arr = JSON.parse(localStorage.getItem('mutedGroups') || '[]');
+    arr = arr.filter(id => id !== groupId);
+    if (muted) arr.push(groupId);
+    localStorage.setItem('mutedGroups', JSON.stringify(arr));
+  } catch {}
+}
+
+// ─── READ RECEIPTS ────────────────────────────────────────────────────────────
+// Track which messages each user has seen using messages.seen_by (JSONB array)
+// _groupReads[groupId] = Set of message IDs (Supabase row IDs) this user has seen
+let _groupReads = {};
+
+async function markGroupRead(groupId) {
+  if (!user || !groupId) return;
+  const myId = user.id || role;
+  // Mark all messages in this group as seen by this user via Supabase RPC or update
+  // We use a simple approach: update all messages in the chat where our ID is not in seen_by
+  try {
+    // Get messages for this group where we haven't read yet
+    const { data: unread } = await sb
+      .from('messages')
+      .select('id, seen_by')
+      .eq('chat_id', 'grp-' + groupId)
+      .not('seen_by', 'cs', JSON.stringify([myId]));
+
+    if (!unread || !unread.length) return;
+    // Update each unread message
+    for (const msg of unread) {
+      const seenBy = Array.isArray(msg.seen_by) ? msg.seen_by : [];
+      if (!seenBy.includes(myId)) {
+        await sb.from('messages').update({ seen_by: [...seenBy, myId] }).eq('id', msg.id);
+      }
+    }
+  } catch(e) { /* non-critical */ }
+}
+
+async function getReadCount(groupId, msgSupabaseId) {
+  if (!msgSupabaseId) return { seen:0, total:0 };
+  try {
+    const { data } = await sb.from('messages').select('seen_by').eq('id', msgSupabaseId).single();
+    const g = groups.find(gr => gr.id === groupId);
+    const members = g ? resolveGroupMembers(g) : [];
+    const seen = Array.isArray(data?.seen_by) ? data.seen_by.length : 0;
+    return { seen, total: members.length };
+  } catch { return { seen:0, total:0 }; }
+}
+
+async function showReadReceiptModal(groupId, msgIdx) {
+  const convo = CHATS['grp-' + groupId];
+  const g = groups.find(gr => gr.id === groupId);
+  if (!convo || !g) return;
+  const msg = convo.msgs[msgIdx];
+  if (!msg) return;
+
+  const members = resolveGroupMembers(g);
+  // Try to fetch seen_by from Supabase using the stored msgId
+  let seenIds = [];
+  if (msg._sbId) {
+    const { data } = await sb.from('messages').select('seen_by').eq('id', msg._sbId).single().catch(() => ({ data: null }));
+    seenIds = Array.isArray(data?.seen_by) ? data.seen_by : [];
+  }
+
+  const readList  = members.filter(e => seenIds.includes(e.id));
+  const unreadList = members.filter(e => !seenIds.includes(e.id) && e.id !== (user?.id || role));
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.style.cssText = 'display:flex;z-index:10000';
+  modal.innerHTML = `
+    <div class="modal" style="max-height:80vh;overflow-y:auto">
+      <div class="mhandle"></div>
+      <div class="mtitle">👁 Read Receipts</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:12px;max-height:50px;overflow:hidden;text-overflow:ellipsis">${msg.text ? msg.text.substring(0,80) : 'Attachment'}${msg.text?.length > 80 ? '…' : ''}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:6px">✅ Read (${readList.length})</div>
+      ${readList.length ? readList.map(e => `<div style="padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">${e.firstName} ${e.lastName} <span style="font-size:10px;color:var(--t3)">${e.role||''}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);padding:6px 0">No one yet</div>'}
+      <div style="font-size:12px;font-weight:600;color:var(--t3);margin:10px 0 6px">⏳ Not yet read (${unreadList.length})</div>
+      ${unreadList.length ? unreadList.map(e => `<div style="padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">${e.firstName} ${e.lastName} <span style="font-size:10px;color:var(--t3)">${e.role||''}</span></div>`).join('') : '<div style="font-size:12px;color:var(--t3);padding:6px 0">Everyone has read this</div>'}
+      <button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:14px">Close</button>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 // ─── OPEN GROUP MODAL ────────────────────────────────────────────────────────
@@ -10190,10 +10396,11 @@ renderChatList = function() {
       const cnt = resolveGroupMembers(g).length;
       const grpName = lang === 'ar' ? (g.nameAr || g.name) : g.name;
       const grpDesc = lang === 'ar' ? (g.descAr || g.desc) : g.desc;
+      const muteTag = isGroupMuted(g.id) ? ' 🔕' : '';
       return `<div class="chat-row" onclick="openGroupChat('${g.id}')">
         <div class="chat-av-sm b" style="font-size:20px">${g.icon}</div>
         <div class="chat-info">
-          <div class="chat-name">${grpName}</div>
+          <div class="chat-name">${grpName}${muteTag}</div>
           <div class="chat-prev">${grpDesc || cnt + t(' members',' عضو')}</div>
         </div>
         <div class="chat-meta">
@@ -10238,15 +10445,38 @@ function openGroupChat(groupId) {
   const subLine = members.length + ' members' + (maintainer ? ` · 👑 ${maintainer.firstName} ${maintainer.lastName}` : '');
   document.getElementById('chatSubEl').textContent = subLine;
 
-  // Show ⋮ menu button for admin and maintainer
-  const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
+  // Show ⋮ menu button for everyone in group chats (leave/mute available to all)
   const actionsBtn = document.getElementById('groupActionsBtn');
-  if (actionsBtn) actionsBtn.style.display = isAdminOrMaintainer ? 'flex' : 'none';
+  if (actionsBtn) actionsBtn.style.display = 'flex';
+
+  // Show/hide admin-only menu items
+  const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
+  const manageMembersItem = document.querySelector('[onclick="openManageMembersModal()"]');
+  if (manageMembersItem) manageMembersItem.style.display = isAdminOrMaintainer ? 'flex' : 'none';
+
+  // Leave/mute: hidden for All Staff group
+  const isAllStaff = g.type === 'all';
+  const leaveItem = document.getElementById('leaveGroupMenuItem');
+  const muteItem  = document.getElementById('muteGroupMenuItem');
+  // Managers group — no leave either (auto-resolved group)
+  const canLeave  = !isAllStaff && g.type === 'custom';
+  if (leaveItem) leaveItem.style.display = canLeave ? 'flex' : 'none';
+  if (muteItem)  muteItem.style.display  = isAllStaff ? 'none' : 'flex';
+
+  // Update mute toggle label
+  const muted = isGroupMuted(groupId);
+  const muteIcon  = document.getElementById('muteGroupIcon');
+  const muteLabel = document.getElementById('muteGroupLabel');
+  if (muteIcon)  muteIcon.textContent  = muted ? '🔕' : '🔔';
+  if (muteLabel) muteLabel.textContent = muted ? 'Unmute Notifications' : 'Mute Notifications';
 
   // Pinned banner
   updatePinnedBanner(g);
 
-  // Render messages with pin button for admin/maintainer
+  // Apply send/attach permissions for the current user
+  applyGroupChatPerms(groupId);
+
+  // Render messages
   renderGroupMessages(groupId);
 
   document.getElementById('chatPanel').classList.add('open');
@@ -10254,6 +10484,64 @@ function openGroupChat(groupId) {
     const msgs = document.getElementById('chatMsgsEl');
     if (msgs) msgs.scrollTop = msgs.scrollHeight;
   }, 50);
+
+  // Mark all messages as read in background
+  markGroupRead(groupId);
+}
+
+// ─── APPLY GROUP CHAT PERMISSIONS ────────────────────────────────────────────
+function applyGroupChatPerms(groupId) {
+  const g = groups.find(gr => gr.id === groupId);
+  if (!g) return;
+  const perms = getGroupSendPerms(g);
+
+  const attachBtn   = document.getElementById('chatAttachBtn');
+  const inputInner  = document.getElementById('chatInputInner');
+  const readonlyBar = document.getElementById('announceReadonlyBar');
+  const filePending = document.getElementById('filePendingBar');
+
+  if (readonlyBar) readonlyBar.style.display = (perms.isAnnounce && !perms.canSend) ? 'block' : 'none';
+  if (inputInner)  inputInner.style.display  = perms.canSend ? 'flex' : 'none';
+  if (filePending && !perms.canSend) { filePending.style.display = 'none'; }
+  if (attachBtn)   attachBtn.style.display   = perms.canAttach ? 'inline-flex' : 'none';
+}
+
+// ─── LEAVE GROUP ──────────────────────────────────────────────────────────────
+async function leaveGroup() {
+  toggleGroupMenu(); // close dropdown
+  if (!activeGroupId || !user) return;
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+  if (g.type === 'all') { toast('⚠️ You cannot leave the All Staff group.'); return; }
+  if (g.type !== 'custom') { toast('⚠️ You cannot leave department groups.'); return; }
+  if (!confirm('Leave "' + g.name + '"? You will stop receiving messages from this group.')) return;
+  // Remove from members in Supabase
+  const newMembers = (g.members || []).filter(id => id !== (user.id || role));
+  const { error } = await sb.from('groups').update({ members: newMembers }).eq('id', activeGroupId);
+  if (error) { toast('❌ Could not leave group: ' + error.message); return; }
+  g.members = newMembers;
+  // Close chat
+  document.getElementById('chatPanel').classList.remove('open');
+  activeGroupId = null;
+  activeChat = null;
+  renderChatList();
+  toast('✅ You have left "' + g.name + '"');
+}
+
+// ─── MUTE / UNMUTE GROUP ──────────────────────────────────────────────────────
+function toggleMuteGroup() {
+  toggleGroupMenu(); // close dropdown
+  if (!activeGroupId) return;
+  const g = groups.find(gr => gr.id === activeGroupId);
+  if (!g) return;
+  if (g.type === 'all') { toast('⚠️ Notifications for All Staff cannot be silenced.'); return; }
+  const wasMuted = isGroupMuted(activeGroupId);
+  setGroupMuted(activeGroupId, !wasMuted);
+  const muteIcon  = document.getElementById('muteGroupIcon');
+  const muteLabel = document.getElementById('muteGroupLabel');
+  if (muteIcon)  muteIcon.textContent  = !wasMuted ? '🔕' : '🔔';
+  if (muteLabel) muteLabel.textContent = !wasMuted ? 'Unmute Notifications' : 'Mute Notifications';
+  toast(!wasMuted ? '🔕 Notifications muted for "' + g.name + '"' : '🔔 Notifications unmuted for "' + g.name + '"');
 }
 
 // Returns 'manager' | 'supervisor' | 'employee' from any emp_type value
@@ -10269,6 +10557,9 @@ function renderGroupMessages(groupId) {
   const convo = CHATS['grp-' + groupId];
   if (!convo || !g) return;
   const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
+  const myType = user?.emp_type || user?.type || 'employee';
+  const isMgrOrSup = ['admin','manager','supervisor','acc_mgr','security_sup'].includes(myType);
+  const totalMembers = resolveGroupMembers(g).length;
   const msgs = document.getElementById('chatMsgsEl');
   if (!msgs) return;
   msgs.innerHTML = (convo.msgs || []).map((m, idx) => {
@@ -10293,10 +10584,21 @@ function renderGroupMessages(groupId) {
       senderRow = `<div class="msg-sender-row"><span class="msg-sender-name">${m.senderName}</span>${badge}</div>`;
     }
 
+    // Read receipt: show 👁 X/Y on manager/supervisor messages sent by the current user
+    // (tx messages from this session where senderType is manager/sup)
+    let readReceiptBtn = '';
+    if (!m.rx && isMgrOrSup && lvl !== 'employee' && m._sbId) {
+      // Async: show a placeholder that updates on click
+      readReceiptBtn = `<button onclick="showReadReceiptModal('${groupId}',${idx})" title="View read receipts" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:2px 4px;opacity:0.8;white-space:nowrap" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">👁 ${totalMembers > 0 ? '?/'+totalMembers : ''}</button>`;
+    } else if (!m.rx && isMgrOrSup && lvl !== 'employee' && !m._sbId && m.createdAt) {
+      // Message not yet saved to Supabase or ID not retrieved yet
+      readReceiptBtn = `<span style="font-size:10px;color:var(--t3);opacity:0.6">👁 sending…</span>`;
+    }
+
     return `<div class="bubble ${side} ${hlClass}" id="groupmsg-${idx}" style="${isPinned ? 'outline:1px solid rgba(255,193,40,.4);' : ''}">
       ${senderRow}${parseMsgBody(body)}
       <span class="bt">${m.t}</span>
-      ${pinBtn}
+      ${pinBtn}${readReceiptBtn}
     </div>`;
   }).join('');
 }
