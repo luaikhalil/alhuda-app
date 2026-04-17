@@ -1617,14 +1617,6 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
           <div id="loanMyStatus"></div>
         </div>
 
-        <!-- HR Manager view -->
-        <div id="loanHRView" style="display:none">
-          <div class="adv-section-hdr">
-            <div class="stitle" style="margin:0" data-en="LOAN REQUESTS" data-ar="طلبات القروض">LOAN REQUESTS</div>
-          </div>
-          <div id="loanHRList"></div>
-        </div>
-
         <!-- Accounting Manager view -->
         <div id="loanAccView" style="display:none">
           <div class="adv-section-hdr">
@@ -2090,7 +2082,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         </div>
         <!-- Leave chain explanation -->
         <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.15);border-radius:var(--r1);padding:10px 12px;margin:12px 0;font-size:11px;color:var(--t2)">
-          ⚠️ <span data-en="Leave requests must be approved by your direct manager first, then forwarded to HR." data-ar="يجب الموافقة على طلبات الإجازة من مديرك المباشر أولاً، ثم تُحال إلى الموارد البشرية.">Leave requests must be approved by your direct manager first, then forwarded to HR.</span>
+          ⚠️ <span data-en="Leave requests go to your direct manager first, then HR Manager for final approval." data-ar="تذهب طلبات الإجازة إلى مديرك المباشر أولاً، ثم إلى مسؤول الموارد البشرية للموافقة النهائية.">Leave requests go to your direct manager first, then HR Manager for final approval.</span>
         </div>
       </div>
 
@@ -2266,22 +2258,6 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
 </div>
 
 <!-- ══ HR LOAN REVIEW MODAL ══ -->
-<div class="modal-bg" id="loanHRReviewModal">
-  <div class="modal">
-    <div class="mhandle"></div>
-    <div class="mtitle" data-en="💼 Loan Review" data-ar="💼 مراجعة القرض">💼 Loan Review</div>
-    <input type="hidden" id="loanHRReviewId">
-    <div id="loanHRReviewDetails" style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.7"></div>
-    <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
-    <input class="inp" id="loanHRNote" type="text" placeholder="..." style="margin-bottom:12px">
-    <div style="display:flex;gap:8px">
-      <button class="btn-pri" style="flex:1;background:linear-gradient(135deg,#4ade80,#16a34a)" onclick="approveHRLoan()" data-en="✅ Approve" data-ar="✅ موافقة">✅ Approve</button>
-      <button class="btn-sec" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:var(--red)" onclick="rejectHRLoan()" data-en="❌ Reject" data-ar="❌ رفض">❌ Reject</button>
-    </div>
-    <button class="btn-sec" onclick="closeModal('loanHRReviewModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-  </div>
-</div>
-
 <!-- ══ ACCOUNTING LOAN SIGNATURE MODAL ══ -->
 <div class="modal-bg" id="loanAccSignModal">
   <div class="modal">
@@ -3050,7 +3026,6 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <select class="inp" id="reqEditStatus" style="margin-bottom:0">
         <option value="pending">Pending</option>
         <option value="pending_manager">Pending Manager Approval</option>
-        <option value="pending_hr">Pending HR Approval</option>
         <option value="in_progress">In Progress</option>
         <option value="resolved">Resolved</option>
         <option value="approved">Approved</option>
@@ -3137,6 +3112,20 @@ let _reqPage = 1;   // same for admin requests
 const SUPA_URL = 'https://vecqselsvubtqxzllonk.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlY3FzZWxzdnVidHF4emxsb25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NzY3ODIsImV4cCI6MjA5MTI1Mjc4Mn0.x9HJfCFFlJ1nryMTT9tEMTmfi4qpjNFUhLKDAp9A14c';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ─── UTILITIES ────────────────────────────────────────────────────────────────
+// Normalize employee ID: strips leading zeros from purely numeric IDs so
+// '004', '4', and 4 all compare equal. Non-numeric IDs (e.g. 'ADM-001') are
+// returned trimmed but otherwise unchanged.
+const normId = v => /^\d+$/.test(String(v ?? '').trim())
+  ? String(parseInt(String(v).trim(), 10))
+  : String(v ?? '').trim();
+
+// Return FCM token array for an employee, matched by normalized ID.
+function getTokensFor(rawId) {
+  const nid = normId(rawId);
+  return employees.filter(e => normId(e.id) === nid && e.fcm_token).map(e => e.fcm_token);
+}
 
 // ─── REAL LOGIN ───────────────────────────────────────────────────────────────
 async function doLogin() {
@@ -3272,19 +3261,14 @@ function showLoginErr(msg) {
 // Map employee DB record to a role key so existing UI logic works
 function empIdToRoleKey(e) {
   if (e.id === 'ADM-001' || e.id === '001' || e.id === '1' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
-  // Derive from emp_type + dept_key
-  if (e.emp_type === 'manager')     return 'gf_mgr';
-  if (e.emp_type === 'dept_officer') {
-    const m = {
-      office_hr:'hr_mgr', office_supervision:'supervision',
-      office_it:'it_staff', office_accounting:'hr_mgr',
-      office_marketing:'hr_mgr', office_purchasing:'hr_mgr'
-    };
-    return m[e.dept_key] || 'hr_mgr';
+  if (e.emp_type === 'manager') {
+    // Accounting/finance dept → acc_mgr role slot; all others → gf_mgr (operations/store)
+    const accKeys = ['accounts','accounting','treasury','dataentry'];
+    return accKeys.includes(e.dept_key) ? 'acc_mgr' : 'gf_mgr';
   }
-  if (e.emp_type === 'security' && (e.role_key === 'security_sup' || e.job_title === 'Security Supervisor')) return 'security_sup';
-  if (e.emp_type === 'security')    return 'security';
-  if (e.emp_type === 'supervisor')  return 'cashier_sup';
+  if (e.emp_type === 'security_sup') return 'security_sup';
+  if (e.emp_type === 'security')     return 'security';
+  if (e.emp_type === 'supervisor')   return 'cashier_sup';
   return 'sales_staff';
 }
 
@@ -3383,18 +3367,18 @@ const ROLES = {
   cashier_sup: { id:'007', name:'Sara Al-Amri', nameAr:'سارة العامري', role:'Cashier Supervisor', roleAr:'مشرف الصندوق', dept:'Ground Floor · Cashier', deptAr:'الطابق الأرضي · الصندوق', init:'SA', type:'supervisor', reportTo:'gf_mgr', area:'gf', canIncident:true },
   gf_mgr:      { id:'MGR-001', name:'Khalid Al-Mansour', nameAr:'خالد المنصور', role:'Store Manager', roleAr:'مدير المتجر', dept:'Ground Floor', deptAr:'الطابق الأرضي', init:'KM', type:'manager', reportTo:'supervision', area:'gf', manages:['sales_staff','cashier_sup'] },
   wh_mgr:      { id:'MGR-002', name:'Omar Saleh', nameAr:'عمر صالح', role:'Warehouse Manager', roleAr:'مدير المستودع', dept:'Warehouse', deptAr:'المستودع', init:'OS', type:'manager', reportTo:'supervision', area:'warehouse', manages:['wh_emp'] },
-  hr_mgr:      { id:'OFF-001', name:'Nadia Hassan', nameAr:'نادية حسن', role:'HR Manager', roleAr:'مدير الموارد البشرية', dept:'HR Department', deptAr:'قسم الموارد البشرية', init:'NH', type:'dept_officer', deptKey:'hr', area:'office' },
-  supervision: { id:'OFF-005', name:'Fahad Al-Rashidi', nameAr:'فهد الراشدي', role:'Head of Supervision', roleAr:'رئيس الإشراف', dept:'Top Level Supervision', deptAr:'الإشراف العام', init:'FR', type:'dept_officer', deptKey:'supervision', area:'office' },
+  hr_mgr:      { id:'OFF-001', name:'Nadia Hassan', nameAr:'نادية حسن', role:'HR Manager', roleAr:'مدير الموارد البشرية', dept:'HR Department', deptAr:'قسم الموارد البشرية', init:'NH', type:'employee', deptKey:'hr', area:'office' },
+  supervision: { id:'OFF-005', name:'Fahad Al-Rashidi', nameAr:'فهد الراشدي', role:'Head of Supervision', roleAr:'رئيس الإشراف', dept:'Top Level Supervision', deptAr:'الإشراف العام', init:'FR', type:'employee', deptKey:'supervision', area:'office' },
   security:    { id:'SEC-001', name:'Walid Nasser', nameAr:'وليد ناصر', role:'Security Guard', roleAr:'حارس الأمن', dept:'Security', deptAr:'الأمن', init:'WN', type:'security', area:'security' },
   security_sup:{ id:'SEC-SUP', name:'Mahmoud Al-Qahtan', nameAr:'محمود القحطان', role:'Security Supervisor', roleAr:'مشرف الأمن', dept:'Security', deptAr:'الأمن', init:'MQ', type:'security_sup', area:'security', manages:['security'] },
-  it_staff:    { id:'OFF-004', name:'Ayman Al-Zubairi', nameAr:'أيمن الزبيري', role:'IT Technician', roleAr:'فني تقنية المعلومات', dept:'IT Department', deptAr:'قسم تقنية المعلومات', init:'AZ', type:'dept_officer', deptKey:'it', area:'office' },
+  it_staff:    { id:'OFF-004', name:'Ayman Al-Zubairi', nameAr:'أيمن الزبيري', role:'IT Technician', roleAr:'فني تقنية المعلومات', dept:'IT Department', deptAr:'قسم تقنية المعلومات', init:'AZ', type:'employee', deptKey:'it', area:'office' },
   acc_mgr:     { id:'OFF-006', name:'Tariq Al-Balushi', nameAr:'طارق البلوشي', role:'Accounting Manager', roleAr:'مدير المحاسبة', dept:'Accounting', deptAr:'المحاسبة', init:'TB', type:'manager', deptKey:'accounting', area:'office' }
 };
 
 // Request types per role
 const REQ_TYPES = {
   employee: [
-    { key:'leave',       icon:'📅', label:'Leave Request',    labelAr:'طلب إجازة',       to:'manager_then_hr',  toLabel:'Manager → HR',         toNote:'Goes to your manager first, then HR for final approval.' },
+    { key:'leave',       icon:'📅', label:'Leave Request',    labelAr:'طلب إجازة',       to:'manager_then_hr',  toLabel:'Manager → HR Manager',  toNote:'Goes to your direct manager first, then HR Manager for final approval.' },
     { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',     toNote:'Goes directly to Maintenance Department.' },
     { key:'it',          icon:'💻', label:'IT Support',       labelAr:'دعم تقني',        to:'it',               toLabel:'IT Department',         toNote:'Goes directly to IT Department.' },
     { key:'hr',          icon:'📋', label:'HR Inquiry',       labelAr:'استفسار HR',      to:'hr',               toLabel:'HR Department',         toNote:'Goes directly to HR Department.' },
@@ -3402,7 +3386,7 @@ const REQ_TYPES = {
     { key:'general',     icon:'📝', label:'General Request',  labelAr:'طلب عام',         to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
   ],
   supervisor: [
-    { key:'leave',       icon:'📅', label:'Leave Request',    labelAr:'طلب إجازة',       to:'manager_then_hr',  toLabel:'Manager → HR',         toNote:'Goes to your manager first, then HR for final approval.' },
+    { key:'leave',       icon:'📅', label:'Leave Request',    labelAr:'طلب إجازة',       to:'manager_then_hr',  toLabel:'Manager → HR Manager',  toNote:'Goes to your direct manager first, then HR Manager for final approval.' },
     { key:'incident',    icon:'⚠️', label:'Incident Report',  labelAr:'تقرير حادثة',    to:'supervision',      toLabel:'Top Level Supervision', toNote:'Goes directly to Top Level Supervision Team.' },
     { key:'maintenance', icon:'🔧', label:'Maintenance',      labelAr:'صيانة',           to:'maintenance',      toLabel:'Maintenance Dept',     toNote:'Goes directly to Maintenance Department.' },
     { key:'it',          icon:'💻', label:'IT Support',       labelAr:'دعم تقني',        to:'it',               toLabel:'IT Department',         toNote:'Goes directly to IT Department.' },
@@ -3410,7 +3394,7 @@ const REQ_TYPES = {
     { key:'general',     icon:'📝', label:'General Request',  labelAr:'طلب عام',         to:'supervision',      toLabel:'Supervision Team',     toNote:'Goes to Top Level Supervision.' },
   ],
   manager: [
-    { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',               toLabel:'General Manager',       toNote:'Goes directly to the General Manager for approval, then HR.' },
+    { key:'leave',       icon:'📅', label:'My Leave Request', labelAr:'طلب إجازتي',      to:'gm',               toLabel:'General Manager',       toNote:'Goes directly to the General Manager for approval.' },
     { key:'escalate',    icon:'🚨', label:'Escalate to GM',   labelAr:'تصعيد للمدير العام', to:'gm',            toLabel:'General Manager',       toNote:'Escalate an urgent issue directly to the General Manager.' },
     { key:'budget',      icon:'💵', label:'Budget Request',   labelAr:'طلب ميزانية',     to:'gm',               toLabel:'General Manager',       toNote:'Request budget approval from the General Manager.' },
     { key:'supply',      icon:'📦', label:'Supply Request',   labelAr:'طلب تموين',       to:'accounting',       toLabel:'Accounting Dept',       toNote:'Goes to Accounting / Procurement.' },
@@ -3704,7 +3688,8 @@ function login(roleKey) {
   document.getElementById('empStatsRow').style.display = (isSecurity || isSecuritySup) ? 'none' : 'flex';
   document.getElementById('newReqBtn').style.display = isSecurity ? 'none' : 'block';
   document.getElementById('myReqsSection').style.display = 'block';
-  document.getElementById('incomingReqsSection').style.display = (isManager || isDeptOfficer || isSecuritySup) ? 'block' : 'none';
+  const isHRManager = normId(user.id || role) === normId('144');
+  document.getElementById('incomingReqsSection').style.display = (isManager || isSecuritySup || isHRManager) ? 'block' : 'none';
   document.getElementById('broadcastBtn').style.display = (isManager || isDeptOfficer) ? 'block' : 'none';
 
   // Check for passes
@@ -4385,17 +4370,12 @@ function renderIncoming() {
   if (!list) return;
 
   let incoming = [];
+  const myNormId = normId(user.id || role);
   if (user.type === 'manager') {
-    incoming = requests.filter(r => (r.forManager === role || r.forManager === user.id) && r.status === 'pending_manager');
-  } else if (user.type === 'dept_officer') {
-    const deptKey = user.deptKey;
-    incoming = requests.filter(r => {
-      const matchDept = r.forDept === deptKey || r.to === deptKey;
-      const active    = r.status === 'pending' || r.status === 'in_progress';
-      // Supervision also sees escalated requests routed to them
-      const escalated = r.status === 'escalated' && deptKey === 'office_supervision';
-      return matchDept && (active || escalated);
-    });
+    incoming = requests.filter(r => (normId(r.forManager) === myNormId) && r.status === 'pending_manager');
+  } else if (myNormId === normId('144')) {
+    // HR Manager sees all leave requests waiting for HR approval
+    incoming = requests.filter(r => r.type === 'leave' && r.status === 'pending_hr');
   } else if (user.type === 'admin') {
     // Admin (General Manager) sees:
     // 1. All requests directed to GM (forManager === ADM-001 or forDept === 'gm')
@@ -4458,44 +4438,89 @@ function handleReq(id, action) {
   const req = requests.find(r => r.id === id);
   if (!req) return;
 
+  // Notify GM and Operations Manager (004) — they watch all leave steps
+  const notifyLeaveWatchers = (title, body) => {
+    const gmTok = getAdminFCMTokens(); // GM — uses ADM-001 / 001 lookup
+    if (gmTok.length) sendPush(gmTok, title, body);
+    const opsTok = getTokensFor('4');  // Operations Manager 004
+    if (opsTok.length) sendPush(opsTok, title, body);
+  };
+
   if (action === 'approve') {
     if (req.status === 'pending_manager') {
       const isLeaveRequest = req.type === 'leave';
       const isGMDirectRequest = req.to === 'gm' && req.type !== 'leave';
 
       if (isGMDirectRequest) {
-        // GM requests (escalate, budget, memo) → approved directly, no HR step
+        // GM-direct requests (escalate, budget, memo) → approved immediately
         req.status = 'approved';
         req.chainStatus = req.chainStatus.map(() => 'done');
         toast('✅ ' + t('Approved by General Manager','تمت الموافقة من المدير العام'));
         sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Request Approved by GM','تمت الموافقة من المدير العام'), req.title || req.typeLabel);
+
       } else if (isLeaveRequest) {
-        // Leave requests → forward to HR after GM/manager approval
+        // Leave step 1: manager approved → forward to HR Manager (144)
         req.status = 'pending_hr';
         req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
-        req.forManager = null; req.forDept = 'hr';
-        toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
-        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Leave Forwarded to HR','إجازتك أُحيلت إلى الموارد البشرية'), req.title || req.typeLabel);
+        req.forManager = '144'; req.forDept = null;
+        toast('✅ ' + t('Approved · Forwarded to HR Manager','تمت الموافقة · أُحيل إلى مسؤول الموارد البشرية'));
+        // Notify HR Manager (144)
+        const hrTok = getTokensFor('144');
+        if (hrTok.length) sendPush(hrTok, '📋 ' + t('Leave Request Awaiting Your Approval','طلب إجازة ينتظر موافقتك'), req.fromName + ' — ' + (req.title || ''));
+        // Notify GM + Ops Manager of progress
+        notifyLeaveWatchers('📋 ' + t('Leave: Manager Approved → HR','إجازة: المدير وافق → HR'), req.fromName + ' — ' + (req.title || ''));
+
       } else {
-        // Other pending_manager requests → forward to HR
-        req.status = 'pending_hr';
-        req.chainStatus = req.chainStatus.map((s,i) => i <= 1 ? 'done' : i === 2 ? 'active' : 'pending');
-        req.forManager = null; req.forDept = 'hr';
-        toast('✅ ' + t('Approved · Forwarded to HR','تمت الموافقة · تم الإحالة إلى الموارد البشرية'));
-        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Forwarded to HR', req.title || req.typeLabel);
+        // All other pending_manager requests → approved directly
+        req.status = 'approved';
+        req.chainStatus = req.chainStatus.map(() => 'done');
+        toast('✅ ' + t('Request Approved','تمت الموافقة على الطلب'));
+        sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Request Approved','تمت الموافقة'), req.title || req.typeLabel);
       }
+
+    } else if (req.status === 'pending_hr' && req.type === 'leave') {
+      // Leave step 2: HR Manager (144) gives final approval
+      req.status = 'approved';
+      req.chainStatus = req.chainStatus.map(() => 'done');
+      toast('✅ ' + t('Leave Approved','تمت الموافقة على الإجازة'));
+      // Notify the requesting employee
+      sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ ' + t('Your leave request has been approved','تمت الموافقة على طلب إجازتك'), req.title || req.typeLabel);
+      // Notify the employee's direct manager
+      const reqEmp = employees.find(e => normId(e.id) === normId(req.fromEmpId || req.from));
+      if (reqEmp?.report_to) {
+        const mgrTok = getTokensFor(reqEmp.report_to);
+        if (mgrTok.length) sendPush(mgrTok, '✅ ' + t('Leave Approved by HR','إجازة موافق عليها من HR'), req.fromName + ' — ' + (req.title || ''));
+      }
+      // Notify GM + Ops Manager
+      notifyLeaveWatchers('✅ ' + t('Leave Approved','إجازة موافق عليها'), req.fromName + ' — ' + (req.title || ''));
+
     } else {
       req.status = 'approved';
       req.chainStatus = req.chainStatus.map(() => 'done');
       toast('✅ ' + t('Request approved','تمت الموافقة على الطلب'));
       sendPush(getEmpFCMToken(req.fromEmpId || req.from), '✅ Request Approved', req.title || req.typeLabel);
     }
+
   } else if (action === 'reject') {
+    const wasLeave = req.type === 'leave';
+    const wasAtHR  = req.status === 'pending_hr';
     req.status = 'rejected';
-    req.chainStatus = req.chainStatus.map((s,i) => s === 'active' ? 'rejected' : s);
+    req.chainStatus = req.chainStatus.map(s => s === 'active' ? 'rejected' : s);
     toast('❌ ' + t('Request rejected','تم رفض الطلب'));
-    // Notify employee of rejection
-    sendPush(getEmpFCMToken(req.fromEmpId || req.from), '❌ Request Rejected', req.title || req.typeLabel);
+    // Always notify the requesting employee
+    sendPush(getEmpFCMToken(req.fromEmpId || req.from), '❌ ' + t('Request Rejected','تم رفض طلبك'), req.title || req.typeLabel);
+    if (wasLeave) {
+      // If HR is rejecting, also notify the direct manager
+      if (wasAtHR) {
+        const reqEmp = employees.find(e => normId(e.id) === normId(req.fromEmpId || req.from));
+        if (reqEmp?.report_to) {
+          const mgrTok = getTokensFor(reqEmp.report_to);
+          if (mgrTok.length) sendPush(mgrTok, '❌ ' + t('Leave Rejected by HR','طلب إجازة رُفض من HR'), req.fromName + ' — ' + (req.title || ''));
+        }
+      }
+      // Notify GM + Ops Manager on any leave rejection
+      notifyLeaveWatchers('❌ ' + t('Leave Request Rejected','طلب إجازة مرفوض'), req.fromName + ' — ' + (req.title || ''));
+    }
   } else if (action === 'call') {
     // Generate pass
     const serial = generateSerial();
@@ -4690,7 +4715,7 @@ function selectReqType(key) {
   // Show/hide special fields
   document.getElementById('leaveFields').style.display = key === 'leave' ? 'block' : 'none';
   document.getElementById('incidentFields').style.display = key === 'incident' ? 'block' : 'none';
-  document.getElementById('callToOfficeField').style.display = (user.type === 'dept_officer' || user.type === 'manager') ? 'block' : 'none';
+  document.getElementById('callToOfficeField').style.display = user.type === 'manager' ? 'block' : 'none';
 
   // Set today's date defaults
   const today = new Date().toISOString().split('T')[0];
@@ -4732,11 +4757,11 @@ function submitRequest() {
   const isGMRequest = rt.to === 'gm'; // request goes directly to General Manager
 
   if (isLeave) {
-    chain = [t('Submitted','مُقدَّم'), t('GM Approval','المدير العام ✓'), t('HR Approval','HR ✓'), t('Decision','القرار')];
+    chain = [t('Submitted','مُقدَّم'), t('Manager Approval','موافقة المدير'), t('HR Approval','موافقة HR'), t('Decision','القرار')];
     chainStatus = ['done','active','pending','pending'];
     reqStatus = 'pending_manager';
     // Managers always report to GM (ADM-001); others use their reportTo field
-    forManager = (user.type === 'manager' || user.type === 'dept_officer')
+    forManager = (user.type === 'manager')
       ? (user.report_to || user.reportTo || 'ADM-001')
       : (user.reportTo || user.report_to || 'ADM-001');
   } else if (isGMRequest) {
@@ -4753,12 +4778,12 @@ function submitRequest() {
   }
 
   // Generate pass only if authorised role is calling in (GM, Account Manager, Secretary)
-  const isPassAuthorised = role === 'admin' || (user && (user.role === 'Account Manager' || user.role === 'Secretary' || user.role === 'General Manager'));
+  const isPassAuthorised = role === 'admin' || passIssuers.includes(user?.id);
   if (callToOffice && isPassAuthorised) {
     serial = generateSerial();
     passes.push({ serial, empName:user.name, empDept:user.dept, purpose:title, issuedBy:user.dept, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), valid:true, roleKey:role });
   } else if (callToOffice && !isPassAuthorised) {
-    toast(t('⚠️ Only GM, Account Manager, or Secretary can issue passes.','⚠️ التصاريح تُصدر من المدير العام أو مدير الحسابات أو السكرتيرة فقط.'));
+    toast(t('⚠️ You are not authorized to issue passes.','⚠️ ليس لديك صلاحية إصدار التصاريح.'));
   }
 
   const newReq = { id:newId, type:selectedReqType, typeLabel:rt.label, typeLabelAr: AR_MAP[rt.label] || rt.label, from:role, fromName:lang==='ar'?user.nameAr:user.name, fromEmpId:user.id, to:rt.to, toLabel:rt.toLabel, title, date:'Today', status:reqStatus, chainStep:isLeave?1:null, details:document.getElementById('fDetails').value || title, chain, chainStatus, forManager, forDept, urgent:selectedReqType==='incident', passGenerated:!!serial, passSerial:serial, passIssued:serial?user.dept:null, passPurpose:serial?title:null };
@@ -4803,8 +4828,20 @@ function submitRequest() {
   if (badge) badge.textContent = requests.filter(r => r.from === role).length;
 
   toast('📤 ' + t('Request submitted: ' + newId, 'تم إرسال الطلب: ' + newId));
-  // Notify admins of new request
-  sendPush(getAdminFCMTokens(), '📋 New Request', (lang==='ar'?user.nameAr:user.name) + ': ' + title);
+  // Notify the right person about the new request
+  if (isLeave && forManager) {
+    // Leave: notify the direct manager who needs to review it
+    const mgrTok = getTokensFor(forManager);
+    if (mgrTok.length) sendPush(mgrTok, '📋 ' + t('New Leave Request','طلب إجازة جديد'), (lang==='ar'?user.nameAr:user.name) + ': ' + title);
+    // Also keep GM + 004 in the loop
+    const gmTok2 = getAdminFCMTokens();
+    if (gmTok2.length) sendPush(gmTok2, '📋 ' + t('Leave Submitted','إجازة مُقدَّمة'), (lang==='ar'?user.nameAr:user.name) + ': ' + title);
+    const opsTok2 = getTokensFor('4');
+    if (opsTok2.length) sendPush(opsTok2, '📋 ' + t('Leave Submitted','إجازة مُقدَّمة'), (lang==='ar'?user.nameAr:user.name) + ': ' + title);
+  } else {
+    // All other requests: notify GM
+    sendPush(getAdminFCMTokens(), '📋 New Request', (lang==='ar'?user.nameAr:user.name) + ': ' + title);
+  }
   renderMyRequests();
   renderIncoming();
 
@@ -6049,34 +6086,7 @@ function renderMyLoan(loans) {
     </div>`).join('');
 }
 
-// ─── HR: list of pending loans ─────────────────────────────────────────────────
-function renderHRLoanList(loans) {
-  const el = document.getElementById('loanHRList');
-  if (!el) return;
-  if (!loans.length) {
-    el.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px">لا توجد طلبات قروض جديدة</div>`;
-    return;
-  }
-  el.innerHTML = loans.map(l => {
-    const emp = employees.find(e => String(e.id) === String(l.emp_id));
-    const salary = emp?.salary || 0;
-    const maxLoan = salary * 1;
-    return `<div style="background:var(--bgc);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
-      <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px">${l.emp_name}</div>
-      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">${l.dept_label||l.dept||''}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--t2);margin-bottom:10px">
-        <div>القرض: <strong style="color:var(--t1)">${Number(l.loan_amount).toLocaleString()} ريال</strong></div>
-        <div>الخصم/شهر: <strong style="color:var(--t1)">${Number(l.monthly_deduction).toLocaleString()} ريال</strong></div>
-        <div>مدة السداد: <strong style="color:var(--t1)">${l.months_to_pay} أشهر</strong></div>
-        <div>الراتب: <strong style="color:var(--t1)">${Number(salary).toLocaleString()} ريال</strong></div>
-      </div>
-      ${l.hr_note ? `<div style="font-size:11px;color:var(--t3);margin-bottom:8px">ملاحظة: ${l.hr_note}</div>` : ''}
-      <button onclick="openHRLoanReview('${l.id}')" style="width:100%;padding:9px;border-radius:9px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">مراجعة الطلب</button>
-    </div>`;
-  }).join('');
-}
-
-// ─── Accounting: list of hr_approved loans ─────────────────────────────────────
+// ─── Accounting: pending loans (direct from employee) ─────────────────────────
 function renderAccLoanList(loans) {
   const el = document.getElementById('loanAccList');
   if (!el) return;
@@ -6205,65 +6215,6 @@ async function submitLoanRequest() {
   // Notify Accounting Manager
   const accTokens = getAccFCMTokens();
   if (accTokens.length) sendPush(accTokens, '💼 طلب قرض جديد', `${payload.emp_name} — ${Number(amount).toLocaleString()} ريال`);
-}
-
-// ─── HR: review modal ─────────────────────────────────────────────────────────
-function openHRLoanReview(loanId) {
-  const l   = salaryLoans.find(x => x.id === loanId);
-  if (!l) return;
-  const emp = employees.find(e => String(e.id) === String(l.emp_id));
-  document.getElementById('loanHRReviewId').value = loanId;
-  document.getElementById('loanHRNote').value = '';
-  const det = document.getElementById('loanHRReviewDetails');
-  if (det) det.innerHTML = `
-    <div><strong>الموظف:</strong> ${l.emp_name}</div>
-    <div><strong>القسم:</strong> ${l.dept_label||l.dept||'—'}</div>
-    <div><strong>الراتب:</strong> ${Number(emp?.salary||0).toLocaleString()} ريال</div>
-    <div><strong>مبلغ القرض:</strong> ${Number(l.loan_amount).toLocaleString()} ريال</div>
-    <div><strong>الخصم الشهري:</strong> ${Number(l.monthly_deduction).toLocaleString()} ريال</div>
-    <div><strong>مدة السداد:</strong> ${l.months_to_pay} أشهر</div>
-    <div><strong>ملفات الضمان:</strong> ${emp?.files_complete ? '✅ مكتملة' : '❌ غير مكتملة'}</div>`;
-  openModal('loanHRReviewModal');
-}
-
-async function approveHRLoan() {
-  const loanId = document.getElementById('loanHRReviewId').value;
-  const note   = document.getElementById('loanHRNote').value.trim();
-  const myId   = user.id || role;
-  const now    = new Date().toISOString();
-  const { error } = await sb.from('salary_loans').update({
-    status: 'hr_approved', hr_by_id: myId, hr_by_name: user.name, hr_at: now, hr_note: note
-  }).eq('id', loanId);
-  if (error) { toast('❌ ' + error.message); return; }
-  const local = salaryLoans.find(x => x.id === loanId);
-  if (local) { local.status = 'hr_approved'; local.hr_by_id = myId; local.hr_by_name = user.name; local.hr_at = now; local.hr_note = note; }
-  closeModal('loanHRReviewModal');
-  renderLoans();
-  toast(t('✅ Loan approved and forwarded to Accounting','✅ تمت الموافقة وأُرسل للمحاسبة'));
-  const accTokens = getAccFCMTokens();
-  const l = salaryLoans.find(x => x.id === loanId);
-  if (accTokens.length && l) sendPush(accTokens, '💼 قرض بانتظار مراجعتك', `${l.emp_name} — ${Number(l.loan_amount).toLocaleString()} ريال`);
-  await loadSalaryLoans(); renderLoans();
-}
-
-async function rejectHRLoan() {
-  const loanId = document.getElementById('loanHRReviewId').value;
-  const note   = document.getElementById('loanHRNote').value.trim();
-  const reason = note || prompt(t('Rejection reason:','سبب الرفض:')) || t('Rejected by HR','مرفوض من الموارد البشرية');
-  const myId   = user.id || role;
-  const now    = new Date().toISOString();
-  const { error } = await sb.from('salary_loans').update({
-    status: 'rejected', rejection_reason: reason, hr_by_id: myId, hr_by_name: user.name, hr_at: now
-  }).eq('id', loanId);
-  if (error) { toast('❌ ' + error.message); return; }
-  const local = salaryLoans.find(x => x.id === loanId);
-  if (local) { local.status = 'rejected'; local.rejection_reason = reason; }
-  closeModal('loanHRReviewModal');
-  renderLoans();
-  toast(t('❌ Loan request rejected','❌ تم رفض طلب القرض'));
-  const l = salaryLoans.find(x => x.id === loanId);
-  if (l) { const tok = getEmpFCMToken(l.emp_id); if (tok.length) sendPush(tok, '💼 طلب قرض مرفوض', `${reason}`); }
-  await loadSalaryLoans(); renderLoans();
 }
 
 // ─── Accounting: signature pad ────────────────────────────────────────────────
@@ -6632,7 +6583,7 @@ let polls = [];
 function canCreatePoll() {
   if (!user) return false;
   const t = user.emp_type || user.type || '';
-  return ['admin','manager','supervisor','dept_officer'].includes(t);
+  return ['admin','manager','supervisor'].includes(t);
 }
 
 function openPollModal() {
@@ -6705,7 +6656,7 @@ function renderPolls() {
   const visible = polls.filter(p => {
     if (!p.target_role) return true;
     if (!user) return false;
-    if (p.target_role === 'admin') return ['admin','manager','supervisor','dept_officer'].includes(user.emp_type || user.type || '');
+    if (p.target_role === 'admin') return ['admin','manager','supervisor'].includes(user.emp_type || user.type || '');
     return true;
   });
 
@@ -6958,7 +6909,7 @@ function buildReportingDropdowns(supervisorId, managerId, empType) {
 
   const getLevel = e => {
     if (e.emp_type === 'admin' || e.id === 'ADM-001' || e.id === '001' || e.id === '1') return 'manager';
-    if (e.emp_type === 'manager' || e.emp_type === 'dept_officer' || e.emp_type === 'acc_mgr') return 'manager';
+    if (e.emp_type === 'manager' || e.emp_type === 'acc_mgr') return 'manager';
     if (e.emp_type === 'supervisor' || e.emp_type === 'security_sup') return 'supervisor';
     return 'employee';
   };
@@ -7121,7 +7072,7 @@ function openEmpModal(empId) {
     populateEmpFormDropdowns(e.dept_key || e.dept || '', e.location || '', e.deptLabel || '');
     document.getElementById('eRole').value = e.role || '';
     // Map any legacy emp_type values to the 3 clean levels
-    const lvl = ({'manager':'manager','supervisor':'supervisor','dept_officer':'manager','acc_mgr':'manager','security_sup':'supervisor','security':'employee','employee':'employee'})[e.emp_type] || 'employee';
+    const lvl = ({'manager':'manager','supervisor':'supervisor','acc_mgr':'manager','security_sup':'supervisor','security':'employee','employee':'employee'})[e.emp_type] || 'employee';
     document.getElementById('eEmpType').value = lvl;
     document.getElementById('eStartDate').value = e.startDate;
     document.getElementById('eSalary').value = e.salary;
@@ -7536,13 +7487,12 @@ function sendReminderForReq(reqId) {
   const age = formatAge(req);
   const title = `⏰ Reminder: Pending Request (${age})`;
   const body = `"${req.title}" from ${req.fromName} is still waiting for your response.`;
-  // Push to responsible person (forManager) or dept
+  // Push to responsible person (forManager) or dept — use normId to handle zero-padded IDs
   let tokens = [];
   if (req.forManager) {
-    const target = employees.find(e => e.id === req.forManager);
-    if (target?.fcm_token) tokens = [target.fcm_token];
+    tokens = getTokensFor(req.forManager);
   }
-  if (!tokens.length) tokens = getAdminFCMTokens(); // fallback to admin
+  if (!tokens.length) tokens = getAdminFCMTokens(); // fallback to GM
   sendPush(tokens, title, body);
   toast(`📩 Reminder sent for: ${req.title}`);
 }
@@ -8857,7 +8807,7 @@ let notifRead = JSON.parse(localStorage.getItem('notifRead') || '[]');
 
 function updateBellBadge() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
     employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   let count = 0;
   if (!isManager) {
@@ -8885,7 +8835,7 @@ function toggleNotifPanel() {
   if (isOpen) { panel.style.display = 'none'; return; }
   // Mark all current notifications as read (clears badge)
   if (user) {
-    const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+    const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
       employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
     if (!isManager) {
       tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
@@ -8911,7 +8861,7 @@ function closeNotifOnOutside(e) {
 
 function renderNotifPanel() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
     employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   const list = document.getElementById('notifList');
   const title = document.getElementById('notifTitle');
@@ -8960,7 +8910,7 @@ function dismissNotif(id) {
 
 function clearAllNotifs() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
     employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   if (!isManager) {
     tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifDismissed.includes(tk.id)) notifDismissed.push(tk.id); });
@@ -10310,7 +10260,7 @@ function openGroupChat(groupId) {
 function _msgRoleLevel(senderType) {
   if (!senderType) return 'employee';
   if (['admin','manager'].includes(senderType)) return 'manager';
-  if (['supervisor','dept_officer','acc_mgr','security_sup'].includes(senderType)) return 'supervisor';
+  if (['supervisor','acc_mgr','security_sup'].includes(senderType)) return 'supervisor';
   return 'employee';
 }
 
