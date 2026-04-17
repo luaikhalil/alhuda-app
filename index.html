@@ -1431,7 +1431,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     </div>
     <div class="hdr-right">
       <div class="icon-btn" id="bellBtn" onclick="toggleNotifPanel()" style="position:relative">🔔<div class="nbadge" id="bellBadge" style="display:none">0</div></div>
-      <div class="icon-btn" onclick="showTab('msgs')">💬<div class="nbadge" id="msgBadge">2</div></div>
+      <div class="icon-btn" onclick="showTab('msgs')">💬<div class="nbadge" id="msgBadge" style="display:none">0</div></div>
       <div class="icon-btn" onclick="showPassList()">🎫<div class="nbadge" id="passBadge" style="display:none">1</div></div>
       <div class="icon-btn" id="adminBtn" style="display:none;background:rgba(255,193,40,.1);border-color:rgba(255,193,40,.3)" onclick="openAdmin()">⚙️</div>
       <div class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</div>
@@ -1517,7 +1517,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
       <div class="srow" id="empStatsRow">
         <div class="schip b" style="cursor:pointer" onclick="showTab('requests')"><div class="sv" id="sReqs">3</div><div class="sl" data-en="My Requests" data-ar="طلباتي">My Requests</div></div>
         <div class="schip g" style="cursor:pointer" onclick="showTab('profile')"><div class="sv" id="homeShiftStart">--:--</div><div class="sl" data-en="Shift Start" data-ar="بدء الوردية">Shift Start</div></div>
-        <div class="schip o" style="cursor:pointer" onclick="showTab('msgs')"><div class="sv" id="sMsgs">2</div><div class="sl" data-en="Messages" data-ar="رسائل">Messages</div></div>
+        <div class="schip o" style="cursor:pointer" onclick="showTab('msgs')"><div class="sv" id="sMsgs">0</div><div class="sl" data-en="Messages" data-ar="رسائل">Messages</div></div>
       </div>
 
       <div class="stitle" data-en="RECENT ACTIVITY" data-ar="النشاط الأخير">RECENT ACTIVITY</div>
@@ -1649,16 +1649,8 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <h2 style="font-size:17px;font-weight:700" data-en="Messages" data-ar="الرسائل">Messages</h2>
       </div>
 
-      <!-- Announcement -->
-      <div class="ann-card" onclick="openChat('mgmt')">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span style="font-size:15px">📢</span>
-          <span style="font-size:11px;font-weight:600;color:var(--purple)" data-en="Management Announcement" data-ar="إعلان الإدارة">Management Announcement</span>
-          <span style="font-size:10px;color:var(--t3);margin-left:auto">Today</span>
-        </div>
-        <div style="font-size:13px;font-weight:600" data-en="Monthly Staff Meeting — Fri April 10, 2:00 PM" data-ar="الاجتماع الشهري — الجمعة 10 أبريل، 2:00 مساءً">Monthly Staff Meeting — Fri April 10, 2:00 PM</div>
-        <div style="font-size:11px;color:var(--t2);margin-top:3px" data-en="All staff must attend. Main Conference Room." data-ar="حضور جميع الموظفين إلزامي. غرفة الاجتماعات الرئيسية.">All staff must attend. Main Conference Room.</div>
-      </div>
+      <!-- Scheduled announcements/meetings (visible to relevant staff) -->
+      <div id="scheduledMeetingsContainer" style="margin-bottom:4px"></div>
 
       <div id="chatList"></div>
 
@@ -1667,7 +1659,7 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
         <div id="pollsList"></div>
       </div>
 
-      <!-- Manager: broadcast + poll buttons -->
+      <!-- Manager: broadcast + poll + schedule buttons -->
       <div id="broadcastBtn" style="display:none;margin-top:4px">
         <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:8px" onclick="openBroadcastModal()">
           <span style="font-size:26px">📢</span>
@@ -1681,6 +1673,13 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
           <div>
             <div style="font-size:13px;font-weight:600" data-en="Create Poll" data-ar="إنشاء تصويت">Create Poll</div>
             <div style="font-size:11px;color:var(--t2)" data-en="Ask staff a question and collect votes" data-ar="اسأل الموظفين وجمّع أصواتهم">Ask staff a question and collect votes</div>
+          </div>
+        </div>
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px;margin-top:8px" onclick="openScheduleMeetingModal()">
+          <span style="font-size:26px">📅</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Schedule Meeting / Announcement</div>
+            <div style="font-size:11px;color:var(--t2)">Set date, time, department &amp; audience</div>
           </div>
         </div>
       </div>
@@ -2156,6 +2155,53 @@ body.light .add-btn { background:linear-gradient(135deg,#ffc128,#e6a800)!importa
     </div>
     <button class="btn-pri" onclick="submitBroadcast()" data-en="📢 Send to All" data-ar="📢 إرسال للجميع">📢 Send to All</button>
     <button class="btn-sec" onclick="closeModal('broadcastModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── SCHEDULE MEETING MODAL ── -->
+<div class="modal-bg" id="scheduleMeetingModal">
+  <div class="modal" style="padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+    <div class="mhandle"></div>
+    <div class="mtitle">📅 Schedule Meeting / Announcement</div>
+
+    <div class="mg">
+      <label class="lbl">Title</label>
+      <input id="smTitle" class="inp" type="text" placeholder="e.g. Monthly Staff Meeting" style="margin-bottom:0">
+    </div>
+    <div class="mg">
+      <label class="lbl">Details (optional)</label>
+      <textarea id="smDetails" class="inp" rows="2" style="resize:none;height:60px;margin-bottom:0" placeholder="Location, agenda, notes..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div style="flex:1">
+        <label class="lbl">Date</label>
+        <input id="smDate" class="inp" type="date" style="margin-bottom:0">
+      </div>
+      <div style="flex:1">
+        <label class="lbl">Time</label>
+        <input id="smTime" class="inp" type="time" style="margin-bottom:0">
+      </div>
+    </div>
+    <div class="mg">
+      <label class="lbl">Department</label>
+      <select id="smDept" class="inp" style="margin-bottom:0">
+        <option value="all">🏢 All Departments</option>
+        <option value="gf">🏪 Ground Floor</option>
+        <option value="warehouse">📦 Warehouse</option>
+        <option value="security">🔒 Security</option>
+        <option value="office">💼 Office Departments</option>
+      </select>
+    </div>
+    <div class="mg">
+      <label class="lbl">Who should see this?</label>
+      <select id="smAudience" class="inp" style="margin-bottom:0">
+        <option value="all">👥 All staff in selected department</option>
+        <option value="managers">⭐ Managers &amp; supervisors only</option>
+      </select>
+    </div>
+
+    <button class="btn-pri" onclick="submitScheduledMeeting()" style="margin-top:4px">📅 Save Announcement</button>
+    <button class="btn-sec" onclick="closeModal('scheduleMeetingModal')">Cancel</button>
   </div>
 </div>
 
@@ -3267,6 +3313,7 @@ function showLoginErr(msg) {
 // Map employee DB record to a role key so existing UI logic works
 function empIdToRoleKey(e) {
   if (e.id === 'ADM-001' || e.id === '001' || e.id === '1' || e.dept === 'admin' || e.emp_type === 'admin') return 'admin';
+  if (e.emp_type === 'dept_officer') return 'dept_officer'; // Operations Manager (004) and similar
   if (e.emp_type === 'manager') {
     // Accounting/finance dept → acc_mgr role slot; all others → gf_mgr (operations/store)
     const accKeys = ['accounts','accounting','treasury','dataentry'];
@@ -3808,6 +3855,8 @@ function showTab(id) {
   const nav = document.getElementById('ni-' + id);
   if (nav) nav.classList.add('active');
   document.querySelector('.content').scrollTop = 0;
+  // Load scheduled meetings when messages tab opens
+  if (id === 'msgs') loadScheduledMeetings();
 }
 
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
@@ -4910,41 +4959,22 @@ function verifyPass() {
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────────────────────
-// Track which chats have been read this session
-const chatReadState = { manager:true, hr:false, it:true };
+const chatReadState = {};
 function markChatRead(id) {
   chatReadState[id] = true;
   renderChatList();
-  // Recount total unread and update header badge
   const total = Object.values(chatReadState).filter(v => !v).length;
   const badge = document.getElementById('msgBadge');
   if (badge) { badge.textContent = total; badge.style.display = total > 0 ? 'flex' : 'none'; }
   const sMsgs = document.getElementById('sMsgs');
   if (sMsgs) sMsgs.textContent = total;
-  // Also update bottom nav badge
   const nb = document.querySelector('#ni-msgs .nb');
   if (nb) { nb.textContent = total; nb.style.display = total > 0 ? 'flex' : 'none'; }
 }
 function renderChatList() {
   const list = document.getElementById('chatList');
   if (!list) return;
-  const chats = [
-    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread: chatReadState.manager ? 0 : 1 },
-    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread: chatReadState.hr ? 0 : 1 },
-    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread: chatReadState.it ? 0 : 1 },
-  ];
-  list.innerHTML = chats.map(c => `
-    <div class="chat-row" onclick="openChat('${c.id}')">
-      <div class="chat-av-sm ${c.cls}">${c.icon}</div>
-      <div class="chat-info">
-        <div class="chat-name">${c.name}</div>
-        <div class="chat-prev">${c.prev}</div>
-      </div>
-      <div class="chat-meta">
-        <div class="chat-time">${c.time}</div>
-        ${c.unread ? `<div class="chat-unread">${c.unread}</div>` : ''}
-      </div>
-    </div>`).join('');
+  list.innerHTML = ''; // overridden below — groups-only list
 }
 
 function openChat(id) {
@@ -5214,6 +5244,193 @@ function submitBroadcast() {
   // Reset fields
   if (document.getElementById('broadSubject')) document.getElementById('broadSubject').value = '';
   if (document.getElementById('broadBody')) document.getElementById('broadBody').value = '';
+}
+
+// ─── SCHEDULED MEETINGS / ANNOUNCEMENTS ──────────────────────────────────────
+let scheduledMeetings = [];
+
+// Dept key groups used to filter visibility
+const DEPT_KEY_MAP = {
+  gf:        ['cashiers','sales','supervisors','store_staff','merchandising'],
+  warehouse: ['receiving','stockcontrol','expirymonitoring','transfers','purchasing'],
+  security:  ['securityguards','cctvteam'],
+  office:    ['accounts','treasury','dataentry','office_supervision','office_hr','office_marketing','office_maintenance'],
+};
+
+function openScheduleMeetingModal() {
+  // Pre-fill date to today
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('smDate').value = today;
+  document.getElementById('smTime').value = '';
+  document.getElementById('smTitle').value = '';
+  document.getElementById('smDetails').value = '';
+  document.getElementById('smDept').value = 'all';
+  document.getElementById('smAudience').value = 'all';
+  openModal('scheduleMeetingModal');
+}
+
+async function submitScheduledMeeting() {
+  const title    = (document.getElementById('smTitle')?.value || '').trim();
+  const details  = (document.getElementById('smDetails')?.value || '').trim();
+  const date     = document.getElementById('smDate')?.value || '';
+  const time     = document.getElementById('smTime')?.value || '';
+  const dept     = document.getElementById('smDept')?.value || 'all';
+  const audience = document.getElementById('smAudience')?.value || 'all';
+
+  if (!title) { toast('⚠️ Please enter a title'); return; }
+  if (!date)  { toast('⚠️ Please select a date');  return; }
+
+  const scheduledAt = time ? date + 'T' + time + ':00' : date + 'T00:00:00';
+
+  const record = {
+    title,
+    body: details,
+    sender_id:   user.id || role,
+    sender_name: user.name || '',
+    ann_type:    'scheduled_meeting',
+    scheduled_at: scheduledAt,
+    target_dept: dept,
+    target_audience: audience,
+  };
+
+  const { data, error } = await sb.from('announcements').insert(record).select().single();
+  if (error) { toast('❌ Failed to save: ' + error.message); return; }
+
+  closeModal('scheduleMeetingModal');
+  // Add to local list and re-render
+  scheduledMeetings.unshift({ ...record, id: data?.id || 'loc-'+Date.now() });
+  renderScheduledMeetings();
+
+  // Push notifications to target audience
+  const targetTokens = _getMeetingTargetTokens(dept, audience);
+  if (targetTokens.length) {
+    const timeLabel = time ? ' · ' + _fmt12h(time) : '';
+    sendPush(targetTokens, '📅 ' + title, _fmtDate(date) + timeLabel + (details ? ' — ' + details : ''));
+  }
+  toast('✅ Announcement saved!');
+}
+
+function _fmt12h(t24) {
+  const [h,m] = t24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return h12 + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+}
+function _fmtDate(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+function _getMeetingTargetTokens(dept, audience) {
+  let pool = employees.filter(e => e.active && e.fcm_token);
+
+  // Filter by department
+  if (dept !== 'all') {
+    const keys = DEPT_KEY_MAP[dept] || [];
+    pool = pool.filter(e => keys.includes(e.dept_key));
+  }
+
+  // Filter by audience
+  if (audience === 'managers') {
+    pool = pool.filter(e => ['manager','admin','dept_officer','supervisor','acc_mgr','security_sup'].includes(e.emp_type));
+  }
+
+  return pool.map(e => e.fcm_token).filter(Boolean);
+}
+
+function _meetingVisibleToMe(m) {
+  if (!user) return false;
+  const myType   = user.emp_type || user.type || 'employee';
+  const myDept   = user.dept_key || '';
+  const isAdmin  = myType === 'admin' || user.id === 'ADM-001';
+  const isMgrSup = isAdmin || ['manager','dept_officer','supervisor','acc_mgr','security_sup'].includes(myType);
+
+  // Audience check
+  if (m.target_audience === 'managers' && !isMgrSup) return false;
+
+  // Dept check
+  if (m.target_dept && m.target_dept !== 'all') {
+    const keys = DEPT_KEY_MAP[m.target_dept] || [];
+    if (!isAdmin && !keys.includes(myDept)) return false;
+  }
+
+  return true;
+}
+
+async function loadScheduledMeetings() {
+  try {
+    const { data, error } = await sb
+      .from('announcements')
+      .select('*')
+      .eq('ann_type', 'scheduled_meeting')
+      .order('scheduled_at', { ascending: true });
+    if (error) throw error;
+    scheduledMeetings = data || [];
+    renderScheduledMeetings();
+  } catch(e) {
+    console.warn('loadScheduledMeetings failed:', e);
+  }
+}
+
+async function deleteScheduledMeeting(id) {
+  if (!confirm('Delete this announcement?')) return;
+  const { error } = await sb.from('announcements').delete().eq('id', id);
+  if (error) { toast('❌ ' + error.message); return; }
+  scheduledMeetings = scheduledMeetings.filter(m => m.id !== id);
+  renderScheduledMeetings();
+  toast('🗑 Announcement deleted');
+}
+
+function renderScheduledMeetings() {
+  const container = document.getElementById('scheduledMeetingsContainer');
+  if (!container) return;
+
+  const myType   = user?.emp_type || user?.type || 'employee';
+  const isAdmin  = myType === 'admin' || user?.id === 'ADM-001';
+  const isMgrSup = isAdmin || ['manager','dept_officer','supervisor','acc_mgr','security_sup'].includes(myType);
+
+  // Filter to what this user can see; sort by soonest first
+  const visible = scheduledMeetings
+    .filter(m => _meetingVisibleToMe(m))
+    .sort((a,b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+
+  if (!visible.length) { container.innerHTML = ''; return; }
+
+  const deptLabels = { all:'All Departments', gf:'Ground Floor', warehouse:'Warehouse', security:'Security', office:'Office Departments' };
+  const audLabels  = { all:'All Staff', managers:'Managers & Supervisors' };
+
+  container.innerHTML = visible.map(m => {
+    const dt   = new Date(m.scheduled_at);
+    const past = dt < new Date() && m.scheduled_at.includes('T') && !m.scheduled_at.endsWith('T00:00:00');
+    const dateStr = _fmtDate(m.scheduled_at.slice(0,10));
+    const timeStr = m.scheduled_at.length > 10 && !m.scheduled_at.endsWith('T00:00:00')
+      ? ' · ' + _fmt12h(m.scheduled_at.slice(11,16)) : '';
+    const delBtn = isMgrSup
+      ? `<button onclick="deleteScheduledMeeting('${m.id}')" title="Delete" style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:2px 4px;opacity:0.7;flex-shrink:0" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">🗑</button>`
+      : '';
+    const deptTag = m.target_dept && m.target_dept !== 'all'
+      ? `<span style="font-size:9px;background:rgba(255,193,40,.15);color:var(--gold);border-radius:4px;padding:1px 5px;font-weight:600">${deptLabels[m.target_dept]||m.target_dept}</span>`
+      : '';
+    const audTag = m.target_audience === 'managers'
+      ? `<span style="font-size:9px;background:rgba(140,82,255,.15);color:var(--purple);border-radius:4px;padding:1px 5px;font-weight:600">Managers only</span>`
+      : '';
+    return `<div class="ann-card" style="opacity:${past?0.55:1};margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="font-size:18px;flex-shrink:0">📅</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:700;color:var(--t1)">${m.title}</span>
+            ${deptTag}${audTag}
+            ${past ? '<span style="font-size:9px;color:var(--t3);font-style:italic">past</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--gold);font-weight:600;margin-bottom:2px">${dateStr}${timeStr}</div>
+          ${m.body ? `<div style="font-size:11px;color:var(--t2)">${m.body}</div>` : ''}
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">By ${m.sender_name || 'Management'}</div>
+        </div>
+        ${delBtn}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -8056,7 +8273,7 @@ function resolveGroupMembers(g) {
     return employees.filter(e => ['accounts','treasury','dataentry','office_supervision','office_hr','office_marketing','office_maintenance'].includes(e.dept_key) && e.active);
 
   if (g.type === 'dept_managers')
-    return employees.filter(e => (e.emp_type === 'manager' || e.emp_type === 'admin') && e.active);
+    return employees.filter(e => ['manager','admin','dept_officer'].includes(e.emp_type) && e.active);
 
   // custom — use members array
   return employees.filter(e => (g.members || []).includes(e.id) && e.active);
@@ -8070,7 +8287,7 @@ function getGroupSendPerms(g) {
   if (!g || !user) return { canSend:false, canAttach:false, isAnnounce:false, isAllStaff:false };
   const myType  = user.emp_type || user.type || 'employee';
   const isAdmin = myType === 'admin' || user.id === 'ADM-001';
-  const isMgr   = isAdmin || myType === 'manager';
+  const isMgr   = isAdmin || ['manager','dept_officer'].includes(myType);
   const isSup   = isMgr  || ['supervisor','acc_mgr','security_sup'].includes(myType);
 
   // ALL STAFF — everyone texts, nobody attaches
@@ -10363,25 +10580,10 @@ function autoCreateDeptGroups() {
 }
 
 // ─── PATCH renderChatList TO INCLUDE GROUPS ───────────────────────────────────
-// Override the existing renderChatList to include dynamic groups
 const _origRenderChatList = renderChatList;
 renderChatList = function() {
   const list = document.getElementById('chatList');
   if (!list) return;
-
-  // Static DM chats
-  const dmChats = [
-    { id:'manager', icon:'👨‍💼', cls:'b', name:t('Khalid Al-Mansour (Manager)','خالد المنصور (المدير)'), prev:t('Good morning! Stock Aisle 3...','صباح الخير! تخزين الممر 3...'), time:'8:05 AM', unread: chatReadState.manager ? 0 : 1 },
-    { id:'hr', icon:'📋', cls:'g', name:t('HR Department','الموارد البشرية'), prev:t('Your leave request REQ-001 received...','تم استلام طلب الإجازة REQ-001...'), time:t('Yesterday','أمس'), unread: chatReadState.hr ? 0 : 1 },
-    { id:'it', icon:'💻', cls:'b', name:t('IT Department','قسم IT'), prev:t('Technician visiting Aisle 5 today...','الفني يزور الممر 5 اليوم...'), time:t('Apr 7','7 أبريل'), unread: chatReadState.it ? 0 : 1 },
-  ];
-
-  const dmHTML = dmChats.map(c => `
-    <div class="chat-row" onclick="openChat('${c.id}')">
-      <div class="chat-av-sm ${c.cls}">${c.icon}</div>
-      <div class="chat-info"><div class="chat-name">${c.name}</div><div class="chat-prev">${c.prev}</div></div>
-      <div class="chat-meta"><div class="chat-time">${c.time}</div>${c.unread ? `<div class="chat-unread">${c.unread}</div>` : ''}</div>
-    </div>`).join('');
 
   // Groups section
   const myGroups = groups.filter(g => {
@@ -10409,7 +10611,7 @@ renderChatList = function() {
       </div>`;
     }).join('')}` : '';
 
-  list.innerHTML = dmHTML + grpHTML;
+  list.innerHTML = grpHTML;
 };
 
 // ─── GROUP CHAT ───────────────────────────────────────────────────────────────
@@ -10558,7 +10760,7 @@ function renderGroupMessages(groupId) {
   if (!convo || !g) return;
   const isAdminOrMaintainer = (user?.type === 'admin') || (user?.id === g.maintainerId);
   const myType = user?.emp_type || user?.type || 'employee';
-  const isMgrOrSup = ['admin','manager','supervisor','acc_mgr','security_sup'].includes(myType);
+  const isMgrOrSup = ['admin','manager','dept_officer','supervisor','acc_mgr','security_sup'].includes(myType);
   const totalMembers = resolveGroupMembers(g).length;
   const msgs = document.getElementById('chatMsgsEl');
   if (!msgs) return;
