@@ -8857,7 +8857,8 @@ let notifRead = JSON.parse(localStorage.getItem('notifRead') || '[]');
 
 function updateBellBadge() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin';
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+    employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   let count = 0;
   if (!isManager) {
     // For employees: count pending tasks assigned to them
@@ -8884,7 +8885,8 @@ function toggleNotifPanel() {
   if (isOpen) { panel.style.display = 'none'; return; }
   // Mark all current notifications as read (clears badge)
   if (user) {
-    const isManager = user.type === 'manager' || user.type === 'admin';
+    const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+      employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
     if (!isManager) {
       tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
     } else {
@@ -8909,7 +8911,8 @@ function closeNotifOnOutside(e) {
 
 function renderNotifPanel() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin';
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+    employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   const list = document.getElementById('notifList');
   const title = document.getElementById('notifTitle');
   title.textContent = '🔔 ' + t('Notifications', 'الإشعارات');
@@ -8957,7 +8960,8 @@ function dismissNotif(id) {
 
 function clearAllNotifs() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin';
+  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' || user.type === 'dept_officer' ||
+    employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
   if (!isManager) {
     tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifDismissed.includes(tk.id)) notifDismissed.push(tk.id); });
   } else {
@@ -8985,7 +8989,9 @@ async function loadTasks() {
 function renderTasks() {
   if (!user) return;
   const isAdmin   = user.type === 'admin' || user.dept === 'admin' || role === 'admin';
-  const isManager = user.type === 'manager' || isAdmin;
+  const myId      = user.id || role;
+  const hasReports = employees.some(e => normId(e.report_to) === normId(myId) || normId(e.supervisor_id) === normId(myId));
+  const isManager = isAdmin || user.type === 'manager' || user.type === 'supervisor' || hasReports;
   document.getElementById('createTaskBtn').style.display = isManager ? 'block' : 'none';
   document.getElementById('myTasksSection').style.display = isManager ? 'none' : 'block';
   document.getElementById('mgrTasksSection').style.display = isManager ? 'block' : 'none';
@@ -9202,6 +9208,49 @@ function updateProfileCoins() {
   }
 }
 
+/** Returns the list of dept_keys a user can assign tasks within:
+ *  - If their dept_key is a main dept (has subs in allDepts) → main + all sub keys
+ *  - If their dept_key is a sub → only that sub key
+ *  - Admin → null (meaning all) */
+function getAssignableDeptKeys(deptKey) {
+  if (!deptKey || deptKey === 'admin') return null;
+  // Check if deptKey matches a main dept
+  const main = allDepts.find(d => d.key === deptKey);
+  if (main) {
+    const subKeys = (main.subs || []).map(s => s.key);
+    return [deptKey, ...subKeys];
+  }
+  // Check if deptKey is a sub-dept key — return parent + all siblings so the
+  // parent-level manager can still see everything, but this user only sees their sub
+  for (const d of allDepts) {
+    if ((d.subs || []).some(s => s.key === deptKey)) {
+      return [deptKey]; // sub-dept user only assigns within their own sub
+    }
+  }
+  return [deptKey]; // fallback
+}
+
+function getAssignableEmployees() {
+  const isAdmin = user.type === 'admin' || user.dept === 'admin';
+  if (isAdmin) return employees.filter(e => e.dept !== 'admin' && e.active);
+
+  const myId      = user.id || role;
+  const myDeptKey = user.deptKey || user.dept_key || user.dept || '';
+  const allowed   = getAssignableDeptKeys(myDeptKey);
+
+  return employees.filter(e => {
+    if (e.dept === 'admin' || !e.active) return false;
+    if (normId(e.id) === normId(myId))   return false; // don't assign to yourself
+    // Direct reports (report_to or supervisor_id points to current user)
+    if (normId(e.report_to)      === normId(myId)) return true;
+    if (normId(e.supervisor_id)  === normId(myId)) return true;
+    // Same dept / sub-dept scope
+    const eDeptKey = e.deptKey || e.dept_key || e.dept || '';
+    if (allowed && allowed.includes(eDeptKey)) return true;
+    return false;
+  });
+}
+
 function openTaskModal(editId) {
   const isEdit = !!editId;
   const tk = isEdit ? tasks.find(t => t.id === editId) : null;
@@ -9212,9 +9261,9 @@ function openTaskModal(editId) {
   document.getElementById('tDueDate').value  = tk?.due_date    || '';
   document.getElementById('tDueTime').value  = tk?.due_time    || '';
   document.getElementById('tPriority').value = tk?.priority    || 'normal';
-  // Populate assign-to select
+  // Populate assign-to select — only show employees the current user can manage
   const sel = document.getElementById('tAssignTo');
-  sel.innerHTML = employees.filter(e => e.dept !== 'admin' && e.active).map(e => `<option value="${e.id}">${e.firstName} ${e.lastName} · ${e.deptLabel}</option>`).join('');
+  sel.innerHTML = getAssignableEmployees().map(e => `<option value="${e.id}">${e.firstName} ${e.lastName} · ${e.deptLabel}</option>`).join('');
   openModal('taskModal');
 }
 
