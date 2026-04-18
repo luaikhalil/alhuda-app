@@ -1579,6 +1579,91 @@ body:not(.light) .toast{background:var(--bg2)!important;border:1px solid var(--b
 
 /* ── Toggle ── */
 body:not(.light) .tog.on{background:var(--cyan)!important;box-shadow:none!important;}
+
+/* ── Base .card (used by announcement/poll/schedule action rows) ── */
+body:not(.light) .card{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+
+/* ── Announcement / poll action cards (solid neutral, not purple) ── */
+body:not(.light) .ann-card{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+
+/* ── Profile hero & leave cards (remove purple-blue gradient) ── */
+body:not(.light) .prof-hero{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .prof-hero::before{display:none!important;}
+body:not(.light) .leave-card,
+body:not(.light) .leave-card.annual,
+body:not(.light) .leave-card.sick,
+body:not(.light) .leave-card.emergency{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .leave-card.annual{border-color:rgba(184,134,11,.35)!important;}
+body:not(.light) .leave-card.sick{border-color:rgba(239,68,68,.3)!important;}
+body:not(.light) .leave-card.emergency{border-color:rgba(167,139,250,.3)!important;}
+body:not(.light) .leave-card.annual .leave-val,
+body:not(.light) .leave-card.sick .leave-val,
+body:not(.light) .leave-card.emergency .leave-val{text-shadow:none!important;}
+
+/* ── Hero card supporting elements (already flattened the hero-card itself) ── */
+body:not(.light) .hero-time-badge{
+  background:rgba(184,134,11,.1)!important;
+  border:1px solid rgba(184,134,11,.25)!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .hero-name{text-shadow:none!important;color:var(--t1)!important;}
+
+/* ── Notification prompt banner (created via inline JS style) ── */
+body:not(.light) #notifBanner{
+  background:var(--bg2)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.6)!important;
+  backdrop-filter:none!important;
+}
+
+/* ── Icon buttons in header (carry a faint tint from the v3 theme) ── */
+body:not(.light) .icon-btn{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+}
+body:not(.light) .icon-btn:active{background:var(--bg2)!important;}
+
+/* ── Header itself ── */
+body:not(.light) .hdr{
+  background:var(--bg2)!important;
+  border-bottom:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+
+/* ── Bottom nav ── */
+body:not(.light) .bnav{
+  background:var(--bg2)!important;
+  border-top:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .ni.active{
+  background:var(--bgch)!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+body:not(.light) .ni.active .nlbl{text-shadow:none!important;}
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
