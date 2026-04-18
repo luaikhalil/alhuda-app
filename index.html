@@ -5345,7 +5345,10 @@ function _closeCsel() {
   }
 }
 document.addEventListener('click', _closeCsel);
-document.addEventListener('scroll', _closeCsel, true);
+document.addEventListener('scroll', e => {
+  // Only close if the scroll happened outside the open dropdown
+  if (_cselOpen && !_cselOpen.opts.contains(e.target)) _closeCsel();
+}, true);
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openBroadcastModal() { openModal('broadcastModal'); }
 function submitBroadcast() {
