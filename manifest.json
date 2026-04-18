@@ -2,7 +2,7 @@
   "name": "Alhuda Staff App",
   "short_name": "Alhuda",
   "description": "Alhuda Advance Hypermarket — Staff Management App",
-  "start_url": "./alhuda-staff-app.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
