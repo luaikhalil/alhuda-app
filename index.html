@@ -11,6 +11,7 @@
 <link id="appFavicon" rel="icon" type="image/png" href="icon-192.png">
 <link id="appTouchIcon" rel="apple-touch-icon" href="icon-512.png">
 <link id="appManifest" rel="manifest" href="manifest.json">
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
 <script>
 (function(){
   var icon = localStorage.getItem('co_icon') || localStorage.getItem('co_logo_light') || localStorage.getItem('co_logo_dark');
