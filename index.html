@@ -1350,6 +1350,218 @@ body.light .hdr-av { background:#fde68a!important; color:#92400e!important; }
 /* New Request button — dark yellow with black text */
 body.light #newReqBtn button { background:linear-gradient(135deg,#d4a017,#e6a800)!important; color:#1a1000!important; border:none!important; box-shadow:0 2px 8px rgba(200,140,0,.25)!important; }
 body.light .add-btn { background:linear-gradient(135deg,#d4a017,#e6a800)!important; color:#1a1000!important; box-shadow:0 2px 8px rgba(200,140,0,.25)!important; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SUPPLIERS-APP DESIGN OVERRIDES (2026-04-18)
+   Final pass: neutralize the glow/neon layer so the app matches the
+   suppliers design language — solid panels, neutral borders, colored
+   numbers only. Placed at the end of <style> so source-order wins.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Stat tiles: flat, neutral border, small color accent only on value ── */
+body:not(.light) .schip{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  padding:14px 10px!important;
+  border-radius:16px!important;
+  transition:border-color .2s!important;
+}
+body:not(.light) .schip:hover{border-color:#333!important;box-shadow:none!important;}
+body:not(.light) .schip .sv{text-shadow:none!important;letter-spacing:-.5px!important;}
+body:not(.light) .schip .sl{color:var(--t2)!important;text-transform:uppercase!important;letter-spacing:.04em!important;font-weight:500!important;}
+body:not(.light) .schip.b,
+body:not(.light) .schip.g,
+body:not(.light) .schip.o,
+body:not(.light) .schip.p,
+body:not(.light) .schip.r{
+  background:var(--bgc)!important;
+  border-color:var(--border)!important;
+  box-shadow:none!important;
+}
+body:not(.light) .schip.b .sv{color:var(--blue)!important;}
+body:not(.light) .schip.g .sv{color:var(--green)!important;}
+body:not(.light) .schip.o .sv{color:var(--orange)!important;}
+body:not(.light) .schip.p .sv{color:var(--purple)!important;}
+body:not(.light) .schip.r .sv{color:var(--red)!important;}
+body:not(.light) .schip.b .sl,
+body:not(.light) .schip.g .sl,
+body:not(.light) .schip.o .sl,
+body:not(.light) .schip.p .sl,
+body:not(.light) .schip.r .sl{color:var(--t2)!important;}
+
+/* ── Hero greeting card: remove mountain + glow, solid dark ── */
+body:not(.light) .hero-card{
+  background:linear-gradient(135deg,rgba(184,134,11,.08),rgba(184,134,11,.02))!important;
+  border:1px solid rgba(184,134,11,.25)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .hero-mountain,
+body:not(.light) .hero-mountain::before,
+body:not(.light) .hero-mountain::after,
+body:not(.light) .hero-glow{display:none!important;}
+body:not(.light) .hero-name,
+body:not(.light) .greet-name{text-shadow:none!important;}
+
+/* ── Clock / shift card ── */
+body:not(.light) .clock-card{
+  background:var(--bgc)!important;
+  border:1px solid rgba(74,222,128,.25)!important;
+  box-shadow:none!important;
+}
+body:not(.light) .clock-time{text-shadow:none!important;color:var(--green)!important;}
+body:not(.light) .clock-date{color:var(--t2)!important;}
+body:not(.light) .sday{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+}
+body:not(.light) .sday .dn{color:var(--blue)!important;text-shadow:none!important;}
+
+/* ── Primary button: solid gold, no glow ── */
+body:not(.light) .btn-pri{
+  background:var(--cyan)!important;
+  color:#000!important;
+  box-shadow:none!important;
+  border:none!important;
+  border-radius:12px!important;
+  font-weight:600!important;
+}
+body:not(.light) .btn-pri:hover{background:var(--blue)!important;}
+
+/* ── Secondary + status buttons ── */
+body:not(.light) .btn-sec{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+}
+body:not(.light) .btn-ok,
+body:not(.light) .btn-no{box-shadow:none!important;}
+body:not(.light) .sec-btn,
+body:not(.light) .send-btn,
+body:not(.light) .add-btn{
+  background:var(--cyan)!important;
+  box-shadow:none!important;
+  color:#000!important;
+  border-radius:12px!important;
+}
+
+/* ── All list rows: solid, no blur, no glow ── */
+body:not(.light) .req-card,
+body:not(.light) .task-card,
+body:not(.light) .chat-row,
+body:not(.light) .menu-row,
+body:not(.light) .payslip-row,
+body:not(.light) .lb-row,
+body:not(.light) .emp-card,
+body:not(.light) .grp-card,
+body:not(.light) .shift-item,
+body:not(.light) .req-row{
+  background:var(--bgc)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+body:not(.light) .req-card:hover,
+body:not(.light) .task-card:hover,
+body:not(.light) .req-card:active,
+body:not(.light) .task-card:active,
+body:not(.light) .chat-row:active,
+body:not(.light) .menu-row:active,
+body:not(.light) .payslip-row:active,
+body:not(.light) .req-row:active{
+  background:var(--bg2)!important;
+  border-color:#333!important;
+  box-shadow:none!important;
+}
+
+/* ── Chat bubbles ── */
+body:not(.light) .bubble.rx{background:var(--bgc)!important;border:1px solid var(--border)!important;box-shadow:none!important;}
+body:not(.light) .bubble.tx{background:rgba(184,134,11,.15)!important;border:1px solid rgba(184,134,11,.3)!important;box-shadow:none!important;}
+body:not(.light) .chat-hdr{background:var(--bg2)!important;border-bottom:1px solid var(--border)!important;backdrop-filter:none!important;}
+body:not(.light) .chat-inp{background:var(--bgc)!important;border:1px solid var(--border)!important;}
+
+/* ── Badges: low-opacity colored fills with matching text ── */
+body:not(.light) .bdg.g{background:rgba(74,222,128,.12)!important;border:1px solid rgba(74,222,128,.25)!important;color:#4ade80!important;}
+body:not(.light) .bdg.o{background:rgba(251,191,36,.12)!important;border:1px solid rgba(251,191,36,.25)!important;color:#fbbf24!important;}
+body:not(.light) .bdg.r{background:rgba(248,113,113,.12)!important;border:1px solid rgba(248,113,113,.25)!important;color:#f87171!important;}
+body:not(.light) .bdg.b{background:rgba(184,134,11,.12)!important;border:1px solid rgba(184,134,11,.3)!important;color:#d4a017!important;}
+body:not(.light) .bdg.p{background:rgba(167,139,250,.12)!important;border:1px solid rgba(167,139,250,.25)!important;color:#a78bfa!important;}
+body:not(.light) .bdg.gold{background:rgba(212,160,23,.12)!important;border:1px solid rgba(212,160,23,.25)!important;color:#d4a017!important;}
+
+/* ── Activity icons ── */
+body:not(.light) .aico.b{background:rgba(184,134,11,.12)!important;border:1px solid rgba(184,134,11,.25)!important;box-shadow:none!important;}
+body:not(.light) .aico.g{background:rgba(74,222,128,.12)!important;border:1px solid rgba(74,222,128,.25)!important;box-shadow:none!important;}
+body:not(.light) .aico.o{background:rgba(251,191,36,.12)!important;border:1px solid rgba(251,191,36,.25)!important;box-shadow:none!important;}
+body:not(.light) .aico.p{background:rgba(167,139,250,.12)!important;border:1px solid rgba(167,139,250,.25)!important;box-shadow:none!important;}
+body:not(.light) .aico.r{background:rgba(248,113,113,.12)!important;border:1px solid rgba(248,113,113,.25)!important;box-shadow:none!important;}
+
+/* ── Chat avatars ── */
+body:not(.light) .chat-av-sm.b{background:rgba(184,134,11,.12)!important;border:1px solid rgba(184,134,11,.25)!important;}
+body:not(.light) .chat-av-sm.p{background:rgba(167,139,250,.12)!important;border:1px solid rgba(167,139,250,.25)!important;}
+body:not(.light) .chat-av-sm.g{background:rgba(74,222,128,.12)!important;border:1px solid rgba(74,222,128,.25)!important;}
+body:not(.light) .chat-av-sm.o{background:rgba(251,191,36,.12)!important;border:1px solid rgba(251,191,36,.25)!important;}
+
+/* ── Modal ── */
+body:not(.light) .modal{
+  background:var(--bg2)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:0 -20px 60px rgba(0,0,0,.6)!important;
+  backdrop-filter:none!important;
+  border-radius:24px 24px 0 0!important;
+}
+body:not(.light) .mhandle{background:var(--t3)!important;}
+
+/* ── Admin panel + settings ── */
+body:not(.light) .admin-hdr,
+body:not(.light) .admin-tabs{background:var(--bg2)!important;border-color:var(--border)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .admin-tab.active{background:var(--bgch)!important;border-bottom:2px solid var(--cyan)!important;color:var(--blue)!important;text-shadow:none!important;}
+body:not(.light) .setting-group{background:var(--bgc)!important;border:1px solid var(--border)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .setting-group-title{color:var(--blue)!important;text-shadow:none!important;border-bottom:1px solid var(--border)!important;}
+body:not(.light) .setting-btn{background:var(--bgch)!important;border:1px solid rgba(184,134,11,.3)!important;color:var(--blue)!important;box-shadow:none!important;}
+
+/* ── Filter chips ── */
+body:not(.light) .afc,
+body:not(.light) .lang-btn{background:var(--bgc)!important;border:1px solid var(--border)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .afc.active,
+body:not(.light) .lang-btn.active{background:var(--bgch)!important;border-color:rgba(184,134,11,.5)!important;color:var(--blue)!important;text-shadow:none!important;box-shadow:none!important;}
+
+/* ── Profile ── */
+body:not(.light) .prof-hdr{background:var(--bgc)!important;border:1px solid var(--border)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .prof-av{background:rgba(184,134,11,.15)!important;border:1px solid rgba(184,134,11,.4)!important;box-shadow:none!important;color:var(--blue)!important;}
+body:not(.light) .emp-av{background:rgba(184,134,11,.15)!important;border:1px solid rgba(184,134,11,.35)!important;box-shadow:none!important;}
+
+/* ── Rtype, perm-chk, import, announce ── */
+body:not(.light) .rtype-btn{background:var(--bgc)!important;border:1px solid var(--border)!important;backdrop-filter:none!important;}
+body:not(.light) .rtype-btn.sel,
+body:not(.light) .rtype-btn:active{background:var(--bgch)!important;border-color:rgba(184,134,11,.5)!important;box-shadow:none!important;}
+body:not(.light) .rtype-btn.sel .rtype-lbl{color:var(--blue)!important;text-shadow:none!important;}
+body:not(.light) .perm-chk{background:var(--bgc)!important;border:1px solid var(--border)!important;}
+body:not(.light) .perm-chk.on{background:var(--bgch)!important;border-color:rgba(184,134,11,.5)!important;color:var(--blue)!important;box-shadow:none!important;}
+body:not(.light) .import-box{border:2px dashed var(--border)!important;}
+body:not(.light) .import-box:hover{border-color:rgba(184,134,11,.5)!important;box-shadow:none!important;}
+body:not(.light) .ann-card{background:rgba(167,139,250,.08)!important;border:1px solid rgba(167,139,250,.25)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .coin-display{background:var(--bgc)!important;border:1px solid rgba(184,134,11,.35)!important;box-shadow:none!important;backdrop-filter:none!important;}
+
+/* ── Search + inputs ── */
+body:not(.light) .search-inp{background:var(--bgc)!important;border:1px solid var(--border)!important;backdrop-filter:none!important;}
+body:not(.light) .search-inp:focus,
+body:not(.light) .inp:focus{border-color:var(--cyan)!important;box-shadow:none!important;}
+body:not(.light) .inp{background:var(--bgc)!important;border:1px solid var(--border)!important;}
+
+/* ── Login ── */
+body:not(.light) .login-card{background:var(--bgc)!important;border:1px solid var(--border)!important;box-shadow:none!important;backdrop-filter:none!important;}
+body:not(.light) .demo-btn{background:var(--bgc)!important;border:1px solid var(--border)!important;backdrop-filter:none!important;}
+body:not(.light) .demo-btn:hover{background:var(--bg2)!important;border-color:rgba(184,134,11,.4)!important;}
+
+/* ── Header avatar, toast ── */
+body:not(.light) .hdr-av{background:rgba(184,134,11,.15)!important;border:1px solid rgba(184,134,11,.35)!important;box-shadow:none!important;color:var(--blue)!important;}
+body:not(.light) .toast{background:var(--bg2)!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px rgba(0,0,0,.6)!important;}
+
+/* ── Toggle ── */
+body:not(.light) .tog.on{background:var(--cyan)!important;box-shadow:none!important;}
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
