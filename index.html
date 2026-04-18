@@ -1353,10 +1353,27 @@ body.light .add-btn { background:linear-gradient(135deg,#d4a017,#e6a800)!importa
 
 /* ════════════════════════════════════════════════════════════════════════
    SUPPLIERS-APP DESIGN OVERRIDES (2026-04-18)
-   Final pass: neutralize the glow/neon layer so the app matches the
-   suppliers design language — solid panels, neutral borders, colored
-   numbers only. Placed at the end of <style> so source-order wins.
+   Final pass: neutralize the "Futuristic Design System v3" layer above
+   (lines ~761–1089) so the app matches the suppliers design language:
+   solid neutral panels, neutral borders, colored numbers only,
+   NO blue/purple tint, NO CRT scan-lines, NO glow.
    ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Reset the design tokens that "v3" redefined with blue-purple values ── */
+:root {
+  --bg:     #0a0a0a !important;
+  --bg2:    #161616 !important;
+  --bgc:    #111111 !important;
+  --bgch:   rgba(184,134,11,0.10) !important;
+  --border: #262626 !important;
+  --t1:     #f5f5f5 !important;
+  --t2:     #a3a3a3 !important;
+  --t3:     #737373 !important;
+}
+body:not(.light) { background: #0a0a0a !important; }
+
+/* ── Kill the CRT scan-line overlay that the v3 theme re-enabled ── */
+body:not(.light)::before { display: none !important; }
 
 /* ── Stat tiles: flat, neutral border, small color accent only on value ── */
 body:not(.light) .schip{
