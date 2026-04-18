@@ -1664,6 +1664,36 @@ body:not(.light) .ni.active{
   box-shadow:none!important;
 }
 body:not(.light) .ni.active .nlbl{text-shadow:none!important;}
+
+/* ── Notification dropdown panel (inline style in HTML uses rgba(13,11,26)) ── */
+body:not(.light) #notifPanel{
+  background:var(--bg2)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.6)!important;
+  backdrop-filter:none!important;
+}
+
+/* ── Toggle switch: clearer OFF vs ON states ─────────────────────────────
+   OFF: flat neutral gray track + white knob
+   ON:  solid gold track + white knob, no glow
+   ──────────────────────────────────────────────────────────────────────── */
+body:not(.light) .tog{
+  background:#3a3a3a!important;       /* clearly gray when OFF, not purplish */
+  box-shadow:none!important;
+  border:1px solid #4a4a4a!important;
+}
+body:not(.light) .tog.on{
+  background:var(--cyan)!important;   /* solid brand gold when ON */
+  border:1px solid var(--cyan)!important;
+  box-shadow:none!important;
+}
+body:not(.light) .tog::after{
+  background:#fff!important;
+  box-shadow:0 1px 3px rgba(0,0,0,.5)!important;
+}
+body:not(.light) .tog.on::after{
+  background:#fff!important;           /* keep knob white even when ON */
+}
 </style>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
