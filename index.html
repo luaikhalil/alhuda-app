@@ -266,6 +266,19 @@ body.rtl{font-family:var(--ffa);direction:rtl;}
 .inp:focus{border-color:var(--blue);}
 .inp::placeholder{color:var(--t3);}
 select.inp{appearance:none;}
+/* ── Custom select dropdown (replaces native select in modals to fix RTL desktop bug) ── */
+.csel-wrap{position:relative;width:100%;margin-bottom:14px;}
+.csel-wrap.mb0{margin-bottom:0;}
+.csel-trigger{width:100%;padding:11px 36px 11px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:var(--r1);color:var(--t1);font-size:14px;font-family:inherit;cursor:pointer;text-align:right;display:flex;align-items:center;justify-content:space-between;gap:8px;box-sizing:border-box;}
+.csel-trigger::after{content:'▾';font-size:12px;color:var(--t3);flex-shrink:0;}
+.csel-trigger.open{border-color:var(--blue);}
+.csel-opts{position:fixed;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r1);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:9999;overflow-y:auto;max-height:220px;min-width:200px;}
+.csel-opt{padding:11px 16px;font-size:14px;color:var(--t1);cursor:pointer;text-align:right;transition:background .15s;}
+.csel-opt:hover,.csel-opt.sel{background:rgba(255,193,40,.12);color:var(--gold);}
+body.light .csel-trigger{background:#fff;border:1px solid rgba(0,0,0,.15);color:#111;}
+body.light .csel-opts{background:#fff;border:1px solid rgba(0,0,0,.15);}
+body.light .csel-opt{color:#111;}
+body.light .csel-opt:hover,body.light .csel-opt.sel{background:rgba(255,193,40,.15);}
 .demo-section{margin-top:4px;}
 .demo-lbl{font-size:10px;color:var(--t3);text-align:center;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
 .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -5219,7 +5232,120 @@ async function _sendFileMsg(file, caption) {
 }
 
 // ─── MODALS ───────────────────────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  // Replace any native <select> inside this modal with custom dropdowns
+  el.querySelectorAll('select.inp:not([data-csel])').forEach(sel => _initCsel(sel));
+}
+
+// ── Custom select (csel) — fixes RTL desktop dropdown positioning ─────────────
+let _cselOpen = null; // currently open dropdown el
+
+function _initCsel(sel) {
+  sel.setAttribute('data-csel', '1');
+  const hasMb0 = sel.style.marginBottom === '0px' || sel.style.marginBottom === '0';
+  const wrap = document.createElement('div');
+  wrap.className = 'csel-wrap' + (hasMb0 ? ' mb0' : '');
+
+  const trigger = document.createElement('div');
+  trigger.className = 'csel-trigger';
+  trigger.setAttribute('tabindex', '0');
+
+  const label = document.createElement('span');
+  label.className = 'csel-label';
+
+  trigger.appendChild(label);
+  wrap.appendChild(trigger);
+
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+  sel.style.display = 'none';
+
+  function syncLabel() {
+    const opt = sel.options[sel.selectedIndex];
+    label.textContent = opt ? opt.text : '';
+  }
+  syncLabel();
+
+  const opts = document.createElement('div');
+  opts.className = 'csel-opts';
+  opts.style.display = 'none';
+
+  function buildOpts() {
+    opts.innerHTML = '';
+    Array.from(sel.options).forEach((o, i) => {
+      const div = document.createElement('div');
+      div.className = 'csel-opt' + (i === sel.selectedIndex ? ' sel' : '');
+      div.textContent = o.text;
+      div.addEventListener('mousedown', e => {
+        e.preventDefault();
+        sel.selectedIndex = i;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        syncLabel();
+        _closeCsel();
+      });
+      opts.appendChild(div);
+    });
+  }
+
+  document.body.appendChild(opts);
+
+  function _openCsel() {
+    if (_cselOpen) _closeCsel();
+    buildOpts();
+    // Position using getBoundingClientRect so it always appears below trigger
+    const r = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const optsH = Math.min(220, sel.options.length * 42);
+    opts.style.display = 'block';
+    opts.style.width = r.width + 'px';
+    if (spaceBelow >= optsH || spaceBelow >= 120) {
+      opts.style.top  = (r.bottom + 4) + 'px';
+      opts.style.bottom = 'auto';
+    } else {
+      opts.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+      opts.style.top = 'auto';
+    }
+    // RTL: align to right edge of trigger
+    if (document.documentElement.dir === 'rtl' || document.body.dir === 'rtl') {
+      opts.style.right = (window.innerWidth - r.right) + 'px';
+      opts.style.left  = 'auto';
+    } else {
+      opts.style.left  = r.left + 'px';
+      opts.style.right = 'auto';
+    }
+    trigger.classList.add('open');
+    _cselOpen = { opts, trigger };
+  }
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if (opts.style.display === 'block') _closeCsel();
+    else _openCsel();
+  });
+  trigger.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _openCsel(); }
+    if (e.key === 'Escape') _closeCsel();
+  });
+
+  // Keep in sync if value changed programmatically
+  sel.addEventListener('change', syncLabel);
+
+  wrap._cselClose = function() { opts.style.display = 'none'; trigger.classList.remove('open'); };
+  wrap._opts = opts;
+}
+
+function _closeCsel() {
+  if (_cselOpen) {
+    _cselOpen.opts.style.display = 'none';
+    _cselOpen.trigger.classList.remove('open');
+    _cselOpen = null;
+  }
+}
+document.addEventListener('click', _closeCsel);
+document.addEventListener('scroll', _closeCsel, true);
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function openBroadcastModal() { openModal('broadcastModal'); }
 function submitBroadcast() {
