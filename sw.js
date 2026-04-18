@@ -1,6 +1,6 @@
 const CACHE = 'alhuda-v1';
 const ASSETS = [
-  './alhuda-staff-app.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -44,7 +44,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return response;
-      }).catch(() => caches.match('./alhuda-staff-app.html'));
+      }).catch(() => caches.match('./index.html'));
     })
   );
 });
