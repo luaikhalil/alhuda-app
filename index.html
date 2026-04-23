@@ -1749,29 +1749,6 @@ body:not(.light) .tog.on::after{
     <div id="loginErr" style="display:none;color:var(--red);font-size:12px;text-align:center;margin-top:6px;padding:8px;background:rgba(239,68,68,.08);border-radius:8px;border:1px solid rgba(239,68,68,.2)"></div>
     <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px" data-en="Enter your employee number" data-ar="أدخل رقم الموظف">Enter your employee number</div>
 
-    <div class="demo-section">
-      <div class="demo-lbl" data-en="Quick Demo — Select Your Role" data-ar="تجريبي سريع — اختر دورك">Quick Demo — Select Your Role</div>
-      <div class="demo-grid">
-        <button class="demo-btn" onclick="login('sales_staff')"><span>🧑</span><span data-en="Sales Staff" data-ar="موظف القاعة">Sales Staff</span><span style="font-size:9px;color:var(--t3)" data-en="Ground Floor" data-ar="الطابق الأرضي">Ground Floor</span></button>
-        <button class="demo-btn" onclick="login('cashier_sup')"><span>💰</span><span data-en="Cashier Supervisor" data-ar="مشرف الصندوق">Cashier Supervisor</span><span style="font-size:9px;color:var(--t3)" data-en="Ground Floor" data-ar="الطابق الأرضي">Ground Floor</span></button>
-        <button class="demo-btn" onclick="login('gf_mgr')"><span>🏪</span><span data-en="Store Manager" data-ar="مدير المتجر">Store Manager</span><span style="font-size:9px;color:var(--t3)" data-en="Ground Floor" data-ar="الطابق الأرضي">Ground Floor</span></button>
-        <button class="demo-btn" onclick="login('wh_mgr')"><span>📦</span><span data-en="Warehouse Mgr" data-ar="مدير المستودع">Warehouse Mgr</span><span style="font-size:9px;color:var(--t3)" data-en="Warehouse" data-ar="المستودع">Warehouse</span></button>
-        <button class="demo-btn" onclick="login('hr_mgr')"><span>📋</span><span data-en="HR Manager" data-ar="مدير الموارد البشرية">HR Manager</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
-        <button class="demo-btn" onclick="login('supervision')"><span>👁️</span><span data-en="Top Supervision" data-ar="الإشراف العام">Top Supervision</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
-        <button class="demo-btn" onclick="login('security')"><span>🔒</span><span data-en="Security Guard" data-ar="حارس الأمن">Security Guard</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
-        <button class="demo-btn" onclick="login('security_sup')"><span>🛡️</span><span data-en="Security Supervisor" data-ar="مشرف الأمن">Security Supervisor</span><span style="font-size:9px;color:var(--t3)" data-en="Security" data-ar="الأمن">Security</span></button>
-        <button class="demo-btn" onclick="login('it_staff')"><span>💻</span><span data-en="IT Staff" data-ar="موظف تقنية المعلومات">IT Staff</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
-        <button class="demo-btn" onclick="login('acc_mgr')"><span>🧾</span><span data-en="Accounting Manager" data-ar="مدير المحاسبة">Accounting Manager</span><span style="font-size:9px;color:var(--t3)" data-en="Office" data-ar="المكتب">Office</span></button>
-      </div>
-      <!-- Admin button spans full width -->
-      <button class="demo-btn" onclick="login('admin')" style="grid-column:1/-1;margin-top:6px;background:rgba(184,134,11,.06);border-color:rgba(184,134,11,.3);flex-direction:row;justify-content:center;gap:10px;padding:12px">
-        <span style="font-size:22px">👔</span>
-        <div style="text-align:left">
-          <div style="font-size:12px;font-weight:700;color:var(--blue)" data-en="General Manager" data-ar="المدير العام">General Manager</div>
-          <div style="font-size:10px;color:var(--t3)" data-en="Full access · All operations" data-ar="وصول كامل · جميع العمليات">Full access · All operations</div>
-        </div>
-      </button>
-    </div>
   </div>
 </div>
 
@@ -3904,7 +3881,7 @@ const CHATS = {
 let lang = 'ar';
 let role = null;
 let user = null;
-let clockedIn = true;
+let clockedIn = false;
 let selectedReqType = null;
 let callToOffice = false;
 let activeChat = null;
@@ -4130,6 +4107,7 @@ function login(roleKey) {
   }
 
   startClock();
+  loadTodayAttendance(); // Restore clock-in state from Supabase
   refreshDynamic();
   showTab('home');
   // Re-apply Android WebView touch fix after login renders the app
@@ -4390,7 +4368,7 @@ async function toggleClock() {
         date: new Date().toISOString().split('T')[0],
         lat: loc.lat, lng: loc.lng, distance_m: loc.distance,
         location_verified: loc.distance !== null
-      }).then(({ data, error }) => {
+      }).select().then(({ data, error }) => {
         if (error) console.warn('Supabase clock-in failed:', error);
         else window._lastAttendanceId = data?.[0]?.id;
       });
@@ -4412,6 +4390,39 @@ async function toggleClock() {
         .then(({ error }) => { if (error) console.warn('Supabase clock-out failed:', error); });
     }
   }
+}
+
+// ─── LOAD TODAY'S ATTENDANCE STATE FROM SUPABASE ────────────────────────────
+async function loadTodayAttendance() {
+  if (!user) return;
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data, error } = await sb.from('attendance')
+      .select('*')
+      .eq('emp_id', user.id || role)
+      .eq('date', today)
+      .order('clock_in', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return; // No record → stay clocked out (default false)
+    if (data.clock_in && !data.clock_out) {
+      // Still on shift — restore clocked-in state
+      clockedIn = true;
+      window._lastAttendanceClockIn = data.clock_in;
+      window._lastAttendanceId = data.id;
+      const timeStr = new Date(data.clock_in).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      document.querySelectorAll('#clockBtn').forEach(btn => {
+        btn.className = 'clock-btn out';
+        btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+        btn.textContent = t('🔴 End Shift','🔴 إنهاء الوردية');
+      });
+      document.querySelectorAll('#clockInfo').forEach(el => {
+        el.textContent = t('Clocked in at ','تسجيل دخول الساعة ') + timeStr;
+      });
+      document.getElementById('slideClockOut') && (document.getElementById('slideClockOut').style.display = 'block');
+      updateHeroClockBtn();
+    }
+  } catch(e) { console.warn('loadTodayAttendance:', e); }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -4758,10 +4769,14 @@ function renderMyRequests() {
     return;
   }
 
-  const statusBdg = { pending_manager:'o', pending_hr:'o', pending:'o', in_progress:'b', resolved:'g', approved:'g', rejected:'r' };
-  const statusLbl = { pending_manager: t('Pending Manager','بانتظار المدير'), pending_hr: t('Pending HR','بانتظار HR'), pending: t('Pending','معلق'), in_progress: t('In Progress','قيد التنفيذ'), resolved: t('Resolved','محلول'), approved: t('Approved','موافق'), rejected: t('Rejected','مرفوض') };
+  const statusBdg = { pending_manager:'o', pending_hr:'o', pending:'o', in_progress:'b', resolved:'g', approved:'g', rejected:'r', escalated:'r' };
+  const statusLbl = { pending_manager: t('Pending Manager','بانتظار المدير'), pending_hr: t('Pending HR','بانتظار HR'), pending: t('Pending','معلق'), in_progress: t('In Progress','قيد التنفيذ'), resolved: t('Resolved','محلول'), approved: t('Approved','موافق'), rejected: t('Rejected','مرفوض'), escalated: t('Escalated to GM','مُصعَّد للمدير') };
 
-  list.innerHTML = mine.map(r => `
+  list.innerHTML = mine.map(r => {
+    // Show "Escalate to GM" button if pending_manager for over 24 hours
+    const canEscalate = r.status === 'pending_manager' && r.createdAt &&
+      (Date.now() - new Date(r.createdAt).getTime() > 86400000);
+    return `
     <div class="req-card ${r.urgent ? 'urgent' : ''}" onclick="openReqDetail('${r.id}')">
       <div class="req-top">
         <div>
@@ -4773,7 +4788,9 @@ function renderMyRequests() {
       <div class="req-body">${lang === 'ar' && r.titleAr ? r.titleAr : r.title}</div>
       ${chainHTML(r.chain, r.chainStatus)}
       ${r.passGenerated ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.15);border-radius:8px;font-size:11px;cursor:pointer;color:var(--gold)" onclick="event.stopPropagation();showPass('${r.passSerial}','${r.fromName || user.name}','${r.passDept || user.dept}','${r.passPurpose}','${r.passIssued}')">🎫 ${t('Office Pass Ready · Tap to show','تصريح جاهز · اضغط للعرض')} → <strong>${r.passSerial}</strong></div>` : ''}
-    </div>`).join('');
+      ${canEscalate ? `<button class="escalate-btn" style="margin-top:8px;width:100%;box-sizing:border-box" onclick="event.stopPropagation();escalateToGM('${r.id}')">⬆️ ${t('Manager hasn\'t responded · Escalate to GM','لم يرد المدير · تصعيد للمدير العام')}</button>` : ''}
+    </div>`;
+  }).join('');
 
   // Passes section
   const passList = document.getElementById('myPassesList');
@@ -4841,7 +4858,8 @@ function renderIncoming() {
       <div class="req-body">${lang === 'ar' && r.titleAr ? r.titleAr : r.title}</div>
       <div style="font-size:11px;color:var(--t2);margin-bottom:12px">${r.details}</div>
 
-      ${r.status !== 'escalated' ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${(r.status !== 'escalated' || user.type === 'admin') ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${r.status === 'escalated' ? `<div style="width:100%;font-size:11px;color:#f87171;padding:4px 0 6px">⬆️ ${t('Escalated by employee — your decision is final','تم التصعيد من الموظف — قرارك نهائي')}</div>` : ''}
         ${isIncident && isSupervision ? `
           <button class="btn-ok" style="font-size:12px;flex:2" onclick="toggleIncidentReview('${r.id}')">📝 ${t('Write Report & Complete','اكتب تقريراً وأغلق')}</button>
           <button class="btn-no" style="font-size:12px" onclick="handleReq('${r.id}','reject')">✗ ${t('Dismiss','رفض')}</button>
@@ -4850,7 +4868,7 @@ function renderIncoming() {
           <button class="btn-no" onclick="handleReq('${r.id}','reject')">✗ ${t('Reject','رفض')}</button>
         `}
         ${user.type === 'dept_officer' && !isIncident ? `<button style="padding:9px;border-radius:var(--r1);background:rgba(251,191,36,.1);color:var(--gold);border:1px solid rgba(251,191,36,.2);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer" onclick="handleReq('${r.id}','call')">🎫 ${t('Call In','استدعاء')}</button>` : ''}
-        <button class="escalate-btn" onclick="escalateToGM('${r.id}')" title="${t('Cannot handle this request — send to General Manager','لا يمكن التعامل مع هذا الطلب — أرسل للمدير العام')}">⬆️ ${t('Escalate to GM','تصعيد للمدير')}</button>
+        ${r.status !== 'escalated' ? `<button class="escalate-btn" onclick="escalateToGM('${r.id}')" title="${t('Cannot handle this request — send to General Manager','لا يمكن التعامل مع هذا الطلب — أرسل للمدير العام')}">⬆️ ${t('Escalate to GM','تصعيد للمدير')}</button>` : ''}
       </div>` : `<div style="font-size:11px;color:#f87171;padding:8px 0">⬆️ ${t('This request has been escalated to the General Manager','تم تصعيد هذا الطلب إلى المدير العام')}</div>`}
 
       <!-- Incident Review Panel (shown on toggle) -->
@@ -10992,28 +11010,56 @@ function showCoinHistory() {
 }
 
 // ─── ATTENDANCE HISTORY ───────────────────────────────────────────────────────
-function showAttendanceHistory() {
-  const clockIns = [
-    { day: t('Today','اليوم'),      ci:'08:02 AM', co:'04:00 PM', hrs:'7h 58m', status:'present' },
-    { day: t('Yesterday','أمس'),   ci:'07:58 AM', co:'04:05 PM', hrs:'8h 07m', status:'present' },
-    { day: t('Apr 9','9 أبريل'),   ci:'08:11 AM', co:'04:00 PM', hrs:'7h 49m', status:'present' },
-    { day: t('Apr 8','8 أبريل'),   ci:'08:00 AM', co:'04:00 PM', hrs:'8h 00m', status:'present' },
-    { day: t('Apr 7','7 أبريل'),   ci:'—', co:'—', hrs:'—', status:'leave' },
-    { day: t('Apr 6','6 أبريل'),   ci:'08:03 AM', co:'03:58 PM', hrs:'7h 55m', status:'present' },
-  ];
-  const rows = clockIns.map(d => {
-    const clr = d.status === 'present' ? 'var(--green)' : 'var(--orange)';
-    const icon = d.status === 'present' ? '✅' : '📅';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
-      <div style="font-weight:600">${icon} ${d.day}</div>
-      <div style="text-align:right;font-size:11px;color:var(--t2)">${d.ci} → ${d.co}<br><span style="color:${clr};font-weight:700">${d.hrs}</span></div>
-    </div>`;
-  }).join('');
+async function showAttendanceHistory() {
+  if (!user) return;
+  // Show modal immediately with loading state
   const modal = document.createElement('div');
   modal.className = 'modal-bg';
   modal.style.cssText = 'display:flex;z-index:9999';
-  modal.innerHTML = `<div class="modal"><div class="mhandle"></div><div class="mtitle">📊 ${t('Attendance History','سجل الحضور')}</div>${rows}<button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:10px">${t('Close','إغلاق')}</button></div>`;
+  modal.innerHTML = `<div class="modal"><div class="mhandle"></div><div class="mtitle">📊 ${t('Attendance History','سجل الحضور')}</div><div id="attHistBody" style="text-align:center;padding:24px;color:var(--t3);font-size:13px">⏳ ${t('Loading...','جاري التحميل...')}</div><button class="btn-sec" onclick="this.closest('.modal-bg').remove()" style="margin-top:10px">${t('Close','إغلاق')}</button></div>`;
   document.body.appendChild(modal);
+
+  try {
+    const empId = user.id || role;
+    const { data, error } = await sb.from('attendance')
+      .select('*')
+      .eq('emp_id', empId)
+      .order('date', { ascending: false })
+      .limit(30);
+
+    const body = modal.querySelector('#attHistBody');
+    if (!body) return;
+
+    if (error || !data || data.length === 0) {
+      body.textContent = t('No attendance records found','لا توجد سجلات حضور بعد');
+      return;
+    }
+
+    const rows = data.map(d => {
+      const ci = d.clock_in ? new Date(d.clock_in).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '—';
+      const co = d.clock_out ? new Date(d.clock_out).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : t('Still In','لم يخرج');
+      let hrs = '—';
+      if (d.clock_in && d.clock_out) {
+        const diff = Math.floor((new Date(d.clock_out) - new Date(d.clock_in)) / 60000);
+        hrs = Math.floor(diff/60) + 'h ' + (diff%60) + 'm';
+      } else if (d.clock_in && !d.clock_out) {
+        hrs = t('Active','نشط');
+      }
+      const dateObj = new Date(d.date + 'T00:00:00');
+      const dayLbl = dateObj.toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{weekday:'short',month:'short',day:'numeric'});
+      const clr = d.clock_in ? 'var(--green)' : '#f87171';
+      const icon = d.clock_in ? '✅' : '❌';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px">
+        <div style="font-weight:600">${icon} ${dayLbl}</div>
+        <div style="text-align:${lang==='ar'?'left':'right'};font-size:11px;color:var(--t2)">${ci} → ${co}<br><span style="color:${clr};font-weight:700">${hrs}</span></div>
+      </div>`;
+    }).join('');
+    body.innerHTML = rows;
+  } catch(e) {
+    const body = modal.querySelector('#attHistBody');
+    if (body) body.textContent = t('Failed to load records','فشل في تحميل السجلات');
+    console.warn('showAttendanceHistory:', e);
+  }
 }
 
 function showPerformanceReview() {
