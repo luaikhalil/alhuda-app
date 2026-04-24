@@ -2153,7 +2153,7 @@ body:not(.light) .tog.on::after{
       </div>
 
       <!-- Today Worked / Clock Card -->
-      <div class="worked-card">
+      <div class="worked-card" id="clockAttendanceCard">
         <div class="worked-lbl" data-en="TODAY WORKED" data-ar="ساعات عمل اليوم">TODAY WORKED</div>
         <div class="worked-time" id="workedTime">00:00:00</div>
         <div class="worked-sub" id="clockInfo" data-en="Clocked in at 08:02 AM" data-ar="تسجيل الدخول الساعة 08:02">Clocked in at 08:02 AM</div>
@@ -4089,6 +4089,8 @@ function login(roleKey) {
   const isSecuritySup = user.type === 'security_sup';
   const isEmployee = user.type === 'employee' || user.type === 'supervisor';
 
+  const isAdmin = user.type === 'admin' || user.id === 'ADM-001';
+
   document.getElementById('secVerifyBlock').style.display = (isSecurity || isSecuritySup) ? 'block' : 'none';
   document.getElementById('mgrHomeBlock').style.display = (isManager || isSecuritySup) ? 'block' : 'none';
   document.getElementById('deptHomeBlock').style.display = isDeptOfficer ? 'block' : 'none';
@@ -4099,6 +4101,12 @@ function login(roleKey) {
   document.getElementById('incomingReqsSection').style.display = (isManager || isSecuritySup || isHRManager) ? 'block' : 'none';
   document.getElementById('broadcastBtn').style.display = (isManager || isDeptOfficer) ? 'block' : 'none';
 
+  // GM does not clock in — hide attendance buttons
+  const heroClockBtn = document.getElementById('heroClockBtn');
+  const clockCard    = document.getElementById('clockAttendanceCard');
+  if (heroClockBtn) heroClockBtn.style.display = isAdmin ? 'none' : 'inline-flex';
+  if (clockCard)    clockCard.style.display    = isAdmin ? 'none' : 'block';
+
   // Check for passes
   const myPasses = passes.filter(p => p.roleKey === roleKey);
   if (myPasses.length > 0) {
@@ -4107,7 +4115,7 @@ function login(roleKey) {
   }
 
   startClock();
-  loadTodayAttendance(); // Restore clock-in state from Supabase
+  if (!isAdmin) loadTodayAttendance(); // Restore clock-in state from Supabase (not needed for GM)
   refreshDynamic();
   showTab('home');
   // Re-apply Android WebView touch fix after login renders the app
@@ -5406,6 +5414,13 @@ function openChat(id) {
 function closeChat() {
   document.getElementById('chatPanel').classList.remove('open');
   closeGroupMenu();
+  activeGroupId = null;
+  activeChat = null;
+  // Unsubscribe from realtime when leaving the chat
+  if (_realtimeChan) {
+    try { _realtimeChan.unsubscribe(); } catch(e) {}
+    _realtimeChan = null;
+  }
 }
 
 // ── FILE ATTACHMENT STATE ─────────────────────────────────────────────────
@@ -11155,24 +11170,73 @@ renderChatList = function() {
 
 // ─── GROUP CHAT ───────────────────────────────────────────────────────────────
 let activeGroupId = null; // track which group the open chat belongs to
+let _realtimeChan = null; // current Supabase Realtime channel
 
-function openGroupChat(groupId) {
+// Map a Supabase messages row → in-memory msg object
+function _dbRowToMsg(row, myId) {
+  return {
+    rx: normId(row.sender_id) !== normId(myId),
+    text: row.body,
+    t: new Date(row.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+    senderId: row.sender_id,
+    senderName: row.sender_name || '',
+    senderType: _senderTypeFromId(row.sender_id),
+    _sbId: row.id,
+    seen_by: Array.isArray(row.seen_by) ? row.seen_by : [],
+    createdAt: row.created_at
+  };
+}
+
+// Look up an employee's emp_type by ID
+function _senderTypeFromId(senderId) {
+  const emp = employees.find(e => normId(e.id) === normId(senderId));
+  return emp?.emp_type || 'employee';
+}
+
+// Subscribe to realtime INSERT events for a group chat
+async function subscribeGroupChat(groupId) {
+  // Unsubscribe from any previous channel first
+  if (_realtimeChan) {
+    try { await _realtimeChan.unsubscribe(); } catch(e) {}
+    _realtimeChan = null;
+  }
+  const myId = user?.id || role;
+  _realtimeChan = sb.channel('grp-msgs-' + groupId)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+      filter: `chat_id=eq.grp-${groupId}`
+    }, payload => {
+      const row = payload.new;
+      // Skip own messages — already added locally in sendMsg()
+      if (normId(row.sender_id) === normId(myId)) return;
+      const convo = CHATS['grp-' + groupId];
+      if (!convo) return;
+      // Avoid duplicates (can happen on reconnect)
+      if (convo.msgs.some(m => m._sbId === row.id)) return;
+      convo.msgs.push(_dbRowToMsg(row, myId));
+      if (activeGroupId === groupId) {
+        renderGroupMessages(groupId);
+        const el = document.getElementById('chatMsgsEl');
+        if (el) el.scrollTop = el.scrollHeight;
+        markGroupRead(groupId);
+      } else {
+        renderChatList(); // update unread dot
+      }
+    })
+    .subscribe();
+}
+
+async function openGroupChat(groupId) {
   const g = groups.find(gr => gr.id === groupId);
   if (!g) return;
   const members = resolveGroupMembers(g);
   activeGroupId = groupId;
 
-  // Initialise group chat history if not present
+  // Initialise group chat history if not present (msgs loaded from Supabase below)
   if (!CHATS['grp-' + groupId]) {
-    CHATS['grp-' + groupId] = {
-      name: g.name,
-      nameAr: g.name,
-      av: g.icon,
-      avc: 'b',
-      msgs: [
-        { rx:true, text:`Welcome to ${g.name}! This group has ${members.length} member${members.length!==1?'s':''}.`, textAr:`مرحباً في ${g.name}! تضم هذه المجموعة ${members.length} عضو.`, t:'Today', senderType:'system' }
-      ]
-    };
+    CHATS['grp-' + groupId] = { name: g.name, nameAr: g.name, av: g.icon, avc: 'b', msgs: [] };
   }
 
   // Open chat with group-specific UI
@@ -11217,14 +11281,30 @@ function openGroupChat(groupId) {
   // Apply send/attach permissions for the current user
   applyGroupChatPerms(groupId);
 
-  // Render messages
-  renderGroupMessages(groupId);
+  // Show loading state while fetching from Supabase
+  const msgsEl = document.getElementById('chatMsgsEl');
+  if (msgsEl) msgsEl.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--t3);font-size:12px">⏳ ${t('Loading messages…','جاري تحميل الرسائل…')}</div>`;
 
   document.getElementById('chatPanel').classList.add('open');
-  setTimeout(() => {
-    const msgs = document.getElementById('chatMsgsEl');
-    if (msgs) msgs.scrollTop = msgs.scrollHeight;
-  }, 50);
+
+  // Load message history from Supabase
+  const myId = user?.id || role;
+  const { data: msgRows, error: msgErr } = await sb.from('messages')
+    .select('*')
+    .eq('chat_id', 'grp-' + groupId)
+    .order('created_at', { ascending: true })
+    .limit(150);
+
+  if (!msgErr && msgRows) {
+    CHATS['grp-' + groupId].msgs = msgRows.map(r => _dbRowToMsg(r, myId));
+  }
+
+  // Render and scroll to bottom
+  renderGroupMessages(groupId);
+  setTimeout(() => { if (msgsEl) msgsEl.scrollTop = msgsEl.scrollHeight; }, 50);
+
+  // Subscribe to new messages in real time
+  subscribeGroupChat(groupId);
 
   // Mark all messages as read in background
   markGroupRead(groupId);
