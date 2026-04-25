@@ -2177,13 +2177,13 @@ body:not(.light) .tog.on::after{
       <div class="stitle" data-en="THIS WEEK" data-ar="هذا الأسبوع">THIS WEEK</div>
       <div class="card" style="padding:14px">
         <div class="week-chart" id="weekChart">
-          <div class="week-bar-wrap"><div class="week-bar" style="height:60%"></div><div class="week-bar-lbl">Mon</div></div>
-          <div class="week-bar-wrap"><div class="week-bar" style="height:75%"></div><div class="week-bar-lbl">Tue</div></div>
-          <div class="week-bar-wrap"><div class="week-bar" style="height:55%"></div><div class="week-bar-lbl">Wed</div></div>
-          <div class="week-bar-wrap"><div class="week-bar" style="height:80%"></div><div class="week-bar-lbl">Thu</div></div>
-          <div class="week-bar-wrap"><div class="week-bar today" style="height:45%"></div><div class="week-bar-lbl" style="color:var(--blue)">Today</div></div>
-          <div class="week-bar-wrap"><div class="week-bar" style="height:0%"></div><div class="week-bar-lbl">Sat</div></div>
-          <div class="week-bar-wrap"><div class="week-bar" style="height:0%"></div><div class="week-bar-lbl">Sun</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar0"></div><div class="week-bar-lbl" id="wLbl0">Mon</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar1"></div><div class="week-bar-lbl" id="wLbl1">Tue</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar2"></div><div class="week-bar-lbl" id="wLbl2">Wed</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar3"></div><div class="week-bar-lbl" id="wLbl3">Thu</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar4"></div><div class="week-bar-lbl" id="wLbl4">Fri</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar5"></div><div class="week-bar-lbl" id="wLbl5">Sat</div></div>
+          <div class="week-bar-wrap"><div class="week-bar" style="height:0%" id="wBar6"></div><div class="week-bar-lbl" id="wLbl6">Sun</div></div>
         </div>
         <div style="font-size:10px;color:var(--t3);text-align:center" data-en="Weekly attendance — hours worked per day" data-ar="الحضور الأسبوعي — ساعات العمل يومياً">Weekly attendance — hours worked per day</div>
       </div>
@@ -2192,17 +2192,17 @@ body:not(.light) .tog.on::after{
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <div class="leave-card annual">
           <div class="leave-emoji">🌴</div>
-          <div class="leave-val" id="leaveAnnual">14</div>
+          <div class="leave-val" id="leaveAnnual">—</div>
           <div class="leave-lbl" data-en="Annual" data-ar="سنوية">Annual</div>
         </div>
         <div class="leave-card sick">
           <div class="leave-emoji">🏥</div>
-          <div class="leave-val" id="leaveSick">6</div>
+          <div class="leave-val" id="leaveSick">—</div>
           <div class="leave-lbl" data-en="Sick" data-ar="مرضية">Sick</div>
         </div>
         <div class="leave-card emergency">
           <div class="leave-emoji">🚨</div>
-          <div class="leave-val" id="leaveEmergency">2</div>
+          <div class="leave-val" id="leaveEmergency">—</div>
           <div class="leave-lbl" data-en="Emergency" data-ar="طارئة">Emergency</div>
         </div>
       </div>
@@ -3842,40 +3842,14 @@ const REQ_TYPES = {
   ],
 };
 
-// Demo request data
-let requests = [
-  { id:'REQ-001', type:'leave', typeLabel:'Leave Request', from:'sales_staff', fromName:'Ahmad Hassan', to:'manager_then_hr', toLabel:'Manager → HR', title:'Annual Leave Apr 12–14', date:'Apr 8', status:'pending_manager', chainStep:1, urgent:false, details:'Personal trip with family. 3 days annual leave.', chain:['Submitted','Manager Approval','HR Approval','Decision'], chainStatus:['done','active','pending','pending'] },
-  { id:'REQ-002', type:'it', typeLabel:'IT Support', from:'sales_staff', fromName:'Ahmad Hassan', to:'it', toLabel:'IT Department', title:'Price scanner not working at Aisle 5', date:'Apr 7', status:'in_progress', chainStep:null, urgent:false, details:'The handheld scanner at Aisle 5 is showing error E22. Tried restart, still failing.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','active','pending'] },
-  { id:'REQ-003', type:'maintenance', typeLabel:'Maintenance', from:'sales_staff', fromName:'Ahmad Hassan', to:'maintenance', toLabel:'Maintenance Dept', title:'Broken shelf bracket — Aisle 3', date:'Apr 6', status:'resolved', chainStep:null, urgent:false, details:'Shelf bracket is cracked and may fall. Safety hazard.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','done','done'], resolvedNote:'Bracket replaced on Apr 7. Please check and confirm.', passGenerated:true, passSerial:'20260407583721', passIssued:'Maintenance Dept', passPurpose:'Maintenance Meeting Follow-up' },
-  // Manager's pending approvals
-  { id:'REQ-004', type:'leave', typeLabel:'Leave Request', from:'other_emp', fromName:'Fatima Al-Zahra (EMP-004)', to:'manager_then_hr', toLabel:'Manager → HR', title:'Sick Leave Apr 10', date:'Apr 9', status:'pending_manager', chainStep:1, urgent:false, details:'Feeling unwell, doctor visit required.', chain:['Submitted','Manager Approval','HR Approval','Decision'], chainStatus:['done','active','pending','pending'], forManager:'gf_mgr' },
-  { id:'REQ-005', type:'incident', typeLabel:'Incident Report', from:'cashier_sup', fromName:'Sara Al-Amri (Cashier Sup)', to:'supervision', toLabel:'Top Level Supervision', title:'Cash discrepancy at Register #3 — Apr 9 10:15 AM', date:'Apr 9', status:'pending', chainStep:null, urgent:true, details:'Discrepancy of YER 5,200 found at register #3 during shift change. Customer dispute involved. Security footage requested.', chain:['Submitted','Under Review','Decision'], chainStatus:['done','active','pending'], forDept:'supervision' },
-  { id:'REQ-006', type:'it', typeLabel:'IT Support', from:'gf_mgr', fromName:'Khalid Al-Mansour', to:'it', toLabel:'IT Department', title:'POS system crashing at main cashier lanes', date:'Apr 8', status:'pending', chainStep:null, urgent:true, details:'3 out of 5 cashier POS terminals are crashing randomly since yesterday morning update.', chain:['Submitted','In Progress','Resolved'], chainStatus:['done','active','pending'], forDept:'it' },
-];
-
-// Office passes
-let passes = [
-  { serial:'20260407583721', empName:'Ahmad Hassan', empDept:'Ground Floor', purpose:'Maintenance Meeting Follow-up', issuedBy:'Maintenance Dept', date:'Apr 7, 2026', valid:true, roleKey:'sales_staff' }
-];
+// Requests and passes — loaded from Supabase on login
+let requests = [];
+let passes = [];
 // Employee IDs allowed to issue passes (loaded from Supabase settings)
 let passIssuers = [];
 
-// Conversations
-const CHATS = {
-  mgmt: { name:'Management', nameAr:'الإدارة', av:'📢', avc:'p', msgs:[
-    { rx:true, text:'All staff monthly meeting this Friday, April 10 at 2:00 PM. Main Conference Room. Attendance mandatory.', textAr:'اجتماع الموظفين الشهري الجمعة 10 أبريل الساعة 2:00 ظهراً. غرفة الاجتماعات الرئيسية. الحضور إلزامي.', t:'Today 9:00 AM' }
-  ]},
-  manager: { name:'Khalid Al-Mansour (Manager)', nameAr:'خالد المنصور (المدير)', av:'👨‍💼', avc:'b', msgs:[
-    { rx:true, text:'Good morning! Please make sure the grocery section is fully stocked before 9 AM.', textAr:'صباح الخير! تأكد من أن قسم البقالة ممتلئ بالكامل قبل الساعة 9 صباحاً.', t:'8:05 AM' },
-    { rx:false, text:'On it! Almost done with Aisle 3, will move to frozen section next.', textAr:'حاضر! انتهيت تقريباً من الممر 3، سأنتقل إلى قسم المجمدات بعدها.', t:'8:18 AM' },
-  ]},
-  hr: { name:'HR Department', nameAr:'قسم الموارد البشرية', av:'📋', avc:'g', msgs:[
-    { rx:true, text:'Your leave request REQ-001 has been received and is pending your manager\'s approval.', textAr:'تم استلام طلب إجازتك REQ-001 وهو في انتظار موافقة مديرك.', t:'Yesterday' }
-  ]},
-  it: { name:'IT Department', nameAr:'قسم تقنية المعلومات', av:'💻', avc:'b', msgs:[
-    { rx:true, text:'We\'ve received your IT request REQ-002 for the scanner issue. Technician will visit Aisle 5 today afternoon.', textAr:'استلمنا طلبك REQ-002 بخصوص مشكلة الماسح الضوئي. سيزور الفني الممر 5 بعد الظهر.', t:'Apr 7' }
-  ]}
-};
+// Conversations (group chats are added dynamically via openGroupChat)
+const CHATS = {};
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let lang = 'ar';
@@ -4039,6 +4013,40 @@ function refreshDynamic() {
   if (gd) gd.textContent = (lang === 'ar' ? user.deptAr : user.dept) + ' · ' + (lang === 'ar' ? user.roleAr : user.role);
   // Update hero clock button state
   updateHeroClockBtn();
+
+  // ── Live stats ──────────────────────────────────────────────────────────────
+  const myId2     = user.id || role;
+  const myNormId2 = normId(myId2);
+
+  // Employee chip: active (non-resolved) requests count
+  const myActiveReqs = requests.filter(r =>
+    (normId(r.from) === myNormId2 || r.from === role) &&
+    !['approved','rejected','resolved'].includes(r.status)
+  ).length;
+  const srEl = document.getElementById('sReqs');
+  if (srEl) srEl.textContent = myActiveReqs;
+
+  // Manager home block stats
+  const pendingForMgr = requests.filter(r =>
+    normId(r.forManager) === myNormId2 &&
+    ['pending_manager','pending_hr','escalated'].includes(r.status)
+  ).length;
+  const tasksDone = (tasks || []).filter(tk =>
+    normId(tk.assigned_by) === myNormId2 &&
+    (tk.status === 'completed' || tk.status === 'confirmed')
+  ).length;
+  const activeLeaves = requests.filter(r => r.type === 'leave' && r.status === 'approved').length;
+  const totalActive  = employees.filter(e => e.active).length;
+  const s1 = document.getElementById('mStat1'); if (s1) s1.textContent = totalActive;
+  const s2 = document.getElementById('mStat2'); if (s2) s2.textContent = activeLeaves;
+  const s3 = document.getElementById('mStat3'); if (s3) s3.textContent = pendingForMgr;
+  const s4 = document.getElementById('mStat4'); if (s4) s4.textContent = tasksDone;
+
+  // Dept officer stats
+  const d1 = document.getElementById('dStat1'); if (d1) d1.textContent = requests.filter(r => r.status === 'pending' || r.status === 'pending_manager').length;
+  const d2 = document.getElementById('dStat2'); if (d2) d2.textContent = requests.filter(r => r.status === 'in_progress').length;
+  const d3 = document.getElementById('dStat3'); if (d3) d3.textContent = requests.filter(r => r.status === 'resolved' || r.status === 'approved').length;
+
   renderActivity();
   renderMyRequests();
   renderIncoming();
@@ -4115,7 +4123,7 @@ function login(roleKey) {
   }
 
   startClock();
-  if (!isAdmin) loadTodayAttendance(); // Restore clock-in state from Supabase (not needed for GM)
+  if (!isAdmin) { loadTodayAttendance(); loadWeeklyChart(); } // Restore attendance state from Supabase
   refreshDynamic();
   showTab('home');
   // Re-apply Android WebView touch fix after login renders the app
@@ -4398,6 +4406,63 @@ async function toggleClock() {
         .then(({ error }) => { if (error) console.warn('Supabase clock-out failed:', error); });
     }
   }
+}
+
+// ─── WEEKLY ATTENDANCE CHART ─────────────────────────────────────────────────
+async function loadWeeklyChart() {
+  if (!user) return;
+  const empId = user.id || role;
+  // Build array of last 7 days (Mon–Sun of current week, or last 7 days)
+  const today = new Date();
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNamesAr = ['أحد','اثن','ثلا','أرب','خمي','جمع','سبت'];
+
+  try {
+    const { data } = await sb.from('attendance')
+      .select('date,clock_in,clock_out')
+      .eq('emp_id', empId)
+      .in('date', days);
+
+    const byDate = {};
+    (data || []).forEach(r => { byDate[r.date] = r; });
+
+    let maxHrs = 0;
+    const hrs = days.map(d => {
+      const r = byDate[d];
+      if (!r || !r.clock_in) return 0;
+      if (r.clock_in && r.clock_out) {
+        const h = (new Date(r.clock_out) - new Date(r.clock_in)) / 3600000;
+        if (h > maxHrs) maxHrs = h;
+        return h;
+      }
+      if (r.clock_in && !r.clock_out) {
+        const h = (Date.now() - new Date(r.clock_in)) / 3600000;
+        if (h > maxHrs) maxHrs = h;
+        return h;
+      }
+      return 0;
+    });
+
+    const cap = maxHrs > 0 ? maxHrs : 9; // normalise against max (or 9h shift)
+    days.forEach((d, i) => {
+      const bar = document.getElementById('wBar' + i);
+      const lbl = document.getElementById('wLbl' + i);
+      if (!bar || !lbl) return;
+      const pct = Math.min(100, Math.round((hrs[i] / cap) * 100));
+      bar.style.height = pct + '%';
+      const isToday = d === today.toISOString().split('T')[0];
+      bar.className = 'week-bar' + (isToday ? ' today' : '');
+      const dow = new Date(d + 'T00:00:00').getDay();
+      lbl.textContent = lang === 'ar' ? dayNamesAr[dow] : dayNames[dow];
+      lbl.style.color = isToday ? 'var(--blue)' : '';
+    });
+  } catch(e) { console.warn('loadWeeklyChart:', e); }
 }
 
 // ─── LOAD TODAY'S ATTENDANCE STATE FROM SUPABASE ────────────────────────────
@@ -4742,13 +4807,51 @@ function renderWeeklySchedule() {
 function renderActivity() {
   const feed = document.getElementById('activityFeed');
   if (!feed) return;
-  const items = [
-    { ico:'📋', ic:'b', title:t('Leave request submitted','تم تقديم طلب الإجازة'), sub:t('REQ-001 · Pending manager approval','REQ-001 · في انتظار موافقة المدير'), time:t('9:00 AM','9:00 ص') },
-    { ico:'💬', ic:'o', title:t('Message from Manager','رسالة من المدير'), sub:t('Stock Aisle 3 before 9 AM','تخزين الممر 3 قبل 9 صباحاً'), time:t('8:05 AM','8:05 ص') },
-    { ico:'💻', ic:'b', title:t('IT Support in progress','دعم تقني قيد التنفيذ'), sub:t('REQ-002 · Technician visiting today','REQ-002 · الفني يزور اليوم'), time:t('Yesterday','أمس') },
-    { ico:'🎫', ic:'gold', title:t('Office pass received','تم استلام تصريح المكتب'), sub:t('REQ-003 resolved · Pass 20260407583721','REQ-003 محلول · التصريح 20260407583721'), time:t('Apr 7','7 أبريل') },
-  ];
-  feed.innerHTML = items.map(i => `
+  const myId = user?.id || role;
+  const myNormId = normId(myId);
+  const items = [];
+
+  // Recent requests involving this employee (submitted or pending their action)
+  const myReqs = requests
+    .filter(r => normId(r.from) === myNormId || r.from === role || normId(r.forManager) === myNormId)
+    .slice(0, 4);
+  const reqIco  = { approved:'✅', rejected:'❌', pending_manager:'⏳', pending_hr:'⏳', escalated:'⬆️', resolved:'✅', in_progress:'🔄', pending:'⏳' };
+  const reqClr  = { approved:'g', rejected:'r', pending_manager:'o', pending_hr:'o', escalated:'r', resolved:'g', in_progress:'b' };
+  myReqs.forEach(r => {
+    const typeLabel = lang === 'ar' ? (r.typeLabelAr || tr(r.typeLabel) || r.typeLabel) : r.typeLabel;
+    const title     = lang === 'ar' ? (r.titleAr || r.title) : r.title;
+    items.push({
+      ico: reqIco[r.status] || '📋',
+      ic:  reqClr[r.status] || 'b',
+      title: typeLabel,
+      sub:   title,
+      time:  r.date || ''
+    });
+  });
+
+  // Recent tasks assigned to this employee
+  const myTasks = (tasks || [])
+    .filter(tk => normId(tk.assigned_to) === myNormId || tk.assigned_to === role)
+    .slice(0, 3);
+  myTasks.forEach(tk => {
+    const done = tk.status === 'completed' || tk.status === 'confirmed';
+    items.push({
+      ico:   done ? '✅' : tk.priority === 'high' ? '🔴' : '📌',
+      ic:    done ? 'g' : tk.priority === 'high' ? 'r' : 'b',
+      title: tk.title || t('Task','مهمة'),
+      sub:   t('Task','مهمة') + (tk.due_date ? ' · ' + tk.due_date : ''),
+      time:  tk.due_date || ''
+    });
+  });
+
+  // Sort by time descending (newest first) and cap at 5
+  const display = items.slice(0, 5);
+
+  if (display.length === 0) {
+    feed.innerHTML = `<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">${t('No recent activity','لا يوجد نشاط حديث')}</div>`;
+    return;
+  }
+  feed.innerHTML = display.map(i => `
     <div class="ait">
       <div class="aico ${i.ic}">${i.ico}</div>
       <div class="abody"><div class="atitle">${i.title}</div><div class="asub">${i.sub}</div></div>
@@ -5533,10 +5636,10 @@ async function sendMsg() {
     // Save to Supabase and store row ID back on the msgObj
     if (user) {
       sb.from('messages').insert({
-        chat_id: activeChat,
+        group_id: activeChat,
         sender_id: user.id || role,
         sender_name: user.name,
-        body: txt,
+        text: txt,
         seen_by: [user.id || role]
       }).select('id').single()
         .then(({ data, error }) => {
@@ -5550,10 +5653,10 @@ async function sendMsg() {
     msgs.scrollTop = msgs.scrollHeight;
     if (activeChat && user) {
       sb.from('messages').insert({
-        chat_id: activeChat,
+        group_id: activeChat,
         sender_id: user.id || role,
         sender_name: user.name,
-        body: txt
+        text: txt
       }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
     }
   }
@@ -5600,8 +5703,8 @@ async function _sendFileMsg(file, caption) {
       // Save to Supabase and store row ID
       if (user) {
         sb.from('messages').insert({
-          chat_id: activeChat, sender_id: user.id||role,
-          sender_name: user.name, body, seen_by: [user.id||role]
+          group_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, text: body, seen_by: [user.id||role]
         }).select('id').single()
           .then(({ data, error }) => {
             if (error) console.warn('sendFileMsg failed:', error);
@@ -5613,8 +5716,8 @@ async function _sendFileMsg(file, caption) {
       if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
       if (activeChat && user) {
         sb.from('messages').insert({
-          chat_id: activeChat, sender_id: user.id||role,
-          sender_name: user.name, body
+          group_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, text: body
         }).then(({error}) => { if (error) console.warn('sendFileMsg failed:', error); });
       }
     }
@@ -8731,13 +8834,14 @@ function confirmDanger(action) {
 // MESSAGING GROUPS
 // ══════════════════════════════════════════════════════════════════════════
 
+// Groups — overwritten from Supabase on login; fallback defaults for first load
 let groups = [
-  { id:'grp-001', name:'All Staff',       nameAr:'جميع الموظفين',    desc:'Everyone in the organisation',        descAr:'جميع موظفي المنظمة',            icon:'📢', type:'all',           members:[], createdBy:'ADM-001', pinned:true },
-  { id:'grp-002', name:'Ground Floor',    nameAr:'الطابق الأرضي',    desc:'GF managers, supervisors & staff',    descAr:'مدراء ومشرفو الطابق الأرضي',    icon:'🏪', type:'dept_gf',        members:['EMP-001','EMP-002','EMP-003','EMP-004','MGR-001'], createdBy:'ADM-001' },
-  { id:'grp-003', name:'Warehouse Team',  nameAr:'فريق المستودع',    desc:'Warehouse staff',                     descAr:'موظفو المستودع',                 icon:'📦', type:'dept_warehouse', members:['EMP-005','MGR-002'], createdBy:'ADM-001' },
-  { id:'grp-004', name:'Security Team',   nameAr:'فريق الأمن',       desc:'All security personnel',              descAr:'جميع أفراد الأمن',               icon:'🔒', type:'dept_security',  members:['SEC-001','SEC-002'], createdBy:'ADM-001' },
-  { id:'grp-005', name:'Office Staff',    nameAr:'موظفو المكتب',     desc:'All office department staff',         descAr:'جميع موظفي الأقسام المكتبية',    icon:'💼', type:'dept_office',    members:['OFF-001','OFF-002','OFF-003','OFF-004','OFF-005'], createdBy:'ADM-001' },
-  { id:'grp-006', name:'Managers Group',  nameAr:'مجموعة المدراء',   desc:'All store & department managers',     descAr:'جميع مدراء المتجر والأقسام',    icon:'⭐', type:'dept_managers', members:['MGR-001','MGR-002','MGR-003'], createdBy:'ADM-001' },
+  { id:'grp-001', name:'All Staff',      nameAr:'جميع الموظفين',   desc:'Everyone in the organisation',     descAr:'جميع موظفي المنظمة',         icon:'📢', type:'all',           members:[], createdBy:'ADM-001' },
+  { id:'grp-002', name:'Ground Floor',   nameAr:'الطابق الأرضي',   desc:'GF managers, supervisors & staff', descAr:'مدراء ومشرفو الطابق الأرضي', icon:'🏪', type:'dept_gf',        members:[], createdBy:'ADM-001' },
+  { id:'grp-003', name:'Warehouse Team', nameAr:'فريق المستودع',   desc:'Warehouse staff',                  descAr:'موظفو المستودع',             icon:'📦', type:'dept_warehouse', members:[], createdBy:'ADM-001' },
+  { id:'grp-004', name:'Security Team',  nameAr:'فريق الأمن',      desc:'All security personnel',           descAr:'جميع أفراد الأمن',           icon:'🔒', type:'dept_security',  members:[], createdBy:'ADM-001' },
+  { id:'grp-005', name:'Office Staff',   nameAr:'موظفو المكتب',    desc:'All office department staff',      descAr:'جميع موظفي الأقسام المكتبية',icon:'💼', type:'dept_office',    members:[], createdBy:'ADM-001' },
+  { id:'grp-006', name:'Managers Group', nameAr:'مجموعة المدراء',  desc:'All store & department managers',  descAr:'جميع مدراء المتجر والأقسام', icon:'⭐', type:'dept_managers',  members:[], createdBy:'ADM-001' },
 ];
 
 // Track selected members in the group modal
@@ -8866,7 +8970,7 @@ async function markGroupRead(groupId) {
     const { data: unread } = await sb
       .from('messages')
       .select('id, seen_by')
-      .eq('chat_id', 'grp-' + groupId)
+      .eq('group_id', 'grp-' + groupId)
       .not('seen_by', 'cs', JSON.stringify([myId]));
 
     if (!unread || !unread.length) return;
@@ -11176,7 +11280,7 @@ let _realtimeChan = null; // current Supabase Realtime channel
 function _dbRowToMsg(row, myId) {
   return {
     rx: normId(row.sender_id) !== normId(myId),
-    text: row.body,
+    text: row.text || row.body || '',
     t: new Date(row.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
     senderId: row.sender_id,
     senderName: row.sender_name || '',
@@ -11206,7 +11310,7 @@ async function subscribeGroupChat(groupId) {
       event: 'INSERT',
       schema: 'public',
       table: 'messages',
-      filter: `chat_id=eq.grp-${groupId}`
+      filter: `group_id=eq.grp-${groupId}`
     }, payload => {
       const row = payload.new;
       // Skip own messages — already added locally in sendMsg()
@@ -11291,11 +11395,22 @@ async function openGroupChat(groupId) {
   const myId = user?.id || role;
   const { data: msgRows, error: msgErr } = await sb.from('messages')
     .select('*')
-    .eq('chat_id', 'grp-' + groupId)
+    .eq('group_id', 'grp-' + groupId)
     .order('created_at', { ascending: true })
     .limit(150);
 
-  if (!msgErr && msgRows) {
+  if (msgErr) {
+    console.error('Supabase messages fetch error:', msgErr);
+    if (msgsEl) msgsEl.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--red);font-size:12px;line-height:1.8">
+      ⚠️ ${t('Could not load messages','تعذّر تحميل الرسائل')}<br>
+      <span style="color:var(--t3);font-size:11px">${msgErr.message || msgErr.code || 'Unknown error'}</span><br><br>
+      <span style="color:var(--t3);font-size:11px">${t('Check Supabase RLS policies for the messages table.','تحقق من إعدادات RLS في Supabase لجدول messages.')}</span>
+    </div>`;
+    subscribeGroupChat(groupId);
+    return;
+  }
+
+  if (msgRows) {
     CHATS['grp-' + groupId].msgs = msgRows.map(r => _dbRowToMsg(r, myId));
   }
 
@@ -11383,7 +11498,14 @@ function renderGroupMessages(groupId) {
   const totalMembers = resolveGroupMembers(g).length;
   const msgs = document.getElementById('chatMsgsEl');
   if (!msgs) return;
-  msgs.innerHTML = (convo.msgs || []).map((m, idx) => {
+  const msgList = convo.msgs || [];
+  if (msgList.length === 0) {
+    msgs.innerHTML = `<div style="text-align:center;padding:60px 16px;color:var(--t3);font-size:13px;line-height:2">
+      💬<br>${t('No messages yet — be the first to say hello!','لا رسائل بعد — كن أول من يبدأ!')}
+    </div>`;
+    return;
+  }
+  msgs.innerHTML = msgList.map((m, idx) => {
     const pinBtn = isAdminOrMaintainer
       ? `<button onclick="pinGroupMessage('${groupId}',${idx})" title="Pin this message" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:2px 4px;opacity:0.7" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">📌</button>`
       : '';
