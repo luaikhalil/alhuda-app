@@ -1938,6 +1938,8 @@ body:not(.light) .tog.on::after{
             <button id="advSendGMBtn" onclick="openAccSignModal()" style="display:none;padding:7px 14px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" data-en="✍️ Sign & Send to GM ›" data-ar="✍️ وقّع وأرسل للمدير العام ›">✍️ Sign & Send to GM ›</button>
           </div>
           <div style="font-size:11px;color:var(--t3);margin-bottom:10px" data-en="Review and edit the approved amount for each employee, then sign and send to GM." data-ar="راجع وعدّل المبلغ المسموح لكل موظف، ثم وقّع وأرسل للمدير العام.">Review and edit the approved amount for each employee, then sign and send to GM.</div>
+          <!-- Add advance on behalf of employee (for employees without phone access) -->
+          <button onclick="openAccAddAdvModal()" style="width:100%;padding:10px;border-radius:12px;background:rgba(184,134,11,.1);border:1px dashed rgba(184,134,11,.4);color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px" data-en="➕ Add Advance for an Employee" data-ar="➕ إضافة سلفة لموظف">➕ Add Advance for an Employee</button>
           <div id="advAccList"></div>
           <!-- Print approved PDF button — shown after GM approves -->
           <div id="advAccPrintRow" style="display:none;margin-top:12px">
@@ -2601,6 +2603,39 @@ body:not(.light) .tog.on::after{
     <input class="inp" id="advNoteInp" type="text" data-ph-en="Any note for your manager..." data-ph-ar="ملاحظة لمديرك..." placeholder="Any note for your manager..." style="margin-bottom:0">
     <button class="btn-pri" onclick="submitAdvanceRequest()" data-en="Submit Request" data-ar="إرسال الطلب">Submit Request</button>
     <button class="btn-sec" onclick="closeModal('advRequestModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── ACCOUNTING: ADD ADVANCE FOR EMPLOYEE MODAL ── -->
+<div class="modal-bg" id="accAddAdvModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="➕ Add Advance for Employee" data-ar="➕ إضافة سلفة لموظف">➕ Add Advance for Employee</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.6" data-en="Use this when an employee cannot submit their own request. You can enter any amount — if it exceeds their limit, the GM will be notified." data-ar="استخدم هذا عندما لا يتمكن الموظف من تقديم طلبه. يمكنك إدخال أي مبلغ — إذا تجاوز الحد سيُبلَّغ المدير العام.">Use this when an employee cannot submit their own request. You can enter any amount — if it exceeds their limit, the GM will be notified.</div>
+    <label class="lbl" data-en="Select Employee" data-ar="اختر الموظف">Select Employee</label>
+    <select class="inp" id="accAddAdvEmp" onchange="onAccAddAdvEmpChange()" style="margin-bottom:10px">
+      <option value="">— Select —</option>
+    </select>
+    <div id="accAddAdvLimitBox" style="display:none;background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.2);border-radius:9px;padding:9px 13px;font-size:11px;color:var(--gold);margin-bottom:12px;line-height:1.8"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="flex:1">
+        <label class="lbl" data-en="Cycle" data-ar="الدورة">Cycle</label>
+        <select class="inp" id="accAddAdvCycle">
+          <option value="10" data-en="10th (mid-month)" data-ar="العاشر (منتصف الشهر)">10th (mid-month)</option>
+          <option value="20" data-en="20th (end of month)" data-ar="العشرون (نهاية الشهر)">20th (end of month)</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <label class="lbl" data-en="Amount" data-ar="المبلغ">Amount</label>
+        <input class="inp" id="accAddAdvAmt" type="number" min="50" step="50" data-ph-en="e.g. 500" data-ph-ar="500" placeholder="e.g. 500" oninput="onAccAddAdvAmtChange()">
+      </div>
+    </div>
+    <div id="accAddAdvOverLimit" style="display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:9px;padding:8px 12px;font-size:11px;color:var(--orange);margin-bottom:12px">⚠️ <span id="accAddAdvOverLimitTxt"></span></div>
+    <div id="accAddAdvAlready" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:9px;padding:8px 12px;font-size:11px;color:var(--red);margin-bottom:12px"></div>
+    <label class="lbl" data-en="Note (optional)" data-ar="ملاحظة (اختيارية)">Note (optional)</label>
+    <input class="inp" id="accAddAdvNote" type="text" data-ph-en="Reason for manual entry..." data-ph-ar="سبب الإدخال اليدوي..." placeholder="Reason for manual entry..." style="margin-bottom:0">
+    <button class="btn-pri" onclick="submitAccAddAdv()" data-en="Submit on Behalf" data-ar="إرسال بالنيابة">Submit on Behalf</button>
+    <button class="btn-sec" onclick="closeModal('accAddAdvModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
   </div>
 </div>
 
@@ -6320,8 +6355,12 @@ function renderGMList(list) {
       const limitNote = a.days_worked
         ? `<div style="font-size:10px;color:var(--t3);margin-top:2px">${a.days_worked}${t(' days × ','يوم × ')}${fmtAmt(a.daily_rate)}${t(' = ','=')}${fmtAmt(a.earned_at_request)}${a.prev_advances > 0 ? ` − ${fmtAmt(a.prev_advances)}` : ''} → ${t('limit','حد')} ${fmtAmt(a.max_allowed)}</div>`
         : '';
+      // Flag if manually added by accounting manager on behalf of employee
+      const accAddedNote = a.added_by_acc
+        ? `<div style="font-size:10px;color:var(--orange);margin-top:3px;display:flex;align-items:center;gap:4px">📋 ${t('Added by Accounting','أضافه الحسابات')}${a.added_by_acc_name ? ' · ' + a.added_by_acc_name : ''} ${a.over_limit ? '· <b style="color:var(--red)">' + t('EXCEEDS LIMIT','يتجاوز الحد') + '</b>' : ''}</div>`
+        : '';
       return `
-      <div class="adv-summary-row" style="flex-direction:column;align-items:flex-start;gap:2px">
+      <div class="adv-summary-row" style="flex-direction:column;align-items:flex-start;gap:2px${a.over_limit ? ';border:1px solid rgba(248,113,113,.3);background:rgba(248,113,113,.04);' : ''}">
         <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
           <div>
             <div class="adv-summary-name">${a.emp_name||a.emp_id}</div>
@@ -6329,7 +6368,7 @@ function renderGMList(list) {
           </div>
           <div class="adv-summary-amt" style="color:${withinLimit ? '#4ade80' : '#f87171'}">${fmtAmt(a.amount_approved ?? a.amount_requested)} ${withinLimit ? '' : '⚠️'}</div>
         </div>
-        ${limitNote}
+        ${limitNote}${accAddedNote}
       </div>`;
     }).join('')}`;
 }
@@ -6490,6 +6529,174 @@ async function submitAdvanceRequest() {
       `${user.name} — AED ${Number(amount).toLocaleString()}`
     );
   });
+}
+
+// ─── Accounting Manager: add advance on behalf of an employee ─────────────────
+function openAccAddAdvModal() {
+  // Populate employee dropdown — all active, non-admin employees sorted by name
+  const sel = document.getElementById('accAddAdvEmp');
+  const myId = user?.id || role;
+  const eligible = employees
+    .filter(e => e.active !== false && e.emp_type !== 'admin' && normId(e.id) !== normId(myId))
+    .sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`));
+  sel.innerHTML = `<option value="">${t('— Select Employee —','— اختر الموظف —')}</option>` +
+    eligible.map(e => `<option value="${e.id}">${e.first_name} ${e.last_name} (${e.id}) — ${e.dept_label || e.dept || ''}</option>`).join('');
+  // Reset fields
+  document.getElementById('accAddAdvLimitBox').style.display = 'none';
+  document.getElementById('accAddAdvOverLimit').style.display = 'none';
+  document.getElementById('accAddAdvAlready').style.display = 'none';
+  document.getElementById('accAddAdvAmt').value = '';
+  document.getElementById('accAddAdvNote').value = '';
+  // Set default cycle based on current date
+  const day = new Date().getDate();
+  document.getElementById('accAddAdvCycle').value = day <= 15 ? '10' : '20';
+  openModal('accAddAdvModal');
+}
+
+function _calcAdvanceLimitForEmp(empId) {
+  // Same logic as calcAdvanceLimit but always looks up from employees array (not user.salary)
+  const now       = new Date();
+  const today     = now.getDate();
+  const month     = now.getMonth() + 1;
+  const year      = now.getFullYear();
+  const emp       = employees.find(e => normId(e.id) === normId(empId));
+  const salary    = Number(emp?.salary || 0);
+  if (!salary) return null;
+  const dailyRate   = salary / 30;
+  const cycleDay    = parseInt(document.getElementById('accAddAdvCycle')?.value || '20');
+  const daysWorked  = cycleDay;
+  const earnedSoFar = dailyRate * daysWorked;
+  const prevTotal = salaryAdvances
+    .filter(a => normId(a.emp_id) === normId(empId) && a.cycle_month === month && a.cycle_year === year && a.status !== 'rejected')
+    .reduce((sum, a) => sum + Number(a.amount_approved ?? a.amount_requested ?? 0), 0);
+  const maxAllowed = Math.max(0, earnedSoFar - prevTotal);
+  return { salary, dailyRate, daysWorked, earnedSoFar, prevTotal, maxAllowed };
+}
+
+function onAccAddAdvEmpChange() {
+  const empId = document.getElementById('accAddAdvEmp').value;
+  const limitBox = document.getElementById('accAddAdvLimitBox');
+  const alreadyBox = document.getElementById('accAddAdvAlready');
+  alreadyBox.style.display = 'none';
+  document.getElementById('accAddAdvOverLimit').style.display = 'none';
+
+  if (!empId) { limitBox.style.display = 'none'; return; }
+
+  // Check if already has request this cycle
+  const cycle = document.getElementById('accAddAdvCycle').value;
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year  = now.getFullYear();
+  const existingReq = salaryAdvances.find(a =>
+    normId(a.emp_id) === normId(empId) && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
+  );
+  if (existingReq) {
+    alreadyBox.style.display = 'block';
+    alreadyBox.innerHTML = `⛔ ${t('This employee already has a','هذا الموظف لديه طلب بالفعل بمبلغ')} ${fmtAmt(existingReq.amount_requested)} ${t('request for this cycle','لهذه الدورة')} (${t('status','الحالة')}: ${existingReq.status})`;
+    limitBox.style.display = 'none';
+    return;
+  }
+
+  // Show limit info
+  const lim = _calcAdvanceLimitForEmp(empId);
+  if (lim) {
+    limitBox.style.display = 'block';
+    limitBox.innerHTML = `
+      <b>${t('Salary limit for this cycle:','حد السلفة لهذه الدورة:')}</b><br>
+      ${t('Salary','الراتب')}: ${fmtAmt(lim.salary)} &nbsp;|&nbsp; ${lim.daysWorked}${t(' days worked','يوم عمل')}<br>
+      ${t('Earned so far','المكتسب حتى الآن')}: ${fmtAmt(Math.round(lim.earnedSoFar))}
+      ${lim.prevTotal > 0 ? ` − ${t('Previous advances','سلف سابقة')}: ${fmtAmt(lim.prevTotal)}` : ''}<br>
+      <b style="color:var(--green)">${t('Max allowed','الحد الأقصى')}: ${fmtAmt(Math.floor(lim.maxAllowed))}</b>
+    `;
+  } else {
+    limitBox.style.display = 'block';
+    limitBox.innerHTML = `<span style="color:var(--red)">${t('⚠️ No salary on record for this employee.','⚠️ لا يوجد راتب مسجل لهذا الموظف.')}</span>`;
+  }
+  // Recheck amount if already entered
+  onAccAddAdvAmtChange();
+}
+
+function onAccAddAdvAmtChange() {
+  const empId  = document.getElementById('accAddAdvEmp').value;
+  const amount = parseFloat(document.getElementById('accAddAdvAmt').value || '0');
+  const overBox = document.getElementById('accAddAdvOverLimit');
+  const txt = document.getElementById('accAddAdvOverLimitTxt');
+  if (!empId || !amount) { overBox.style.display = 'none'; return; }
+  const lim = _calcAdvanceLimitForEmp(empId);
+  if (lim && amount > Math.floor(lim.maxAllowed)) {
+    overBox.style.display = 'block';
+    const excess = amount - Math.floor(lim.maxAllowed);
+    txt.textContent = t(
+      `Amount exceeds limit by ${fmtAmt(excess)}. This is allowed — GM will see a warning flag on this request.`,
+      `المبلغ يتجاوز الحد بمقدار ${fmtAmt(excess)}. هذا مسموح — سيرى المدير العام تنبيهاً على هذا الطلب.`
+    );
+  } else {
+    overBox.style.display = 'none';
+  }
+}
+
+async function submitAccAddAdv() {
+  const empId  = document.getElementById('accAddAdvEmp').value;
+  const amount = parseFloat(document.getElementById('accAddAdvAmt').value || '0');
+  const cycle  = document.getElementById('accAddAdvCycle').value;
+  const note   = document.getElementById('accAddAdvNote').value.trim();
+  const now    = new Date();
+  const month  = now.getMonth() + 1;
+  const year   = now.getFullYear();
+
+  if (!empId) { toast(t('⚠️ Please select an employee','⚠️ الرجاء اختيار موظف')); return; }
+  if (!amount || amount <= 0) { toast(t('⚠️ Please enter a valid amount','⚠️ الرجاء إدخال مبلغ صحيح')); return; }
+
+  // Final duplicate check
+  const dup = salaryAdvances.find(a =>
+    normId(a.emp_id) === normId(empId) && a.cycle === cycle && a.cycle_month === month && a.cycle_year === year
+  );
+  if (dup) { toast(t('⚠️ This employee already has a request for this cycle','⚠️ الموظف لديه طلب لهذه الدورة بالفعل')); return; }
+
+  const emp = employees.find(e => normId(e.id) === normId(empId));
+  const empName = emp ? `${emp.first_name} ${emp.last_name}` : empId;
+  const lim = _calcAdvanceLimitForEmp(empId);
+  const isOverLimit = lim ? amount > Math.floor(lim.maxAllowed) : false;
+  const reportToId = emp?.report_to || emp?.supervisor_id || null;
+
+  const payload = {
+    emp_id: empId,
+    emp_name: empName,
+    dept: emp?.dept_key || emp?.dept || '',
+    dept_label: emp?.dept_label || '',
+    report_to_id: reportToId,
+    amount_requested: amount,
+    note: note || t('Added by Accounting Manager on behalf of employee','أضافه مدير الحسابات بالنيابة عن الموظف'),
+    cycle, cycle_month: month, cycle_year: year,
+    status: 'pending',
+    added_by_acc: true,                   // flag: manually added by accounting
+    added_by_acc_id: user?.id || role,
+    added_by_acc_name: user?.name || '',
+    over_limit: isOverLimit,              // flag for GM warning
+    salary_at_request: lim?.salary || null,
+    days_worked: lim?.daysWorked || null,
+    daily_rate: lim ? Math.round(lim.dailyRate) : null,
+    earned_at_request: lim ? Math.round(lim.earnedSoFar) : null,
+    prev_advances: lim?.prevTotal || 0,
+    max_allowed: lim ? Math.floor(lim.maxAllowed) : null
+  };
+
+  const { error } = await sb.from('salary_advances').insert(payload);
+  if (error) { toast('❌ ' + error.message); return; }
+
+  closeModal('accAddAdvModal');
+  await loadSalaryAdvances();
+  renderAdvances();
+  toast(t(`✅ Advance added for ${empName}`,`✅ تمت إضافة السلفة لـ ${empName}`));
+
+  // If over limit → notify GM immediately
+  if (isOverLimit) {
+    const gm = employees.find(e => normId(e.id) === 'ADM-001' || e.emp_type === 'admin');
+    if (gm?.fcm_token) sendPush([gm.fcm_token],
+      '⚠️ ' + t('Advance Exceeds Limit','سلفة تتجاوز الحد'),
+      `${empName} — ${fmtAmt(amount)} (${t('limit','الحد')}: ${fmtAmt(lim ? Math.floor(lim.maxAllowed) : 0)})`
+    );
+  }
 }
 
 // ─── Manager: submit dept batch to Accounting ─────────────────────────────
@@ -11253,18 +11460,22 @@ renderChatList = function() {
   const grpHTML = myGroups.length > 0 ? `
     <div class="stitle" style="margin-top:14px">${t('GROUPS','المجموعات')}</div>
     ${myGroups.map(g => {
-      const cnt = resolveGroupMembers(g).length;
+      const memberCnt = resolveGroupMembers(g).length;
+      const unread = _groupUnread[g.id] || 0;
       const grpName = lang === 'ar' ? (g.nameAr || g.name) : g.name;
-      const grpDesc = lang === 'ar' ? (g.descAr || g.desc) : g.desc;
       const muteTag = isGroupMuted(g.id) ? ' 🔕' : '';
+      const memberLabel = memberCnt + ' ' + t('members','عضو');
+      const unreadBadge = unread > 0
+        ? `<span class="bdg b" style="font-size:11px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:0 5px">${unread > 99 ? '99+' : unread}</span>`
+        : '';
       return `<div class="chat-row" onclick="openGroupChat('${g.id}')">
         <div class="chat-av-sm b" style="font-size:20px">${g.icon}</div>
         <div class="chat-info">
           <div class="chat-name">${grpName}${muteTag}</div>
-          <div class="chat-prev">${grpDesc || cnt + t(' members',' عضو')}</div>
+          <div class="chat-prev" style="color:var(--t3);font-size:12px">${memberLabel}</div>
         </div>
-        <div class="chat-meta">
-          <span class="bdg b" style="font-size:10px">${cnt}</span>
+        <div class="chat-meta" style="align-items:flex-end;gap:4px">
+          ${unreadBadge}
         </div>
       </div>`;
     }).join('')}` : '';
@@ -11275,6 +11486,7 @@ renderChatList = function() {
 // ─── GROUP CHAT ───────────────────────────────────────────────────────────────
 let activeGroupId = null; // track which group the open chat belongs to
 let _realtimeChan = null; // current Supabase Realtime channel
+const _groupUnread = {};  // groupId → unread message count since last open
 
 // Map a Supabase messages row → in-memory msg object
 function _dbRowToMsg(row, myId) {
@@ -11326,7 +11538,9 @@ async function subscribeGroupChat(groupId) {
         if (el) el.scrollTop = el.scrollHeight;
         markGroupRead(groupId);
       } else {
-        renderChatList(); // update unread dot
+        // Increment unread counter for this group
+        _groupUnread[groupId] = (_groupUnread[groupId] || 0) + 1;
+        renderChatList(); // update unread badge
       }
     })
     .subscribe();
@@ -11337,6 +11551,9 @@ async function openGroupChat(groupId) {
   if (!g) return;
   const members = resolveGroupMembers(g);
   activeGroupId = groupId;
+  // Clear unread count for this group
+  _groupUnread[groupId] = 0;
+  renderChatList();
 
   // Initialise group chat history if not present (msgs loaded from Supabase below)
   if (!CHATS['grp-' + groupId]) {
