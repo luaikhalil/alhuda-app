@@ -2290,6 +2290,26 @@ body:not(.light) .tog.on::after{
         </div>
       </div>
 
+      <!-- Feedback button — visible to all except GM -->
+      <div id="feedbackMenuRow" class="menu-row" onclick="openFeedbackModal()">
+        <div class="menu-ico" style="background:rgba(74,222,128,.1)">💡</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500" data-en="Feedback & Suggestions" data-ar="ملاحظات واقتراحات">Feedback & Suggestions</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px" data-en="Report bugs or suggest improvements" data-ar="أبلّغ عن أخطاء أو اقترح تحسينات">Report bugs or suggest improvements</div>
+        </div>
+        <span style="color:var(--t3)">›</span>
+      </div>
+      <!-- GM only: view all feedback -->
+      <div id="feedbackGMRow" class="menu-row" onclick="openFeedbackInbox()" style="display:none">
+        <div class="menu-ico" style="background:rgba(74,222,128,.1)">💡</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500" data-en="Staff Feedback Inbox" data-ar="صندوق الملاحظات">Staff Feedback Inbox</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px" data-en="Bug reports and suggestions from staff" data-ar="أخطاء واقتراحات الموظفين">Bug reports and suggestions from staff</div>
+        </div>
+        <div id="feedbackBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:2px 7px;min-width:18px;text-align:center"></div>
+        <span style="color:var(--t3)">›</span>
+      </div>
+
       <div style="height:6px"></div>
       <div class="menu-row" onclick="logout()" style="border-color:rgba(239,68,68,.18)">
         <div class="menu-ico" style="background:rgba(239,68,68,.1)">🚪</div>
@@ -4086,6 +4106,7 @@ function refreshDynamic() {
   renderMyRequests();
   renderIncoming();
   renderChatList();
+  updateBellBadge();
 }
 
 function updateHeroClockBtn() {
@@ -4159,6 +4180,7 @@ function login(roleKey) {
 
   startClock();
   if (!isAdmin) { loadTodayAttendance(); loadWeeklyChart(); } // Restore attendance state from Supabase
+  setupFeedbackUI(); // Show/hide feedback menu items based on role
   refreshDynamic();
   showTab('home');
   // Re-apply Android WebView touch fix after login renders the app
@@ -4181,6 +4203,141 @@ function login(roleKey) {
     showNotifBanner();
   }, 2000);
 }
+
+// ─── FEEDBACK SYSTEM ─────────────────────────────────────────────────────────
+let _fbType = 'bug';
+
+function setFbType(type) {
+  _fbType = type;
+  const styles = {
+    bug:        { bg:'rgba(248,113,113,.18)', border:'rgba(248,113,113,.5)', color:'#f87171' },
+    suggestion: { bg:'rgba(74,222,128,.18)',  border:'rgba(74,222,128,.5)',  color:'#4ade80' },
+    other:      { bg:'rgba(163,163,163,.18)', border:'rgba(163,163,163,.4)', color:'var(--t1)' }
+  };
+  ['bug','suggestion','other'].forEach(k => {
+    const btn = document.getElementById('fbType' + k.charAt(0).toUpperCase() + k.slice(1));
+    if (!btn) return;
+    const s = styles[k];
+    if (k === type) {
+      btn.style.background = s.bg; btn.style.borderColor = s.border; btn.style.color = s.color;
+    } else {
+      btn.style.background = 'rgba(163,163,163,.06)'; btn.style.borderColor = 'rgba(163,163,163,.15)'; btn.style.color = 'var(--t2)';
+    }
+  });
+}
+
+function openFeedbackModal() {
+  _fbType = 'bug';
+  setFbType('bug');
+  document.getElementById('fbTitle').value = '';
+  document.getElementById('fbBody').value = '';
+  openModal('feedbackModal');
+}
+
+async function submitFeedback() {
+  const title = document.getElementById('fbTitle').value.trim();
+  const body  = document.getElementById('fbBody').value.trim();
+  if (!title) { toast(t('⚠️ Please enter a title','⚠️ الرجاء إدخال عنوان')); return; }
+  if (!body)  { toast(t('⚠️ Please add some details','⚠️ الرجاء إضافة تفاصيل')); return; }
+
+  const { error } = await sb.from('feedback').insert({
+    emp_id:   user?.id || role,
+    emp_name: user?.name || '',
+    dept:     user?.dept_key || user?.deptKey || '',
+    type:     _fbType,
+    title,
+    body,
+    status:   'new'
+  });
+  if (error) { toast('❌ ' + error.message); return; }
+
+  closeModal('feedbackModal');
+  toast(t('✅ Thanks! Your feedback has been sent to the GM.','✅ شكراً! تم إرسال ملاحظتك للمدير العام.'));
+
+  // Push notify GM
+  const gm = employees.find(e => normId(e.id) === 'ADM-001' || e.emp_type === 'admin');
+  if (gm?.fcm_token) {
+    const typeLabel = _fbType === 'bug' ? '🐛 Bug' : _fbType === 'suggestion' ? '💡 Suggestion' : '💬 Feedback';
+    sendPush([gm.fcm_token], typeLabel + ' — ' + (user?.name || ''), title);
+  }
+  // Update badge
+  loadFeedbackBadge();
+}
+
+async function loadFeedbackBadge() {
+  const isAdmin = user?.type === 'admin' || normId(user?.id) === 'ADM-001';
+  if (!isAdmin) return;
+  const { count } = await sb.from('feedback').select('id', { count:'exact', head:true }).eq('status','new');
+  const badge = document.getElementById('feedbackBadge');
+  if (badge) {
+    badge.textContent = count || '';
+    badge.style.display = count > 0 ? 'block' : 'none';
+  }
+}
+
+async function openFeedbackInbox() {
+  openModal('feedbackInboxModal');
+  await loadFeedbackInbox('new');
+}
+
+let _fbInboxFilter = 'new';
+async function loadFeedbackInbox(filter) {
+  _fbInboxFilter = filter || 'new';
+  const listEl = document.getElementById('feedbackInboxList');
+  listEl.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:30px 0">⏳ ${t('Loading…','جاري التحميل…')}</div>`;
+
+  // Style active tab
+  document.getElementById('fbInboxBtnNew').style.background = filter === 'new' ? 'rgba(184,134,11,.15)' : 'transparent';
+  document.getElementById('fbInboxBtnNew').style.color      = filter === 'new' ? 'var(--gold)' : 'var(--t2)';
+  document.getElementById('fbInboxBtnAll').style.background = filter === 'all' ? 'rgba(184,134,11,.15)' : 'transparent';
+  document.getElementById('fbInboxBtnAll').style.color      = filter === 'all' ? 'var(--gold)' : 'var(--t2)';
+
+  let query = sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(50);
+  if (filter === 'new') query = query.eq('status', 'new');
+
+  const { data, error } = await query;
+  if (error) { listEl.innerHTML = `<div style="color:var(--red);font-size:12px;text-align:center;padding:20px">${error.message}</div>`; return; }
+  if (!data || data.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;color:var(--t3);font-size:12px;padding:30px 0">${t('No feedback yet','لا توجد ملاحظات بعد')}</div>`;
+    return;
+  }
+
+  const typeIcon = { bug:'🐛', suggestion:'💡', other:'💬' };
+  const typeColor = { bug:'#f87171', suggestion:'#4ade80', other:'var(--t2)' };
+  listEl.innerHTML = data.map(fb => {
+    const dateStr = fb.created_at ? new Date(fb.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : '';
+    return `
+    <div style="background:var(--bg2);border-radius:12px;padding:13px 15px;margin-bottom:10px;border:1px solid var(--border)${fb.status==='new'?';border-left:3px solid var(--gold)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div>
+          <span style="font-size:12px;color:${typeColor[fb.type]||'var(--t2)'};font-weight:700">${typeIcon[fb.type]||'💬'} ${fb.type?.toUpperCase()}</span>
+          <span style="font-size:11px;color:var(--t3);margin-left:8px">${fb.emp_name||fb.emp_id||''} · ${dateStr}</span>
+        </div>
+        ${fb.status === 'new' ? `<button onclick="markFeedbackReviewed('${fb.id}')" style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:#4ade80;border-radius:8px;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;font-family:inherit;white-space:nowrap">${t('Mark Reviewed','تم المراجعة')}</button>` : `<span style="font-size:10px;color:var(--t3)">${t('Reviewed','مُراجَع')}</span>`}
+      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">${fb.title}</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6">${fb.body}</div>
+    </div>`;
+  }).join('');
+}
+
+async function markFeedbackReviewed(id) {
+  await sb.from('feedback').update({ status: 'reviewed' }).eq('id', id);
+  loadFeedbackInbox(_fbInboxFilter);
+  loadFeedbackBadge();
+}
+
+// Show/hide feedback rows based on role (called after login)
+function setupFeedbackUI() {
+  const isAdmin = user?.type === 'admin' || normId(user?.id) === 'ADM-001';
+  const empRow = document.getElementById('feedbackMenuRow');
+  const gmRow  = document.getElementById('feedbackGMRow');
+  if (empRow) empRow.style.display = isAdmin ? 'none' : 'flex';
+  if (gmRow)  gmRow.style.display  = isAdmin ? 'flex' : 'none';
+  if (isAdmin) loadFeedbackBadge();
+}
+
+// ─── END FEEDBACK SYSTEM ──────────────────────────────────────────────────────
 
 function logout() {
   if (clockTimer) clearInterval(clockTimer);
@@ -5014,7 +5171,7 @@ function renderIncoming() {
           <button class="btn-no" onclick="handleReq('${r.id}','reject')">✗ ${t('Reject','رفض')}</button>
         `}
         ${user.type === 'dept_officer' && !isIncident ? `<button style="padding:9px;border-radius:var(--r1);background:rgba(251,191,36,.1);color:var(--gold);border:1px solid rgba(251,191,36,.2);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer" onclick="handleReq('${r.id}','call')">🎫 ${t('Call In','استدعاء')}</button>` : ''}
-        ${r.status !== 'escalated' ? `<button class="escalate-btn" onclick="escalateToGM('${r.id}')" title="${t('Cannot handle this request — send to General Manager','لا يمكن التعامل مع هذا الطلب — أرسل للمدير العام')}">⬆️ ${t('Escalate to GM','تصعيد للمدير')}</button>` : ''}
+        ${(r.status !== 'escalated' && user.type !== 'admin') ? `<button class="escalate-btn" onclick="escalateToGM('${r.id}')" title="${t('Cannot handle this request — send to General Manager','لا يمكن التعامل مع هذا الطلب — أرسل للمدير العام')}">⬆️ ${t('Escalate to GM','تصعيد للمدير')}</button>` : ''}
       </div>` : `<div style="font-size:11px;color:#f87171;padding:8px 0">⬆️ ${t('This request has been escalated to the General Manager','تم تصعيد هذا الطلب إلى المدير العام')}</div>`}
 
       <!-- Incident Review Panel (shown on toggle) -->
@@ -10067,25 +10224,71 @@ let notifRead = JSON.parse(localStorage.getItem('notifRead') || '[]');
 
 function updateBellBadge() {
   if (!user) return;
-  const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
-    employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
+  const myId      = user.id || role;
+  const myNormId  = normId(myId);
+  const isAdmin   = user.type === 'admin' || myNormId === normId('ADM-001');
+  const isManager = isAdmin || user.type === 'manager' || user.type === 'supervisor' ||
+    employees.some(e => normId(e.report_to) === myNormId || normId(e.supervisor_id) === myNormId);
   let count = 0;
+
   if (!isManager) {
-    // For employees: count pending tasks assigned to them
-    const myPending = tasks.filter(tk => tk.assigned_to === (user.id || role) && (tk.status === 'pending' || tk.status === 'in_progress') && !notifRead.includes(tk.id));
-    count += myPending.length;
+    // Employees: new tasks assigned + any escalated/resolved updates on own requests
+    count += tasks.filter(tk =>
+      normId(tk.assigned_to) === myNormId &&
+      (tk.status === 'pending' || tk.status === 'in_progress') &&
+      !notifRead.includes(tk.id)
+    ).length;
+    // Own requests that just got approved/rejected (not yet dismissed)
+    count += requests.filter(r =>
+      normId(r.from) === myNormId &&
+      (r.status === 'approved' || r.status === 'rejected') &&
+      !notifRead.includes('req_' + r.id)
+    ).length;
   } else {
-    const isGMUser = user.type === 'admin' || user.dept === 'admin' || role === 'admin';
-    // GM sees all pending reviews company-wide; regular managers see only their own
-    const pendingReview = tasks.filter(tk =>
-      (isGMUser || tk.assigned_by === (user.id || role)) &&
+    // Managers/GM: pending_review tasks
+    count += tasks.filter(tk =>
+      (isAdmin || normId(tk.assigned_by) === myNormId) &&
       tk.status === 'pending_review' &&
       !notifRead.includes(tk.id)
-    );
-    count += pendingReview.length;
+    ).length;
+
+    if (isAdmin) {
+      // GM: escalated requests (need action)
+      count += requests.filter(r =>
+        r.status === 'escalated' && !notifRead.includes('req_' + r.id)
+      ).length;
+      // GM: requests directly addressed to GM not yet seen
+      count += requests.filter(r =>
+        (r.forManager === 'ADM-001' || r.forDept === 'gm') &&
+        r.status === 'pending_manager' &&
+        !notifRead.includes('req_' + r.id)
+      ).length;
+    } else {
+      // Regular manager: pending requests in their department
+      count += requests.filter(r =>
+        normId(r.forManager) === myNormId &&
+        r.status === 'pending_manager' &&
+        !notifRead.includes('req_' + r.id)
+      ).length;
+    }
   }
+
   const badge = document.getElementById('bellBadge');
-  if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+  if (badge) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+// ─── MESSAGE BADGE ────────────────────────────────────────────────────────────
+function updateMsgBadge() {
+  const total = Object.values(_groupUnread).reduce((s, n) => s + (n || 0), 0);
+  const hdrBadge = document.getElementById('msgBadge');
+  const navBadge = document.getElementById('msgNavBadge');
+  const sMsgs    = document.getElementById('sMsgs');
+  if (hdrBadge) { hdrBadge.textContent = total > 99 ? '99+' : total; hdrBadge.style.display = total > 0 ? 'flex' : 'none'; }
+  if (navBadge) { navBadge.textContent = total > 99 ? '99+' : total; navBadge.style.display = total > 0 ? 'flex' : 'none'; }
+  if (sMsgs)    { sMsgs.textContent = total || ''; }
 }
 
 function toggleNotifPanel() {
@@ -10095,12 +10298,21 @@ function toggleNotifPanel() {
   if (isOpen) { panel.style.display = 'none'; return; }
   // Mark all current notifications as read (clears badge)
   if (user) {
-    const isManager = user.type === 'manager' || user.type === 'admin' || user.type === 'supervisor' ||
-      employees.some(e => normId(e.report_to) === normId(user.id || role) || normId(e.supervisor_id) === normId(user.id || role));
+    const myId = user.id || role;
+    const myNormId = normId(myId);
+    const isAdmin   = user.type === 'admin' || myNormId === normId('ADM-001');
+    const isManager = isAdmin || user.type === 'manager' || user.type === 'supervisor' ||
+      employees.some(e => normId(e.report_to) === myNormId || normId(e.supervisor_id) === myNormId);
     if (!isManager) {
-      tasks.filter(tk => tk.assigned_to === (user.id || role)).forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+      tasks.filter(tk => tk.assigned_to === myId).forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+      // Also mark own resolved requests as read
+      requests.filter(r => normId(r.from) === myNormId && (r.status === 'approved' || r.status === 'rejected'))
+        .forEach(r => { const k = 'req_' + r.id; if (!notifRead.includes(k)) notifRead.push(k); });
     } else {
-      tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review').forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+      tasks.filter(tk => tk.assigned_by === myId && tk.status === 'pending_review').forEach(tk => { if (!notifRead.includes(tk.id)) notifRead.push(tk.id); });
+      // Mark escalated + pending requests as seen
+      requests.filter(r => r.status === 'escalated' || r.status === 'pending_manager')
+        .forEach(r => { const k = 'req_' + r.id; if (!notifRead.includes(k)) notifRead.push(k); });
     }
     localStorage.setItem('notifRead', JSON.stringify(notifRead));
     updateBellBadge();
@@ -10135,10 +10347,42 @@ function renderNotifPanel() {
       items.push({ id: tk.id, icon, title: tk.title, sub: statusLabel, action: () => { showTab('tasks'); closeNotifPanel(); } });
     });
   } else {
-    const review = tasks.filter(tk => tk.assigned_by === (user.id || role) && tk.status === 'pending_review' && !notifDismissed.includes(tk.id));
+    const myId     = user.id || role;
+    const myNormId = normId(myId);
+    const isAdmin  = user.type === 'admin' || myNormId === normId('ADM-001');
+
+    // Tasks pending review
+    const review = tasks.filter(tk => (isAdmin || normId(tk.assigned_by) === myNormId) && tk.status === 'pending_review' && !notifDismissed.includes(tk.id));
     review.forEach(tk => {
-      items.push({ id: tk.id, icon: '📤', title: tk.title, sub: t('Submitted for review by','أُرسلت للمراجعة من') + ' ' + tk.assigned_to_name, action: () => { showTab('tasks'); closeNotifPanel(); } });
+      items.push({ id: tk.id, icon: '📤', title: tk.title, sub: t('Submitted for review','أُرسلت للمراجعة') + (tk.assigned_to_name ? ' · ' + tk.assigned_to_name : ''), action: () => { showTab('tasks'); closeNotifPanel(); } });
     });
+
+    // Escalated requests (GM only)
+    if (isAdmin) {
+      const escalated = requests.filter(r => r.status === 'escalated' && !notifDismissed.includes('req_' + r.id));
+      escalated.forEach(r => {
+        items.push({ id: 'req_' + r.id, icon: '⬆️', title: r.title || r.typeLabel || t('Request','طلب'), sub: (r.fromName || r.from) + ' · ' + t('Escalated — awaiting your decision','مُصعَّد — بانتظار قرارك'), action: () => { showTab('requests'); closeNotifPanel(); } });
+      });
+      // Pending requests directed to GM
+      const gmPending = requests.filter(r =>
+        (r.forManager === 'ADM-001' || r.forDept === 'gm') &&
+        r.status === 'pending_manager' &&
+        !notifDismissed.includes('req_' + r.id)
+      );
+      gmPending.forEach(r => {
+        items.push({ id: 'req_' + r.id, icon: '📬', title: r.title || r.typeLabel || t('Request','طلب'), sub: (r.fromName || r.from) + ' · ' + t('Awaiting your review','بانتظار مراجعتك'), action: () => { showTab('requests'); closeNotifPanel(); } });
+      });
+    } else {
+      // Regular manager: pending requests in their dept
+      const mgrPending = requests.filter(r =>
+        normId(r.forManager) === myNormId &&
+        r.status === 'pending_manager' &&
+        !notifDismissed.includes('req_' + r.id)
+      );
+      mgrPending.forEach(r => {
+        items.push({ id: 'req_' + r.id, icon: '📬', title: r.title || r.typeLabel || t('Request','طلب'), sub: (r.fromName || r.from) + ' · ' + t('Pending your review','بانتظار مراجعتك'), action: () => { showTab('requests'); closeNotifPanel(); } });
+      });
+    }
   }
   if (!items.length) {
     list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px">${t('No new notifications','لا توجد إشعارات جديدة')}</div>`;
@@ -10766,6 +11010,9 @@ loadSupabaseData = async function(isAdmin) {
   if (isAdmin) {
     setTimeout(() => { try { checkAndNotifyOverdue(false); } catch(e) {} }, 1500);
   }
+
+  // Update bell badge once all data (requests + tasks) is loaded
+  setTimeout(() => { try { updateBellBadge(); } catch(e) {} }, 200);
 };
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -11540,7 +11787,8 @@ async function subscribeGroupChat(groupId) {
       } else {
         // Increment unread counter for this group
         _groupUnread[groupId] = (_groupUnread[groupId] || 0) + 1;
-        renderChatList(); // update unread badge
+        renderChatList();    // update group list badge
+        updateMsgBadge();    // update header + nav badge
       }
     })
     .subscribe();
@@ -11551,9 +11799,10 @@ async function openGroupChat(groupId) {
   if (!g) return;
   const members = resolveGroupMembers(g);
   activeGroupId = groupId;
-  // Clear unread count for this group
+  // Clear unread count for this group and update badges
   _groupUnread[groupId] = 0;
   renderChatList();
+  updateMsgBadge();
 
   // Initialise group chat history if not present (msgs loaded from Supabase below)
   if (!CHATS['grp-' + groupId]) {
@@ -12251,5 +12500,43 @@ _dRenderManageMembersList = debounce(renderManageMembersList, 220);
   tick();
 })();
 </script>
+
+<!-- ── FEEDBACK SUBMIT MODAL ── -->
+<div class="modal-bg" id="feedbackModal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="💡 Feedback & Suggestions" data-ar="💡 ملاحظات واقتراحات">💡 Feedback & Suggestions</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:14px;line-height:1.7" data-en="Found a bug or have an idea to improve the app? Tell us — the GM reviews all feedback directly." data-ar="وجدت خطأً أو لديك فكرة لتحسين التطبيق؟ أخبرنا — المدير العام يراجع جميع الملاحظات مباشرةً.">Found a bug or have an idea to improve the app? Tell us — the GM reviews all feedback directly.</div>
+    <label class="lbl" data-en="Type" data-ar="النوع">Type</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="fbTypeBug" onclick="setFbType('bug')" style="flex:1;padding:9px 6px;border-radius:10px;background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.3);color:#f87171;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" data-en="🐛 Bug" data-ar="🐛 خطأ">🐛 Bug</button>
+      <button id="fbTypeSug" onclick="setFbType('suggestion')" style="flex:1;padding:9px 6px;border-radius:10px;background:rgba(74,222,128,.06);border:1.5px solid rgba(74,222,128,.15);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" data-en="💡 Suggestion" data-ar="💡 اقتراح">💡 Suggestion</button>
+      <button id="fbTypeOther" onclick="setFbType('other')" style="flex:1;padding:9px 6px;border-radius:10px;background:rgba(163,163,163,.06);border:1.5px solid rgba(163,163,163,.15);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" data-en="💬 Other" data-ar="💬 أخرى">💬 Other</button>
+    </div>
+    <label class="lbl" data-en="Brief title" data-ar="عنوان مختصر">Brief title</label>
+    <input class="inp" id="fbTitle" type="text" maxlength="100" data-ph-en="e.g. Clock-in button not working" data-ph-ar="مثال: زر تسجيل الحضور لا يعمل" placeholder="e.g. Clock-in button not working" style="margin-bottom:0">
+    <label class="lbl" style="margin-top:12px" data-en="Details" data-ar="التفاصيل">Details</label>
+    <textarea class="inp" id="fbBody" rows="4" style="resize:none;height:90px;margin-bottom:0" data-ph-en="Describe the issue or idea in detail…" data-ph-ar="اشرح المشكلة أو الفكرة بالتفصيل…" placeholder="Describe the issue or idea in detail…"></textarea>
+    <button class="btn-pri" onclick="submitFeedback()" data-en="Send Feedback" data-ar="إرسال الملاحظة">Send Feedback</button>
+    <button class="btn-sec" onclick="closeModal('feedbackModal')" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+  </div>
+</div>
+
+<!-- ── GM FEEDBACK INBOX MODAL ── -->
+<div class="modal-bg" id="feedbackInboxModal">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <div class="mhandle"></div>
+    <div class="mtitle" data-en="💡 Staff Feedback Inbox" data-ar="💡 صندوق الملاحظات">💡 Staff Feedback Inbox</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button onclick="loadFeedbackInbox('new')" id="fbInboxBtnNew" style="flex:1;padding:8px;border-radius:10px;background:rgba(184,134,11,.15);border:1px solid rgba(184,134,11,.3);color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" data-en="🆕 New" data-ar="🆕 جديد">🆕 New</button>
+      <button onclick="loadFeedbackInbox('all')" id="fbInboxBtnAll" style="flex:1;padding:8px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit" data-en="📋 All" data-ar="📋 الكل">📋 All</button>
+    </div>
+    <div id="feedbackInboxList">
+      <div style="text-align:center;color:var(--t3);font-size:12px;padding:30px 0">⏳ Loading…</div>
+    </div>
+    <button class="btn-sec" onclick="closeModal('feedbackInboxModal')" style="margin-top:8px" data-en="Close" data-ar="إغلاق">Close</button>
+  </div>
+</div>
+
 </body>
 </html>
