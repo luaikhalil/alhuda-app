@@ -5636,10 +5636,10 @@ async function sendMsg() {
     // Save to Supabase and store row ID back on the msgObj
     if (user) {
       sb.from('messages').insert({
-        group_id: activeChat,
+        chat_id: activeChat,
         sender_id: user.id || role,
         sender_name: user.name,
-        text: txt,
+        body: txt,
         seen_by: [user.id || role]
       }).select('id').single()
         .then(({ data, error }) => {
@@ -5653,10 +5653,10 @@ async function sendMsg() {
     msgs.scrollTop = msgs.scrollHeight;
     if (activeChat && user) {
       sb.from('messages').insert({
-        group_id: activeChat,
+        chat_id: activeChat,
         sender_id: user.id || role,
         sender_name: user.name,
-        text: txt
+        body: txt
       }).then(({ error }) => { if (error) console.warn('Supabase sendMsg failed:', error); });
     }
   }
@@ -5703,8 +5703,8 @@ async function _sendFileMsg(file, caption) {
       // Save to Supabase and store row ID
       if (user) {
         sb.from('messages').insert({
-          group_id: activeChat, sender_id: user.id||role,
-          sender_name: user.name, text: body, seen_by: [user.id||role]
+          chat_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, body, seen_by: [user.id||role]
         }).select('id').single()
           .then(({ data, error }) => {
             if (error) console.warn('sendFileMsg failed:', error);
@@ -5716,8 +5716,8 @@ async function _sendFileMsg(file, caption) {
       if (tmpEl) tmpEl.innerHTML = parseMsgBody(body) + `<span class="bt">${now}</span>`;
       if (activeChat && user) {
         sb.from('messages').insert({
-          group_id: activeChat, sender_id: user.id||role,
-          sender_name: user.name, text: body
+          chat_id: activeChat, sender_id: user.id||role,
+          sender_name: user.name, body
         }).then(({error}) => { if (error) console.warn('sendFileMsg failed:', error); });
       }
     }
@@ -8970,7 +8970,7 @@ async function markGroupRead(groupId) {
     const { data: unread } = await sb
       .from('messages')
       .select('id, seen_by')
-      .eq('group_id', 'grp-' + groupId)
+      .eq('chat_id', 'grp-' + groupId)
       .not('seen_by', 'cs', JSON.stringify([myId]));
 
     if (!unread || !unread.length) return;
@@ -11280,7 +11280,7 @@ let _realtimeChan = null; // current Supabase Realtime channel
 function _dbRowToMsg(row, myId) {
   return {
     rx: normId(row.sender_id) !== normId(myId),
-    text: row.text || row.body || '',
+    text: row.body || row.text || '',
     t: new Date(row.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
     senderId: row.sender_id,
     senderName: row.sender_name || '',
@@ -11310,7 +11310,7 @@ async function subscribeGroupChat(groupId) {
       event: 'INSERT',
       schema: 'public',
       table: 'messages',
-      filter: `group_id=eq.grp-${groupId}`
+      filter: `chat_id=eq.grp-${groupId}`
     }, payload => {
       const row = payload.new;
       // Skip own messages — already added locally in sendMsg()
@@ -11395,7 +11395,7 @@ async function openGroupChat(groupId) {
   const myId = user?.id || role;
   const { data: msgRows, error: msgErr } = await sb.from('messages')
     .select('*')
-    .eq('group_id', 'grp-' + groupId)
+    .eq('chat_id', 'grp-' + groupId)
     .order('created_at', { ascending: true })
     .limit(150);
 
